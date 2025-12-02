@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -74,11 +75,13 @@ fun KillingPartSelector(
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
 
-    val barWidth = 6.dp
-    val gap = 8.dp
+    val barWidth = 4.dp
+    val gap = 10.dp
     val barWidthPx = with(density) { barWidth.toPx() }
     val gapPx = with(density) { gap.toPx() }
-    val pxPerSecond = barWidthPx + gapPx          // 1초당 px
+    val basePxPerSecond = barWidthPx + gapPx
+
+    var pxPerSecond by remember {mutableStateOf(basePxPerSecond)}
 
     val timelineWidthPx = totalDuration * pxPerSecond
     val timelineWidthDp = with(density) { timelineWidthPx.toDp() }
@@ -98,6 +101,11 @@ fun KillingPartSelector(
 
     LaunchedEffect(parentWidthPx) {
         if (parentWidthPx > 0f && !handlesInitialized) {
+            val maxDurationSec = 35f
+            val maxAllowedPxPerSecond = parentWidthPx / maxDurationSec
+
+            pxPerSecond = minOf(basePxPerSecond, maxAllowedPxPerSecond)
+
             val initialDurationSec = minDurationSec.coerceAtMost(maxDurationSec)
             val durationPx = initialDurationSec * pxPerSecond
             val center = parentWidthPx / 2f
@@ -242,8 +250,10 @@ fun KillingPartSelector(
                         val parent = parentWidthPx
                         if (parent <= 0f) return@detectDragGestures
 
+                        val handleWidthPx = with(density) { 40.dp.toPx()}
+
                         val candidateX = (rightHandleX + drag.x)
-                            .coerceIn(leftHandleX, parent)
+                            .coerceIn(leftHandleX, parent - handleWidthPx)
 
                         val candidateDurationSec =
                             (candidateX - leftHandleX) / pxPerSecond
@@ -298,7 +308,7 @@ fun KillingPartSelector(
 @Composable
 fun KillingPartSelectorPreview() {
     KillingPartSelector(
-        totalDuration = 185,
+        totalDuration = 150,
         onStartChange = { _, _, _ -> }
     )
 }
