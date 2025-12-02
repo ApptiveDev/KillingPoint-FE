@@ -146,24 +146,26 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Spacer(modifier = Modifier.height(35.dp))
 
-                Spacer(modifier = Modifier.height(60.dp))
-                Text(
-                    text = "MY MUSIC SPACE",
-                    color = Color.White,
-                    fontFamily = UnboundedFontFamily,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 28.sp
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "나만의 뮤직 스페이스",
-                    color = Color(0xFFA4A4A6),
-                    fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(26.dp))
+                if (selected == MainTab.PLAY) {
+                    Text(
+                        text = "MY MUSIC SPACE",
+                        color = Color.White,
+                        fontFamily = UnboundedFontFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 24.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "나만의 뮤직 스페이스",
+                        color = Color(0xFFA4A4A6),
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(26.dp))
+                }
 
                 TopPillTabs(
                     options = listOf("내 프로필", "킬링파트 재생", "뮤직캘린더"),
