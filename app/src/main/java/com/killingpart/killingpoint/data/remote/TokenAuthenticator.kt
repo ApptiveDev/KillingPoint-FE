@@ -4,15 +4,17 @@ import android.content.Context
 import com.killingpart.killingpoint.data.local.TokenStore
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
+import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.Route
+import org.json.JSONObject
 
 class TokenAuthenticator(
     private val context: Context
 ) : Authenticator {
     private val tokenStore = TokenStore(context)
-    private val api = RetrofitClient.getApi(context)
 
     override fun authenticate(route: Route?, response: Response): Request? {
         if (responseCount(response) >= 2) {
@@ -22,26 +24,37 @@ class TokenAuthenticator(
         val refreshToken = runBlocking { tokenStore.getRefreshToken() }
             ?: return null
 
-        val newTokens = try {
-            runBlocking {
-                api.refreshAccessToken(refreshToken)
-            }
+        val refreshUrl = RetrofitClient.BASE_URL + "jwt/exchange"
+
+        val client = OkHttpClient()
+
+        val refreshRequest = Request.Builder()
+            .url(refreshUrl)
+            .header("X-Refresh-Token", refreshToken)
+            .post("".toRequestBody())
+            .build()
+
+        val refreshResponse = try {
+            client.newCall(refreshRequest).execute()
         } catch (e: Exception) {
+            return null
+        }
+
+        if (!refreshResponse.isSuccessful) {
             runBlocking { tokenStore.clear() }
             return null
         }
 
-        runBlocking {
-            tokenStore.save(
-                newTokens.accessToken,
-                newTokens.refreshToken
-            )
-        }
+        val body = refreshResponse.body?.string() ?: return null
+        val json = JSONObject(body)
 
-        val newAccessToken = newTokens.accessToken
+        val newAccess = json.getString("accessToken")
+        val newRefresh = json.getString("refreshToken")
+
+        runBlocking { tokenStore.save(newAccess, newRefresh) }
 
         return response.request.newBuilder()
-            .header("Authorization", "Bearer $newAccessToken")
+            .header("Authorization", "Bearer $newAccess")
             .build()
     }
 
