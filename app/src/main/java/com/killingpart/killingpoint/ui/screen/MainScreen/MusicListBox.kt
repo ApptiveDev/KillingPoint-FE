@@ -56,7 +56,7 @@ fun MusicListBox(
     expanded: Boolean,
     onToggle: (Boolean) -> Unit,
     diaries: List<Diary>,
-    showCurrentHeader: Boolean = false
+    showCurrentHeader: Boolean = false,
 )
 {
 

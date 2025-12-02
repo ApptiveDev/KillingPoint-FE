@@ -88,9 +88,6 @@ fun RunMusicBox(
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
-    
-
-    val videoTotalDuration = currentDiary?.totalDuration
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
@@ -107,7 +104,7 @@ fun RunMusicBox(
                 .fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.padding(start = 15.dp, end = 17.dp, top = 20.dp, bottom = 8.dp),
+                modifier = Modifier.padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 when (val s = userState) {
@@ -117,8 +114,8 @@ fun RunMusicBox(
                             contentDescription = "프로필 사진",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(50))
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(100))
                                 .border(3.dp, mainGreen, RoundedCornerShape(50)),
                             placeholder = painterResource(id = R.drawable.default_profile),
                             error = painterResource(id = R.drawable.default_profile)
@@ -130,8 +127,8 @@ fun RunMusicBox(
                             contentDescription = "프로필 사진",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(50))
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(100))
                                 .border(3.dp, mainGreen, RoundedCornerShape(50))
                         )
                     }
@@ -149,9 +146,10 @@ fun RunMusicBox(
                         },
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.W400,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         color = mainGreen,
                     )
+                    Spacer(Modifier.height(2.dp))
                     Text(
                         text = when (val s = userState) {
                             is UserUiState.Success -> "@${s.userInfo.tag}"
@@ -160,7 +158,7 @@ fun RunMusicBox(
                         },
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.W400,
-                        fontSize = 14.sp,
+                        fontSize = 11.sp,
                         color = mainGreen,
                     )
                 }
@@ -206,7 +204,7 @@ fun RunMusicBox(
                             isPlayingState = isPlaying
                         )
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Box(
                         modifier = Modifier.fillMaxWidth(),
@@ -239,24 +237,6 @@ fun RunMusicBox(
                     }
                     .background(Color.Black.copy(alpha = 0.2f))
             )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val startTime = currentDiary?.start?.toFloatOrNull()?.toInt() ?: 0
-                val durationTime = currentDiary?.duration?.toFloatOrNull()?.toInt() ?: 0
-                val totalTime = videoTotalDuration ?: 180
-                MusicTimeBar(
-                    title = currentDiary?.musicTitle,
-                    start = startTime,
-                    during = durationTime,
-                    total = totalTime
-                )
-
-                Log.d("musicTimebar", "startTime: ${startTime}, duration: ${durationTime}, total: ${totalTime}")
-            }
         }
 
     }

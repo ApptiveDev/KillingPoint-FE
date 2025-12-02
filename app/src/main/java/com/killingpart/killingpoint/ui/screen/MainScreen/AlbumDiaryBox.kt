@@ -56,18 +56,18 @@ fun AlbumDiaryBox(diary: Diary?) {
     
     Column (
         modifier = Modifier.fillMaxHeight()
-            .padding(horizontal = 50.dp),
+            .padding(horizontal = 25.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
         Box(
-            modifier = Modifier.size(267.dp,198.dp),
+            modifier = Modifier.size(267.dp,175.dp),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 painter = painterResource(id = R.drawable.cd),
                 contentDescription = "CD",
                 modifier = Modifier
-                    .size(198.dp)
+                    .size(175.dp)
                     .background(color = Color.Transparent, shape = RoundedCornerShape(8.dp))
                     .offset(x = 33.dp, y = 0.dp)
                     .graphicsLayer {
@@ -81,33 +81,33 @@ fun AlbumDiaryBox(diary: Diary?) {
                     model = imageUrl,
                     contentDescription = "앨범 이미지",
                     modifier = Modifier
-                        .size(198.dp)
+                        .size(175.dp)
                         .offset(x = (-40).dp, y = 0.dp),
                     contentScale = ContentScale.Crop
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(15.dp))
 
         diary?.musicTitle?.let { title ->
             Text(
                 text = title,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 color = Color.White
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         diary?.artist?.let { artist ->
             Text(
                 text = artist,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
-                fontSize = 16.sp,
+                fontSize = 14.sp,
                 color = Color.White
             )
         }
@@ -118,7 +118,7 @@ fun AlbumDiaryBox(diary: Diary?) {
             text = "킬링파트 일기",
             fontFamily = PaperlogyFontFamily,
             fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
+            fontSize = 12.sp,
             color = Color(0xFFA4A4A6)
         )
 
@@ -134,7 +134,7 @@ fun AlbumDiaryBox(diary: Diary?) {
             )
         }
 
-        Spacer(modifier = Modifier.height(500.dp))
+        Spacer(modifier = Modifier.height(150.dp))
     }
 }
 

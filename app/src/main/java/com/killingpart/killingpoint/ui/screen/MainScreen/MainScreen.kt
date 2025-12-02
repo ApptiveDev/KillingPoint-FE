@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.ui.screen.MainScreen
 
+import android.util.Log
 import android.view.RoundedCorner
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -97,7 +98,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     val userState by userViewModel.state.collectAsState()
 
     val MusicCueBtnHeight = 60.dp
-    val BottomBarHeight = 94.dp
+    val BottomBarHeight = 60.dp
     val MusicCueBtnGap = 12.dp
 
     var listExpanded by remember { mutableStateOf(false ) }
@@ -191,7 +192,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         }
                 )
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(7.dp))
 
                 when (selected) {
                     MainTab.PROFILE -> {
@@ -289,25 +290,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                     )
                                 }
                             }
-
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .offset(y = (-40).dp)
-                                        .padding(horizontal = 16.dp)
-                                        .background(color = Color.Black, RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-                                ) {
-                                    MusicListBox(
-                                        currentIndex = currentIndex,
-                                        expanded = listExpanded,
-                                        onToggle = { willOpen ->
-                                            listExpanded = willOpen
-                                        },
-                                        diaries = diaries
-                                    )
-                                }
-                            }
                         }
                     }
                     MainTab.CALENDAR -> {
@@ -328,8 +310,40 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                 BottomBar(navController = navController)
             }
 
-            // MusicCueBtn은 PLAY 탭에서만 표시
             if (selected == MainTab.PLAY) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val currentDiary = diaries.getOrNull(currentIndex)
+                        val videoTotalDuration = currentDiary?.totalDuration
+                        val startTime = currentDiary?.start?.toFloatOrNull()?.toInt() ?: 0
+                        val durationTime = currentDiary?.duration?.toFloatOrNull()?.toInt() ?: 0
+                        val totalTime = videoTotalDuration ?: 180
+                        MusicListBox(
+                            currentIndex = currentIndex,
+                            expanded = listExpanded,
+                            onToggle = { willOpen ->
+                                listExpanded = willOpen
+                            },
+                            diaries = diaries
+                        )
+
+                        MusicTimeBar(
+                            title = currentDiary?.musicTitle,
+                            start = startTime,
+                            during = durationTime,
+                            total = totalTime
+                        )
+                    }
+                }
+
                 MusicCueBtn(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -351,11 +365,8 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         isPlaying = !isPlaying
                     },
                     isPlaying = isPlaying
-
-            )
-
-
-        }
+                )
+            }
         
         // ProfileSettingsScreen을 AppBackground 최상위에 배치하여 항상 표시되도록 함
         LaunchedEffect(showProfileSettings) {

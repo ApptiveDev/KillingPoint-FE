@@ -33,7 +33,8 @@ fun NextSongList(title: String?, label: String, onToggle: ()-> Unit,) {
             .fillMaxWidth()
             .height(41.dp)
             .background(Color.Black, RoundedCornerShape(20.dp))
-            .padding(horizontal = 21.dp, vertical = 8.dp),
+            .padding(horizontal = 21.dp, vertical = 8.dp)
+            .clickable { onToggle() },
         verticalAlignment = Alignment.CenterVertically
     ){
         Text(
@@ -63,7 +64,6 @@ fun NextSongList(title: String?, label: String, onToggle: ()-> Unit,) {
             painter = painterResource(id = R.drawable.music_list),
             contentDescription = "음악 리스트",
             modifier = Modifier.size(24.dp)
-                .clickable { onToggle() }
         )
     }
 }

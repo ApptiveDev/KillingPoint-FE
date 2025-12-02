@@ -38,7 +38,7 @@ fun MusicTimeBar(
         modifier = Modifier
             .fillMaxWidth()
             .background(color = Color.Black.copy(alpha = 0.8f), shape = RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 45.dp, vertical = 8.dp)
     ) {
 
         Column(
@@ -61,12 +61,12 @@ fun MusicTimeBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .onGloballyPositioned { barSize = it.size },
-            contentAlignment = Alignment.CenterStart
+            contentAlignment = Alignment.Center
         ) {
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
+                    .height(4.dp),
             ) {
                 val h = size.height
                 val w = size.width
