@@ -78,12 +78,7 @@ fun MusicTimeBarForDiaryDetail(
 
                     val startX = (start.toFloat() / total) * w
                     val endX = ((start + during).toFloat() / total) * w
-                    
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "Canvas drawing values:")
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "  - start: $start, during: $during, total: $total")
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "  - width: $w, height: $h")
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "  - startX: $startX, endX: $endX")
-                    
+
                     drawLine(
                         color = mainGreen,
                         start = Offset(startX, h / 2f),

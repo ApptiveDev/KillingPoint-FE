@@ -14,7 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -96,17 +98,86 @@ fun MusicTimeBar(
             val barWidthPx = barSize.width.toFloat()
             val barWidthDp = with(density) { barWidthPx.toDp() }.value
 
-            val x0 = 0f
-            val xStart = (start.toFloat() / total) * barWidthDp - 10f
-            val xEnd = ((start + during).toFloat() / total) * barWidthDp + 10f
+            val xStart = (start.toFloat() / total) * barWidthDp
+            val xEnd = ((start + during).toFloat() / total) * barWidthDp
             val xTotal = barWidthDp
+
+            // 텍스트 측정을 위한 measurer
+            val textMeasurer = rememberTextMeasurer()
+            val textStyle = TextStyle(
+                fontSize = 10.sp,
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Thin
+            )
+
+            val startTimeText = formatTime(start)
+            val endTimeText = formatTime(start + during)
+            val totalTimeText = formatTime(total)
+
+            val startTextWidth = with(density) {
+                textMeasurer.measure(startTimeText, textStyle).size.width.toDp().value
+            }
+            val endTextWidth = with(density) {
+                textMeasurer.measure(endTimeText, textStyle).size.width.toDp().value
+            }
+            val totalTextWidth = with(density) {
+                textMeasurer.measure(totalTimeText, textStyle).size.width.toDp().value
+            }
+
+            val minSpacing = 8f
+            val minDistanceStartEnd = (startTextWidth + endTextWidth) / 2f + minSpacing
+            val minDistanceEndTotal = (endTextWidth + totalTextWidth) / 2f + minSpacing
+
+            // 초기 위치
+            var adjustedXStart = xStart
+            var adjustedXEnd = xEnd
+
+            val startRightEdge = adjustedXStart + startTextWidth / 2f
+            val endLeftEdge = adjustedXEnd - endTextWidth / 2f
+            val currentStartEndGap = endLeftEdge - startRightEdge
+
+            if (currentStartEndGap < minSpacing) {
+                // 겹치거나 너무 가까우면 분리
+                val neededGap = minSpacing - currentStartEndGap
+                val halfGap = neededGap / 2f
+
+                // start를 왼쪽으로, end를 오른쪽으로 밀기
+                adjustedXStart = (adjustedXStart - halfGap).coerceAtLeast(startTextWidth / 2f)
+                adjustedXEnd = (adjustedXEnd + halfGap).coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing)
+
+                // start가 왼쪽 경계에 닿으면 end만 오른쪽으로 더 밀기
+                if (adjustedXStart <= startTextWidth / 2f) {
+                    val overflow = startTextWidth / 2f - adjustedXStart
+                    adjustedXStart = startTextWidth / 2f
+                    adjustedXEnd = (adjustedXEnd + overflow).coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing)
+                }
+            }
+
+            val endRightEdge = adjustedXEnd + endTextWidth / 2f
+            val totalLeftEdge = xTotal - totalTextWidth / 2f
+            val currentEndTotalGap = totalLeftEdge - endRightEdge
+
+            if (currentEndTotalGap < minSpacing) {
+                // end를 왼쪽으로 밀기
+                val neededGap = minSpacing - currentEndTotalGap
+                adjustedXEnd = (adjustedXEnd - neededGap).coerceAtLeast(adjustedXStart + minDistanceStartEnd)
+            }
+
+            // 3. 최종 검증: start와 end가 여전히 겹치지 않는지 확인
+            val finalStartRightEdge = adjustedXStart + startTextWidth / 2f
+            val finalEndLeftEdge = adjustedXEnd - endTextWidth / 2f
+            if (finalEndLeftEdge - finalStartRightEdge < minSpacing) {
+                // 여전히 겹치면 end를 오른쪽으로 밀기 (단, total과 겹치지 않도록)
+                val finalGap = minSpacing - (finalEndLeftEdge - finalStartRightEdge)
+                adjustedXEnd = (adjustedXEnd + finalGap).coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing)
+            }
 
             Box(Modifier.fillMaxWidth()) {
                 // start
-                TimeLabelCentered(formatTime(start), xStart, barWidthDp)
+                TimeLabelCentered(formatTime(start), adjustedXStart.coerceAtLeast(startTextWidth / 2f), barWidthDp)
 
                 // start + during
-                TimeLabelCentered(formatTime(start + during), xEnd, barWidthDp)
+                TimeLabelCentered(formatTime(start + during), adjustedXEnd.coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing), barWidthDp)
             }
         }
         }

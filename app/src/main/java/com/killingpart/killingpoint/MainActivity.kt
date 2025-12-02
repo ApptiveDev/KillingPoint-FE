@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -29,6 +30,8 @@ class MainActivity : ComponentActivity() {
         controller.hide(WindowInsetsCompat.Type.navigationBars())
         controller.systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         setContent {
             var showSplash by remember { mutableStateOf(true) }
