@@ -164,7 +164,11 @@ fun OuterBox(
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(
-                            onClick = { onProfileClick() },
+                            onClick = { 
+                                android.util.Log.d("OuterBox", "프로필 편집 버튼 클릭")
+                                onProfileClick()
+                                android.util.Log.d("OuterBox", "onProfileClick 호출 완료")
+                            },
                             modifier = Modifier
                                 .fillMaxWidth(0.8f)
                                 .height(32.dp),

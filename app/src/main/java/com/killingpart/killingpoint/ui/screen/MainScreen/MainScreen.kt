@@ -133,16 +133,15 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     }
 
 
+    // 프로필 설정 화면 상태 관리 (최상위 레벨로 이동)
+    var showProfileSettings by remember { mutableStateOf(false) }
+    // TopPillTabs 위치 측정을 위한 상태
+    var topPillTabsBottomY by remember { mutableStateOf(0.dp) }
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+
     AppBackground {
         Box(modifier = Modifier.fillMaxSize()) {
-            // 프로필 설정 화면 상태 관리 (전역)
-            var showProfileSettings by remember { mutableStateOf(false) }
-            // TopPillTabs 위치 측정을 위한 상태
-            var topPillTabsBottomY by remember { mutableStateOf(0.dp) }
-            val density = LocalDensity.current
-            val configuration = LocalConfiguration.current
-            val screenHeight = configuration.screenHeightDp.dp
-            
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -222,7 +221,11 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                             OuterBox(
                                                 navController = navController,
                                                 diaries = state.diaries,
-                                                onProfileClick = { showProfileSettings = true },
+                                                onProfileClick = { 
+                                                    android.util.Log.d("MainScreen", "프로필 편집 버튼 클릭됨")
+                                                    showProfileSettings = true
+                                                    android.util.Log.d("MainScreen", "showProfileSettings: $showProfileSettings")
+                                                },
                                                 modifier = Modifier.fillParentMaxHeight() // 가능한 최대 높이 사용
                                             )
                                         }
@@ -350,21 +353,31 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
             )
 
 
-            if (showProfileSettings) {
-                val topOffset = topPillTabsBottomY + 15.dp
-                val maxHeight = screenHeight - topOffset - BottomBarHeight
-                ProfileSettingsScreen(
-                    onDismiss = { showProfileSettings = false },
-                    topOffset = topOffset,
-                    maxHeight = maxHeight,
-                    onLogout = {
-                        // 로그아웃/회원탈퇴 후 로그인 화면으로 이동
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
-                        }
+        }
+        
+        // ProfileSettingsScreen을 AppBackground 최상위에 배치하여 항상 표시되도록 함
+        LaunchedEffect(showProfileSettings) {
+            android.util.Log.d("MainScreen", "showProfileSettings 변경됨: $showProfileSettings")
+        }
+        
+        if (showProfileSettings) {
+            android.util.Log.d("MainScreen", "ProfileSettingsScreen 렌더링 시작")
+            val topOffset = topPillTabsBottomY + 15.dp
+            val maxHeight = screenHeight - topOffset - BottomBarHeight
+            ProfileSettingsScreen(
+                onDismiss = { 
+                    android.util.Log.d("MainScreen", "ProfileSettingsScreen 닫기")
+                    showProfileSettings = false 
+                },
+                topOffset = topOffset,
+                maxHeight = maxHeight,
+                onLogout = {
+                    // 로그아웃/회원탈퇴 후 로그인 화면으로 이동
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
                     }
-                )
-            }
+                }
+            )
         }
     }
 }
