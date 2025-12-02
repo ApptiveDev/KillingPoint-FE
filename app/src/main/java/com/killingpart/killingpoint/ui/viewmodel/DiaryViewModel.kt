@@ -29,9 +29,22 @@ class DiaryViewModel(
         val repo = repoFactory(context)
         viewModelScope.launch {
             try {
-                val diaries = repo.getMyDiaries(page = 0, size = 10)
-                if (diaries.content.isNotEmpty()) {
-                    _state.value = DiaryUiState.Success(diaries.content)
+                // 첫 페이지를 가져와서 전체 페이지 수 확인
+                val firstPage = repo.getMyDiaries(page = 0, size = 100)
+                val totalPages = firstPage.page.totalPages
+                val allDiaries = mutableListOf<com.killingpart.killingpoint.data.model.Diary>()
+                
+                // 첫 페이지 추가
+                allDiaries.addAll(firstPage.content)
+                
+                // 나머지 페이지들 가져오기
+                for (page in 1 until totalPages) {
+                    val pageResult = repo.getMyDiaries(page = page, size = 100)
+                    allDiaries.addAll(pageResult.content)
+                }
+                
+                if (allDiaries.isNotEmpty()) {
+                    _state.value = DiaryUiState.Success(allDiaries)
                 } else {
                     _state.value = DiaryUiState.Error("다이어리가 없습니다")
                 }
