@@ -92,25 +92,8 @@ fun RunMusicBox(
 
     val videoTotalDuration = currentDiary?.totalDuration
 
-    val repo = remember { AuthRepository(context) }
-
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
-    }
-
-    LaunchedEffect(currentDiary?.musicTitle, currentDiary?.artist) {
-        if (currentDiary != null && currentDiary.musicTitle.isNotEmpty() && currentDiary.artist.isNotEmpty()) {
-            try {
-                val videos = repo.searchVideos("", currentDiary.artist, currentDiary.musicTitle) // albumId는 DB에 없으므로 빈 문자열
-                val firstVideo = videos.firstOrNull()
-                firstVideo?.duration?.let { durationStr ->
-                    val totalSeconds = parseDurationToSeconds(durationStr)
-                    android.util.Log.d("RunMusicBox", "YouTube video duration: $durationStr -> $totalSeconds seconds")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RunMusicBox", "Failed to fetch video duration: ${e.message}")
-            }
-        }
     }
 
 
