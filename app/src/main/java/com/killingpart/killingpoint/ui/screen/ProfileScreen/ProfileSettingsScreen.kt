@@ -366,7 +366,7 @@ private fun ProfileSettingsContent(
         
         val pattern = Pattern.compile("^[a-z0-9_.]+$")
         if (!pattern.matcher(tag).matches()) {
-            return "30자 이내의 영문과 숫자,\n 특수문자([.],[_])로 조합해주세요."
+            return "30자 이내의 영문과 숫자,특수문자([.],[_])로 조합해주세요."
         }
         
         return null
@@ -516,8 +516,7 @@ private fun ProfileSettingsContent(
                         .fillMaxWidth(),
                 ) {
                     // 프로필 이미지 (클릭 가능)
-                    Column()
-                    {
+                    Column() {
                         AsyncImage(
                             model = state.userInfo.profileImageUrl,
                             contentDescription = "프로필 사진",
@@ -673,7 +672,7 @@ private fun ProfileSettingsContent(
                                             color = Color(0xFF1A1A1A),
                                             shape = RoundedCornerShape(20.dp)
                                         )
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        .padding(horizontal = 6.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -703,13 +702,42 @@ private fun ProfileSettingsContent(
                                 }
                             }
                             
-                            // 하단 버튼 영역 (항상 공간 확보)
+                            // 검증 메시지 영역 (입력 필드 바로 아래)
+                            if (isEditingTag) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (validationMessage != null) {
+                                    Text(
+                                        text = validationMessage!!,
+                                        color = if (validationMessage!!.contains("사용 가능") || validationMessage!!.contains("성공")) {
+                                            Color(0xFF4FDD79)
+                                        } else {
+                                            Color(0xFFFF6B6B)
+                                        },
+                                        fontFamily = PaperlogyFontFamily,
+                                        fontSize = 12.sp,
+                                        lineHeight = 18.sp,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 10.dp, end = 10.dp)
+                                    )
+                                } else if (tagText.isNotEmpty() && tagText != state.userInfo.tag && validateTag(tagText) == null) {
+                                    Text(
+                                        text = "사용 가능한 회원태그입니다!",
+                                        color = Color(0xFF4FDD79),
+                                        fontFamily = PaperlogyFontFamily,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(start = 10.dp)
+                                    )
+                                }
+                            }
+                            
+                            // 하단 버튼 영역
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                ,horizontalArrangement = Arrangement.End,
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 if (isEditingTag) {
@@ -720,38 +748,6 @@ private fun ProfileSettingsContent(
                                             strokeWidth = 2.dp
                                         )
                                     } else {
-                                        // 검증 메시지 또는 성공 메시지 (항상 공간 확보)
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(40.dp) // 여러 줄 텍스트를 위한 높이 증가
-                                                .padding(start = 10.dp, top = 12.dp)
-                                            ,contentAlignment = Alignment.TopStart
-                                        ) {
-                                            if (isEditingTag) {
-                                                if (validationMessage != null) {
-                                                    Text(
-                                                        text = validationMessage!!,
-                                                        color = if (validationMessage!!.contains("사용 가능") || validationMessage!!.contains("성공")) {
-                                                            Color(0xFF4FDD79)
-                                                        } else {
-                                                            Color(0xFFFF6B6B)
-                                                        },
-                                                        fontFamily = PaperlogyFontFamily,
-                                                        fontSize = 12.sp,
-                                                        lineHeight = 16.sp,
-                                                        maxLines = 2
-                                                    )
-                                                } else if (tagText.isNotEmpty() && tagText != state.userInfo.tag && validateTag(tagText) == null) {
-                                                    Text(
-                                                        text = "사용 가능한 회원태그입니다!",
-                                                        color = Color(0xFF4FDD79),
-                                                        fontFamily = PaperlogyFontFamily,
-                                                        fontSize = 12.sp
-                                                    )
-                                                }
-                                            }
-                                        }
                                         IconButton(
                                             onClick = { cancelEditingTag() },
                                             modifier = Modifier.size(32.dp)

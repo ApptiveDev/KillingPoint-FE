@@ -375,7 +375,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
         
         if (showProfileSettings) {
             android.util.Log.d("MainScreen", "ProfileSettingsScreen 렌더링 시작")
-            val topOffset = topPillTabsBottomY + 15.dp
+            val topOffset = topPillTabsBottomY + 120.dp
             val maxHeight = screenHeight - topOffset - BottomBarHeight
             ProfileSettingsScreen(
                 onDismiss = { 
