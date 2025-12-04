@@ -184,8 +184,6 @@ fun MusicTimeBarForDiaryDetail(
                     // start + during (end)
                     TimeLabelCentered(endTimeText, adjustedXEnd.coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing), barWidthDp)
 
-                    // total
-                    TimeLabelCentered(totalTimeText, xTotal, barWidthDp)
                 }
             }
         }
