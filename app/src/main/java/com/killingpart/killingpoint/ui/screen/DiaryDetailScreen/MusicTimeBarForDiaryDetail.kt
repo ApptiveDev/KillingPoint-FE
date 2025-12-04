@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -194,5 +195,17 @@ private fun formatTime(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return "%d:%02d".format(m, s)
+}
+
+@Preview
+@Composable
+fun MusicTimebarPreview() {
+    MusicTimeBarForDiaryDetail(
+        artist = "Beat It Up",
+        musicTitle = "NCT DREAM",
+        start = 102,
+        during = 12,
+        totalDuration = 150,
+    )
 }
 

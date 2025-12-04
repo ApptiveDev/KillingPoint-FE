@@ -1,6 +1,4 @@
-package com.killingpart.killingpoint.ui.screen.WriteDiaryScreen
-import android.graphics.Shader
-import android.os.Build
+package com.killingpart.killingpoint.ui.screen.DiaryDetailScreen
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -30,8 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -46,7 +42,14 @@ import com.killingpart.killingpoint.data.spotify.SimpleTrack
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 
 @Composable
-fun AlbumDiaryBoxWithoutContent(track: SimpleTrack?) {
+fun AlbumDiaryBoxWithTimeBar(
+    track: SimpleTrack?,
+    artist: String = "",
+    musicTitle: String = "",
+    startSeconds: Int = 0,
+    duringSeconds: Int = 0,
+    totalDuration: Int? = null
+) {
     val infiniteTransition = rememberInfiniteTransition(label = "cd_rotation")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -118,7 +121,7 @@ fun AlbumDiaryBoxWithoutContent(track: SimpleTrack?) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.White,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -134,6 +137,16 @@ fun AlbumDiaryBoxWithoutContent(track: SimpleTrack?) {
                         color = Color.White
                     )
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                MusicTimeBarForDiaryDetail(
+                    artist = artist,
+                    musicTitle = musicTitle,
+                    start = startSeconds,
+                    during = duringSeconds,
+                    totalDuration = totalDuration
+                )
             }
         }
 
@@ -144,12 +157,18 @@ fun AlbumDiaryBoxWithoutContent(track: SimpleTrack?) {
 @Preview
 @Composable
 fun AlbumDiaryPreview() {
-    AlbumDiaryBoxWithoutContent(track =
-        SimpleTrack(
+    AlbumDiaryBoxWithTimeBar(
+        track = SimpleTrack(
             id = "",
             title = "Beat It Up",
             artist = "NCT DREAM",
             albumImageUrl = "imageUrl",
             albumId = ""
-        ))
+        ),
+        artist = "NCT DREAM",
+        musicTitle = "Beat It Up",
+        startSeconds = 10,
+        duringSeconds = 20,
+        totalDuration = 180
+    )
 }

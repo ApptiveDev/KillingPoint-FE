@@ -36,7 +36,6 @@ import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.screen.AddMusicScreen.korean_font_medium
-import com.killingpart.killingpoint.ui.screen.MainScreen.AlbumDiaryBox
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
@@ -154,7 +153,7 @@ fun WriteDiaryScreen(
             if (isLoadingVideo || currentVideoUrl == null) {
                 Box(
                     modifier = Modifier
-                        .size(220.dp, 140.dp)
+                        .size(250.dp, 150.dp)
                         .background(Color(0xFF1A1A1A), RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -180,7 +179,7 @@ fun WriteDiaryScreen(
                     updateDate = ""
                 )
                 Box(
-                    modifier = Modifier.size(200.dp, 120.dp)
+                    modifier = Modifier.size(250.dp, 150.dp)
                 ) {
 
                     YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
@@ -315,11 +314,6 @@ fun WriteDiaryScreen(
                                 end = end,
                                 totalDuration = totalDuration
                             )
-                            android.util.Log.d("WriteDiaryScreen", "Creating diary with:")
-                            android.util.Log.d("WriteDiaryScreen", "  - duration: ${body.duration}")
-                            android.util.Log.d("WriteDiaryScreen", "  - start: ${body.start}")
-                            android.util.Log.d("WriteDiaryScreen", "  - end: ${body.end}")
-                            android.util.Log.d("WriteDiaryScreen", "  - totalDuration: ${body.totalDuration}")
                             repo.createDiary(body)
                         }.onSuccess {
                             android.util.Log.d("WriteDiaryScreen", "Diary created successfully")

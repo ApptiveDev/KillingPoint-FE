@@ -210,7 +210,7 @@ fun RunMusicBox(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        AlbumDiaryBox(currentDiary)
+                        DiaryBox(currentDiary)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                 }

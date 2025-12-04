@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -40,8 +41,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.component.AppBackground
@@ -56,10 +59,14 @@ import com.killingpart.killingpoint.ui.viewmodel.UserViewModel
 import com.killingpart.killingpoint.ui.viewmodel.UserUiState
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
-import com.killingpart.killingpoint.ui.screen.MainScreen.AlbumDiaryBox
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import com.killingpart.killingpoint.data.spotify.SimpleTrack
+import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
+import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.AlbumDiaryBoxWithoutContent
+import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.AlbumDiaryBoxWithTimeBar
+import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.eng_font_extrabold
 import java.net.URLDecoder
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -106,22 +113,10 @@ fun DiaryDetailScreen(
         editedContent = content
     }
 
-    // duration, start, end를 초 단위 Int로 변환
-    // duration은 킬링파트의 길이(during), end는 킬링파트의 끝 시간
     val startSeconds = parseTimeToSeconds(start)
     val endSeconds = parseTimeToSeconds(end)
+    val duringSeconds = (endSeconds - startSeconds).coerceAtLeast(0)
 
-    // 디테일 페이지 진입 시 로그 출력
-    LaunchedEffect(startSeconds, endSeconds, duration, totalDuration) {
-        android.util.Log.d("DiaryDetailScreen", "=== DiaryDetailScreen 진입 ===")
-        android.util.Log.d("DiaryDetailScreen", "시작초: $startSeconds")
-        android.util.Log.d("DiaryDetailScreen", "끝초: $endSeconds")
-        android.util.Log.d("DiaryDetailScreen", "duration: $duration")
-        android.util.Log.d("DiaryDetailScreen", "totalDuration: $totalDuration")
-        android.util.Log.d("DiaryDetailScreen", "===========================")
-    }
-
-    // 날짜 포맷팅 (2025.10.26 형식)
     val formattedDate = try {
         val date = LocalDate.parse(createDate.split("T")[0])
         date.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
@@ -129,11 +124,33 @@ fun DiaryDetailScreen(
         createDate.split("T")[0]
     }
 
+    val diary = remember(diaryId, artist, musicTitle, albumImageUrl, videoUrl, duration, start, end, scope, totalDuration) {
+        val scopeEnum = try {
+            Scope.valueOf(scope.ifEmpty { "PRIVATE" })
+        } catch (e: Exception) {
+            Scope.PRIVATE
+        }
+        Diary(
+            id = diaryId,
+            artist = artist,
+            musicTitle = musicTitle,
+            albumImageUrl = albumImageUrl,
+            videoUrl = videoUrl,
+            duration = duration,
+            start = start,
+            end = end,
+            content = content,
+            createDate = createDate,
+            updateDate = createDate,
+            scope = scopeEnum,
+            totalDuration = totalDuration
+        )
+    }
+
     AppBackground {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 상단 헤더
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -142,30 +159,25 @@ fun DiaryDetailScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(
-                    onClick = { 
-                        // 어느 탭에서 왔는지에 따라 적절한 탭으로 돌아가기
+                    onClick = {
                         when (fromTab) {
                             "profile" -> {
-                                // 내 프로필 탭으로 돌아가기
                                 navController.navigate("main?tab=profile") {
                                     popUpTo("main") { inclusive = false }
                                 }
                             }
                             "calendar" -> {
-                                // MusicCalendarScreen으로 돌아가기 (CALENDAR 탭 선택 + 선택된 날짜 복원)
                                 val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
                                 navController.navigate("main?tab=calendar$selectedDateParam") {
                                     popUpTo("main") { inclusive = false }
                                 }
                             }
                             "play" -> {
-                                // 킬링파트 재생 탭으로 돌아가기
                                 navController.navigate("main?tab=play") {
                                     popUpTo("main") { inclusive = false }
                                 }
                             }
                             else -> {
-                                // 기본값: selectedDate가 있으면 calendar, 없으면 profile
                                 if (selectedDate.isNotEmpty()) {
                                     val selectedDateParam = "&selectedDate=${android.net.Uri.encode(selectedDate)}"
                                     navController.navigate("main?tab=calendar$selectedDateParam") {
@@ -219,393 +231,286 @@ fun DiaryDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 음악 플레이어 섹션 (스와이프 가능)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Diary 객체 생성 (YouTubePlayerBox에 전달하기 위해)
-                val diary = remember(diaryId, artist, musicTitle, albumImageUrl, videoUrl, duration, start, end, scope, totalDuration) {
-                    val scopeEnum = try {
-                        Scope.valueOf(scope.ifEmpty { "PRIVATE" })
-                    } catch (e: Exception) {
-                        Scope.PRIVATE
-                    }
-                    Diary(
-                        id = diaryId,
-                        artist = artist,
-                        musicTitle = musicTitle,
-                        albumImageUrl = albumImageUrl,
-                        videoUrl = videoUrl,
-                        duration = duration,
-                        start = start,
-                        end = end,
-                        content = content,
-                        createDate = createDate,
-                        updateDate = createDate, // updateDate가 없으면 createDate 사용
-                        scope = scopeEnum,
-                        totalDuration = totalDuration
+                Box(
+                    modifier = Modifier.size(250.dp, 150.dp)
+                ) {
+                    YouTubePlayerBox(
+                        diary = diary,
+                        startSeconds = startSeconds.toFloat(),
+                        durationSeconds = duringSeconds.toFloat()
                     )
                 }
-                
-                val pagerState = rememberPagerState(pageCount = { 2 }, initialPage = 0)
-                
-                // YouTube 플레이어는 항상 렌더링하여 재생 상태 유지
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    // YouTube 플레이어 (항상 렌더링, 투명하게 오버레이)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .offset(x = if (pagerState.currentPage == 1) 0.dp else (-10000).dp) // 화면 밖으로 이동
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // YouTube 플레이어
-                            YouTubePlayerBox(
-                                diary = diary,
-                                startSeconds = startSeconds.toFloat(),
-                                durationSeconds = duration.toFloat()
-                            )
-                            
-                            Spacer(modifier = Modifier.height(24.dp))
-                        }
-                    }
-                    
-                    // HorizontalPager (앨범 정보와 YouTube 플레이어 페이지)
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                    ) { page ->
-                        when (page) {
-                            0 -> {
-                                // 페이지 0: 앨범 정보
-                                Row(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // 앨범 아트
-                                    AsyncImage(
-                                        model = albumImageUrl,
-                                        contentDescription = "앨범 아트",
-                                        modifier = Modifier
-                                            .size(110.dp)
-                                            .clip(RoundedCornerShape(12.dp)),
-                                        contentScale = ContentScale.Crop,
-                                        placeholder = painterResource(id = R.drawable.example_video),
-                                        error = painterResource(id = R.drawable.example_video)
-                                    )
 
-                                    Spacer(modifier = Modifier.width(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                                    // 음악 정보
-                                    Column(
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text(
-                                            text = musicTitle,
-                                            color = Color.White,
-                                            fontFamily = PaperlogyFontFamily,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            maxLines = 2
-                                        )
+                AlbumDiaryBoxWithTimeBar(
+                    track = SimpleTrack(
+                        id = "",
+                        title = musicTitle,
+                        artist = artist,
+                        albumImageUrl = albumImageUrl,
+                        albumId = ""
+                    ),
+                    artist = artist,
+                    musicTitle = musicTitle,
+                    startSeconds = startSeconds,
+                    duringSeconds = duringSeconds,
+                    totalDuration = totalDuration
+                )
 
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        Text(
-                                            text = artist,
-                                            color = Color.White,
-                                            fontFamily = PaperlogyFontFamily,
-                                            fontWeight = FontWeight.Medium,
-                                            fontSize = 10.sp,
-                                            maxLines = 1
-                                        )
-                                        // 진행 바
-                                        MusicTimeBarForDiaryDetail(
-                                            artist = artist,
-                                            musicTitle = musicTitle,
-                                            start = startSeconds,
-                                            during = duration.toInt(),
-                                            totalDuration = diary.totalDuration
-                                        )
-                                    }
-                                }
-                            }
-                            1 -> {
-                                // 페이지 1: YouTube 플레이어 (위에서 항상 렌더링되므로 여기서는 빈 Box)
-                                Box(modifier = Modifier.fillMaxSize())
-                            }
-                        }
-                    }
-                }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 다이어리 콘텐츠 영역 - 남은 공간을 모두 차지
-            Box(
+            Column(
                 modifier = Modifier
-                    .padding(horizontal = 24.dp) // margin
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(
-                        color = Color(0xFF1D1E20),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(20.dp) // padding
+                    .padding(horizontal = 24.dp)
             ) {
-                // 다이어리 텍스트 (편집 모드에 따라 TextField 또는 Text)
-                if (isEditing) {
-                    OutlinedTextField(
-                        value = editedContent,
-                        onValueChange = { editedContent = it },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 70.dp), // 날짜/닉네임 공간 확보
-                        textStyle = TextStyle(
-                            fontSize = 16.sp,
-                            fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.Medium,
-                            lineHeight = 30.sp,
-                            color = Color.White
-                        ),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent,
-                            focusedBorderColor = mainGreen.copy(alpha = 0.5f),
-                            cursorColor = mainGreen,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    )
-                } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(
+                            color = Color(0xFF1D1E20),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .padding(20.dp)
+                ) {
+                    if (isEditing) {
+                        OutlinedTextField(
+                            value = editedContent,
+                            onValueChange = { editedContent = it },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(bottom = 70.dp),
+                            textStyle = TextStyle(
+                                fontSize = 16.sp,
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                lineHeight = 30.sp,
+                                color = Color.White
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedBorderColor = mainGreen.copy(alpha = 0.5f),
+                                cursorColor = mainGreen,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(bottom = 60.dp)
+                        ) {
+                            Text(
+                                text = currentContent,
+                                color = Color.White,
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp,
+                                lineHeight = 30.sp
+                            )
+                        }
+                    }
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(bottom = 60.dp) // 날짜/닉네임 공간 확보
+                            .align(Alignment.BottomEnd)
+                            .padding(bottom = 5.dp),
+                        horizontalAlignment = Alignment.End
                     ) {
                         Text(
-                            text = currentContent,
+                            text = formattedDate,
                             color = Color.White,
                             fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
-                            lineHeight = 30.sp
+                            fontWeight = FontWeight.W400,
+                            fontSize = 14.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = when (val state = userState) {
+                                is UserUiState.Success -> "@${state.userInfo.username}"
+                                is UserUiState.Loading -> "@KILLINGPART"
+                                is UserUiState.Error -> "@KILLINGPART"
+                            },
+                            color = Color.White,
+                            fontFamily = PaperlogyFontFamily,
+                            fontWeight = FontWeight.W400,
+                            fontSize = 14.sp
                         )
                     }
                 }
-                // 날짜와 닉네임을 우하단에 배치
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(bottom = 5.dp),
-                    horizontalAlignment = Alignment.End
-                ) {
-                    // 날짜
-                    Text(
-                        text = formattedDate,
-                        color = Color.White,
-                        fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.W400,
-                        fontSize = 14.sp
-                    )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // 사용자명
-                    Text(
-                        text = when (val state = userState) {
-                            is UserUiState.Success -> "@${state.userInfo.username}"
-                            is UserUiState.Loading -> "@KILLINGPART"
-                            is UserUiState.Error -> "@KILLINGPART"
-                        },
-                        color = Color.White,
-                        fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.W400,
-                        fontSize = 14.sp
-                    )
-                }
-            }
-
-            // 편집 모드일 때 저장/취소 버튼
-            if (isEditing) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 취소 버튼
-                    Text(
-                        text = "취소",
-                        color = Color(0xFFAAAAAA),
-                        fontFamily = PaperlogyFontFamily,
-                        fontSize = 14.sp,
+                if (isEditing) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
                         modifier = Modifier
-                            .clickable {
-                                editedContent = currentContent
-                                isEditing = false
-                            }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    // 저장 버튼
-                    Text(
-                        text = "저장",
-                        color = mainGreen,
-                        fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
-                        modifier = Modifier
-                            .clickable {
-                                android.util.Log.d("DiaryDetailScreen", "저장 버튼 클릭 - diaryId: $diaryId, isLoading: $isLoading")
-                                
-                                if (diaryId == null) {
-                                    android.util.Log.e("DiaryDetailScreen", "diaryId가 null입니다. 저장할 수 없습니다.")
-                                    android.util.Log.e("DiaryDetailScreen", "백엔드 API가 id를 반환하지 않습니다. 백엔드 개발자에게 문의하세요.")
-                                    return@clickable
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "취소",
+                            color = Color(0xFFAAAAAA),
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .clickable {
+                                    editedContent = currentContent
+                                    isEditing = false
                                 }
-                                
-                                if (isLoading) {
-                                    android.util.Log.d("DiaryDetailScreen", "이미 로딩 중입니다.")
-                                    return@clickable
-                                }
-                                
-                                isLoading = true
-                                coroutineScope.launch {
-                                    try {
-                                        android.util.Log.d("DiaryDetailScreen", "다이어리 수정 시작 - diaryId: $diaryId")
-                                        
-                                        val scopeEnum = try {
-                                            Scope.valueOf(scope.ifEmpty { "PRIVATE" })
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = "저장",
+                            color = mainGreen,
+                            fontFamily = PaperlogyFontFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp,
+                            modifier = Modifier
+                                .clickable {
+                                    if (diaryId == null || isLoading) return@clickable
+
+                                    isLoading = true
+                                    coroutineScope.launch {
+                                        try {
+                                            val scopeEnum = try {
+                                                Scope.valueOf(scope.ifEmpty { "PRIVATE" })
+                                            } catch (e: Exception) {
+                                                Scope.PRIVATE
+                                            }
+
+                                            val updateRequest = CreateDiaryRequest(
+                                                artist = artist,
+                                                musicTitle = musicTitle,
+                                                albumImageUrl = albumImageUrl,
+                                                videoUrl = videoUrl,
+                                                scope = scopeEnum.name,
+                                                content = editedContent,
+                                                duration = duration,
+                                                start = start,
+                                                end = end,
+                                                totalDuration = totalDuration ?: 0
+                                            )
+
+                                            repo.updateDiary(diaryId, updateRequest)
+                                            currentContent = editedContent
+                                            isEditing = false
                                         } catch (e: Exception) {
-                                            Scope.PRIVATE
+                                            e.printStackTrace()
+                                        } finally {
+                                            isLoading = false
                                         }
-                                        
-                                        val updateRequest = CreateDiaryRequest(
-                                            artist = artist,
-                                            musicTitle = musicTitle,
-                                            albumImageUrl = albumImageUrl,
-                                            videoUrl = videoUrl,
-                                            scope = scopeEnum.name,
-                                            content = editedContent,
-                                            duration = duration,
-                                            start = start,
-                                            end = end,
-                                            totalDuration = totalDuration ?: 0 // DB에서 가져온 totalDuration 사용
-                                        )
-                                        
-                                        android.util.Log.d("DiaryDetailScreen", "업데이트 요청 전송 중...")
-                                        repo.updateDiary(diaryId, updateRequest)
-                                        android.util.Log.d("DiaryDetailScreen", "다이어리 수정 성공")
-                                        
-                                        // 성공 시 현재 콘텐츠를 업데이트하고 편집 모드 종료
-                                        currentContent = editedContent
-                                        isEditing = false
-                                    } catch (e: Exception) {
-                                        android.util.Log.e("DiaryDetailScreen", "다이어리 수정 실패: ${e.message}", e)
-                                        e.printStackTrace()
-                                        // 에러 처리 (나중에 토스트 메시지 등 추가 가능)
-                                    } finally {
-                                        isLoading = false
                                     }
                                 }
-                            }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // 하단 네비게이션 바
             BottomBar(navController = navController)
         }
 
         if (showDeleteDialog) {
             AlertDialog(
-                onDismissRequest = { 
-                    if (!isDeleting) {
-                        showDeleteDialog = false
-                    }
-                },
-                title = {
-                    Text(
-                        text = "일기 삭제",
-                        fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color.White
-                    )
-                },
-                text = {
-                    Text(
-                        text = "일기를 삭제하시겠습니까?\n삭제된 일기는 복구할 수 없습니다.",
-                        fontFamily = PaperlogyFontFamily,
-                        fontSize = 14.sp,
-                        color = Color.White
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            if (diaryId != null && !isDeleting) {
-                                isDeleting = true
-                                coroutineScope.launch {
-                                    try {
-                                        repo.deleteDiary(diaryId)
-
-                                        val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
-                                        navController.navigate("main?tab=calendar$selectedDateParam") {
-                                            popUpTo("main") { inclusive = false }
-                                        }
-                                    } catch (e: Exception) {
-                                        android.util.Log.e("DiaryDetailScreen", "다이어리 삭제 실패: ${e.message}", e)
-                                        e.printStackTrace()
-                                        isDeleting = false
-                                        showDeleteDialog = false
-                                    }
-                                }
-                            }
-                        },
-                        enabled = !isDeleting
-                    ) {
-                        Text(
-                            text = if (isDeleting) "삭제 중..." else "삭제",
-                            fontFamily = PaperlogyFontFamily,
-                            color = Color(0xFFFF4444),
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { 
+                        onDismissRequest = {
                             if (!isDeleting) {
                                 showDeleteDialog = false
                             }
                         },
-                        enabled = !isDeleting
-                    ) {
-                        Text(
-                            text = "취소",
-                            fontFamily = PaperlogyFontFamily,
-                            color = Color(0xFFAAAAAA)
-                        )
-                    }
-                },
+                        title = {
+                            Text(
+                                text = "일기 삭제",
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = Color.White
+                            )
+                        },
+                        text = {
+                            Text(
+                                text = "일기를 삭제하시겠습니까?\n삭제된 일기는 복구할 수 없습니다.",
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 14.sp,
+                                color = Color.White
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    if (diaryId != null && !isDeleting) {
+                                        isDeleting = true
+                                        coroutineScope.launch {
+                                            try {
+                                                repo.deleteDiary(diaryId)
+
+                                                val selectedDateParam =
+                                                    if (selectedDate.isNotEmpty()) "&selectedDate=${
+                                                        android.net.Uri.encode(selectedDate)
+                                                    }" else ""
+                                                navController.navigate("main?tab=calendar$selectedDateParam") {
+                                                    popUpTo("main") { inclusive = false }
+                                                }
+                                            } catch (e: Exception) {
+                                                android.util.Log.e(
+                                                    "DiaryDetailScreen",
+                                                    "다이어리 삭제 실패: ${e.message}",
+                                                    e
+                                                )
+                                                e.printStackTrace()
+                                                isDeleting = false
+                                                showDeleteDialog = false
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !isDeleting
+                            ) {
+                                Text(
+                                    text = if (isDeleting) "삭제 중..." else "삭제",
+                                    fontFamily = PaperlogyFontFamily,
+                                    color = Color(0xFFFF4444),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(
+                                onClick = {
+                                    if (!isDeleting) {
+                                        showDeleteDialog = false
+                                    }
+                                },
+                                enabled = !isDeleting
+                            ) {
+                                Text(
+                                    text = "취소",
+                                    fontFamily = PaperlogyFontFamily,
+                                    color = Color(0xFFAAAAAA)
+                                )
+                            }
+                        },
                 containerColor = Color(0xFF1A1A1A),
                 titleContentColor = Color.White,
                 textContentColor = Color.White
@@ -614,25 +519,18 @@ fun DiaryDetailScreen(
     }
 }
 
-/**
- * 시간 문자열을 초 단위로 변환
- * "MM:SS" 형식, 숫자 문자열(소수점 포함 가능)을 지원
- */
 private fun parseTimeToSeconds(timeStr: String): Int {
     return try {
         if (timeStr.contains(":")) {
-            // "MM:SS" 형식
             val parts = timeStr.split(":")
             if (parts.size == 2) {
                 val minutes = parts[0].toIntOrNull() ?: 0
                 val seconds = parts[1].toIntOrNull() ?: 0
                 minutes * 60 + seconds
             } else {
-                0
+                timeStr.toIntOrNull() ?: 0
             }
         } else {
-            // 숫자 문자열 (초 단위, 소수점 포함 가능)
-            // Float로 변환 후 Int로 반올림 (RunMusicBox와 동일한 방식)
             timeStr.toFloatOrNull()?.toInt() ?: 0
         }
     } catch (e: Exception) {
@@ -640,3 +538,24 @@ private fun parseTimeToSeconds(timeStr: String): Int {
     }
 }
 
+@Preview
+@Composable
+fun DiaryDetailScreenPreview() {
+    DiaryDetailScreen(
+        navController = rememberNavController(),
+        artist = "Davinci Leo",
+        musicTitle = "Death Sonnet von Dat",
+        albumImageUrl = "https://i.scdn.co/image/ab67616d00001e02c6b31f5f1ce2958380fdb9b0",
+        content = "자세히 보아야 예쁘다\n오래 보아야 사랑스럽다.\n너도 그렇다",
+        videoUrl = "https://www.youtube-nocookie.com/embed/example",
+        duration = "10",
+        start = "102",
+        end = "112",
+        createDate = "2025-09-19T00:00:00",
+        selectedDate = "2025-09-19",
+        scope = "PUBLIC",
+        diaryId = 1L,
+        totalDuration = 180,
+        fromTab = "calendar"
+    )
+}
