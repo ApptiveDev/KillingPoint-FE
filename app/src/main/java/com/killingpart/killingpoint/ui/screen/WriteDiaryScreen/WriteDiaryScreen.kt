@@ -64,47 +64,14 @@ fun WriteDiaryScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     var content by remember { mutableStateOf("") }
-    var scope by remember { mutableStateOf("PUBLIC") }
+    var scopeState by remember { mutableStateOf("PUBLIC") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
 
-    var currentVideoUrl by remember { mutableStateOf<String?>(if (videoUrl.isNotEmpty()) videoUrl else null) }
-    var currentTotalDuration by remember { mutableStateOf(if (totalDuration > 0) totalDuration else 10) }
-    var isLoadingVideo by remember { mutableStateOf(false) }
-
-    var duration by remember { mutableStateOf(10f) }
-    var start by remember { mutableStateOf(0f) }
-
-    val startSeconds = remember(start) {
-        val seconds = start ?: 0f
-        seconds
-    }
-
-    val durationSeconds = remember(duration) {
-        val seconds = duration ?: 10f
-        seconds
-    }
-
-    LaunchedEffect(title, artist) {
-        if (videoUrl.isEmpty()) {
-            isLoadingVideo = true
-            try {
-                val videos = repo.searchVideos(title, artist)
-                videos.forEachIndexed { index, video ->
-                    android.util.Log.d("SelectDurationScreen", "  비디오[$index]: url=${video.id}")
-                }
-                val firstVideo = videos.firstOrNull()
-                val newVideoId = firstVideo?.id
-                currentVideoUrl = newVideoId
-                currentTotalDuration = firstVideo?.duration ?: 10
-            } catch (e: Exception) {
-                currentVideoUrl = null
-                currentTotalDuration = 10
-            }
-            isLoadingVideo = false
-        }
-    }
+    val startSeconds = start.toFloatOrNull() ?: 0f
+    val endSeconds = end.toFloatOrNull() ?: 0f
+    val durationSeconds = duration.toFloatOrNull() ?: (endSeconds - startSeconds).coerceAtLeast(0f)
 
     val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
 
@@ -150,40 +117,23 @@ fun WriteDiaryScreen(
                 )
             }
 
-            if (isLoadingVideo || currentVideoUrl == null) {
-                Box(
-                    modifier = Modifier
-                        .size(250.dp, 150.dp)
-                        .background(Color(0xFF1A1A1A), RoundedCornerShape(16.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (isLoadingVideo) "비디오 검색 중..." else "비디오를 찾을 수 없습니다",
-                        fontFamily = PaperlogyFontFamily,
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            } else {
-                val tempDiary = Diary(
-                    artist = artist,
-                    musicTitle = title,
-                    albumImageUrl = imageUrl,
-                    videoUrl = currentVideoUrl!!,
-                    content = "",
-                    scope = Scope.PUBLIC,
-                    duration = "0",
-                    start = "0",
-                    end = "0",
-                    createDate = "",
-                    updateDate = ""
-                )
-                Box(
-                    modifier = Modifier.size(250.dp, 150.dp)
-                ) {
-
-                    YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
-                }
+            val tempDiary = Diary(
+                artist = artist,
+                musicTitle = title,
+                albumImageUrl = imageUrl,
+                videoUrl = videoUrl,
+                content = "",
+                scope = Scope.PUBLIC,
+                duration = duration,
+                start = start,
+                end = end,
+                createDate = "",
+                updateDate = ""
+            )
+            Box(
+                modifier = Modifier.size(250.dp, 150.dp)
+            ) {
+                YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
             }
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -307,10 +257,10 @@ fun WriteDiaryScreen(
                                 musicTitle = title,
                                 albumImageUrl = imageUrl,
                                 videoUrl = videoUrl,
-                                scope = scope,
+                                scope = scopeState,
                                 content = content,
-                                duration = duration.toString(),
-                                start = start.toString(),
+                                duration = duration,
+                                start = start,
                                 end = end,
                                 totalDuration = totalDuration
                             )

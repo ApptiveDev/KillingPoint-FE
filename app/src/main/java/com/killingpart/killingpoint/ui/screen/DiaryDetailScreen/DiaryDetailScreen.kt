@@ -63,10 +63,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
-import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
-import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.AlbumDiaryBoxWithoutContent
-import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.AlbumDiaryBoxWithTimeBar
-import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.eng_font_extrabold
 import java.net.URLDecoder
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -549,8 +545,8 @@ fun DiaryDetailScreenPreview() {
         content = "자세히 보아야 예쁘다\n오래 보아야 사랑스럽다.\n너도 그렇다",
         videoUrl = "https://www.youtube-nocookie.com/embed/example",
         duration = "10",
-        start = "102",
-        end = "112",
+        start = "170",
+        end = "180",
         createDate = "2025-09-19T00:00:00",
         selectedDate = "2025-09-19",
         scope = "PUBLIC",

@@ -16,14 +16,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import com.killingpart.killingpoint.ui.theme.mainGreen
 
 @Composable
 fun DiaryBox(diary: Diary?) {
     Column (
         modifier = Modifier.fillMaxWidth()
-            .padding(horizontal = 25.dp),
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
+        Text(
+            text = "킬링파트 일기",
+            fontFamily = PaperlogyFontFamily,
+            fontWeight = FontWeight.Medium,
+            fontSize = 13.sp,
+            color = mainGreen
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
         diary?.content?.let { diaryContent ->
             Text(
                 text = diaryContent,

@@ -96,95 +96,68 @@ fun MusicTimeBarForDiaryDetail(
                 val barWidthPx = barSize.width.toFloat()
                 val barWidthDp = with(density) { barWidthPx.toDp() }.value
 
-                val x0 = 0f
                 val xStart = (start.toFloat() / total) * barWidthDp
                 val xEnd = ((start + during).toFloat() / total) * barWidthDp
                 val xTotal = barWidthDp
-                
-                // 텍스트 측정을 위한 measurer
-                val textMeasurer = rememberTextMeasurer()
-                val textStyle = TextStyle(
+
+                val measurer = rememberTextMeasurer()
+                val style = TextStyle(
                     fontSize = 10.sp,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Thin
                 )
-                
-                val startTimeText = formatTime(start)
-                val endTimeText = formatTime(start + during)
-                val totalTimeText = formatTime(total)
-                
-                val startTextWidth = with(density) { 
-                    textMeasurer.measure(startTimeText, textStyle).size.width.toDp().value 
-                }
-                val endTextWidth = with(density) { 
-                    textMeasurer.measure(endTimeText, textStyle).size.width.toDp().value 
-                }
-                val totalTextWidth = with(density) { 
-                    textMeasurer.measure(totalTimeText, textStyle).size.width.toDp().value 
-                }
-                
-                // 최소 간격 (텍스트 폭의 절반씩 + 여유 공간 8dp)
+
+                val tStart = formatTime(start)
+                val tEnd = formatTime(start + during)
+
+                val startWidth = with(density) { measurer.measure(tStart, style).size.width.toDp().value }
+                val endWidth = with(density) { measurer.measure(tEnd, style).size.width.toDp().value }
+
                 val minSpacing = 8f
-                val minDistanceStartEnd = (startTextWidth + endTextWidth) / 2f + minSpacing
-                val minDistanceEndTotal = (endTextWidth + totalTextWidth) / 2f + minSpacing
-                
-                // 초기 위치
-                var adjustedXStart = xStart
-                var adjustedXEnd = xEnd
-                
-                // start 레이블의 실제 범위: [adjustedXStart - startTextWidth/2, adjustedXStart + startTextWidth/2]
-                // end 레이블의 실제 범위: [adjustedXEnd - endTextWidth/2, adjustedXEnd + endTextWidth/2]
-                // total 레이블의 실제 범위: [xTotal - totalTextWidth/2, xTotal + totalTextWidth/2]
-                
-                // 1. start와 end가 겹치는지 확인 및 조정
-                val startRightEdge = adjustedXStart + startTextWidth / 2f
-                val endLeftEdge = adjustedXEnd - endTextWidth / 2f
-                val currentStartEndGap = endLeftEdge - startRightEdge
-                
-                if (currentStartEndGap < minSpacing) {
-                    // 겹치거나 너무 가까우면 분리
-                    val neededGap = minSpacing - currentStartEndGap
-                    val halfGap = neededGap / 2f
-                    
-                    // start를 왼쪽으로, end를 오른쪽으로 밀기
-                    adjustedXStart = (adjustedXStart - halfGap).coerceAtLeast(startTextWidth / 2f)
-                    adjustedXEnd = (adjustedXEnd + halfGap).coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing)
-                    
-                    // start가 왼쪽 경계에 닿으면 end만 오른쪽으로 더 밀기
-                    if (adjustedXStart <= startTextWidth / 2f) {
-                        val overflow = startTextWidth / 2f - adjustedXStart
-                        adjustedXStart = startTextWidth / 2f
-                        adjustedXEnd = (adjustedXEnd + overflow).coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing)
-                    }
+
+                // 초기 center clamp
+                var adjustedXStart = xStart.coerceAtLeast(startWidth / 2f)
+                var adjustedXEnd = xEnd.coerceAtMost(xTotal - endWidth / 2f)
+
+                val endRightLimit = xTotal - endWidth / 2f
+                val startLeftLimit = startWidth / 2f
+
+                fun startRight() = adjustedXStart + startWidth / 2f
+                fun endLeft() = adjustedXEnd - endWidth / 2f
+
+                // 1. start → end 기본 충돌 처리
+                val gap1 = endLeft() - startRight()
+                if (gap1 < minSpacing) {
+                    val need = minSpacing - gap1
+                    val half = need / 2f
+
+                    adjustedXStart = (adjustedXStart - half).coerceAtLeast(startLeftLimit)
+                    adjustedXEnd = (adjustedXEnd + half).coerceAtMost(endRightLimit)
                 }
-                
-                // 2. end와 total이 겹치는지 확인 및 조정
-                val endRightEdge = adjustedXEnd + endTextWidth / 2f
-                val totalLeftEdge = xTotal - totalTextWidth / 2f
-                val currentEndTotalGap = totalLeftEdge - endRightEdge
-                
-                if (currentEndTotalGap < minSpacing) {
-                    // end를 왼쪽으로 밀기
-                    val neededGap = minSpacing - currentEndTotalGap
-                    adjustedXEnd = (adjustedXEnd - neededGap).coerceAtLeast(adjustedXStart + minDistanceStartEnd)
+
+                // 2. end 기준 total 경계로 충돌 방지
+                val endRight = adjustedXEnd + endWidth / 2f
+                if (endRight > endRightLimit) {
+                    adjustedXEnd = endRightLimit
                 }
-                
-                // 3. 최종 검증: start와 end가 여전히 겹치지 않는지 확인
-                val finalStartRightEdge = adjustedXStart + startTextWidth / 2f
-                val finalEndLeftEdge = adjustedXEnd - endTextWidth / 2f
-                if (finalEndLeftEdge - finalStartRightEdge < minSpacing) {
-                    // 여전히 겹치면 end를 오른쪽으로 밀기 (단, total과 겹치지 않도록)
-                    val finalGap = minSpacing - (finalEndLeftEdge - finalStartRightEdge)
-                    adjustedXEnd = (adjustedXEnd + finalGap).coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing)
+
+                // 3. start ↔ end 재검증
+                val gap2 = endLeft() - startRight()
+                if (gap2 < minSpacing) {
+                    val need = minSpacing - gap2
+                    adjustedXEnd = (adjustedXEnd + need).coerceAtMost(endRightLimit)
+                }
+
+                // 4. end 기준으로 start가 밀려야 하는 케이스 처리
+                val gap3 = endLeft() - startRight()
+                if (gap3 < minSpacing) {
+                    val need = minSpacing - gap3
+                    adjustedXStart = (adjustedXStart - need).coerceAtLeast(startLeftLimit)
                 }
 
                 Box(Modifier.fillMaxWidth().height(20.dp)) {
-                    // start
-                    TimeLabelCentered(startTimeText, adjustedXStart.coerceAtLeast(startTextWidth / 2f), barWidthDp)
-                    
-                    // start + during (end)
-                    TimeLabelCentered(endTimeText, adjustedXEnd.coerceAtMost(xTotal - totalTextWidth / 2f - minSpacing), barWidthDp)
-
+                    TimeLabelCentered(tStart, adjustedXStart, barWidthDp)
+                    TimeLabelCentered(tEnd, adjustedXEnd, barWidthDp)
                 }
             }
         }

@@ -18,8 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import android.graphics.Shader
-import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -170,14 +168,6 @@ fun RunMusicBox(
             val scrollState = rememberScrollState()
             val density = LocalDensity.current
 
-            LaunchedEffect(currentDiary?.videoUrl) {
-                if (currentDiary != null) {
-                    kotlinx.coroutines.delay(300)
-                    android.util.Log.d("RunMusicBox", "Auto scrolling down - diary: ${currentDiary.musicTitle}")
-                    val scrollOffset = with(density) { 300.dp.toPx().toInt() }
-                    scrollState.animateScrollTo(scrollOffset)
-                }
-            }
             
             key(currentDiary?.videoUrl) {
                 Column(
@@ -193,9 +183,9 @@ fun RunMusicBox(
                     val endSeconds = currentDiary?.end?.toFloatOrNull()
 
                     
-                    Box(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         YouTubePlayerBox(
                             currentDiary, 
@@ -203,12 +193,25 @@ fun RunMusicBox(
                             durationSeconds,
                             isPlayingState = isPlaying
                         )
-                    }
-                    Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(
+                            text = currentDiary?.musicTitle.toString(),
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = currentDiary?.artist.toString(),
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Light
+                        )
 
-                    Box(
+                    }
+
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
                     ) {
                         DiaryBox(currentDiary)
                     }
