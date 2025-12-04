@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.killingpart.killingpoint.R
+import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.UnboundedFontFamily
 
 @Composable
@@ -51,7 +52,7 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             )
             Text(
                 text = "MY",
-                fontFamily = UnboundedFontFamily,
+                fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
                 fontSize = 10.sp,
                 color = Color.White
@@ -105,7 +106,7 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             )
             Text(
                 text = "추가",
-                fontFamily = UnboundedFontFamily,
+                fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
                 fontSize = 10.sp,
                 color = Color.White

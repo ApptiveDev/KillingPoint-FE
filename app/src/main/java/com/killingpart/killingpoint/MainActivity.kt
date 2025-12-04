@@ -6,10 +6,15 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -25,12 +30,6 @@ class MainActivity : ComponentActivity() {
         KakaoSdk.init(this, getString(R.string.kakao_native_app_key))
         enableEdgeToEdge()
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val controller = WindowInsetsControllerCompat(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.navigationBars())
-        controller.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
         setContent {
@@ -42,9 +41,12 @@ class MainActivity : ComponentActivity() {
                 }
             } else {
                 val navController = rememberNavController()
-                NavGraph(
-                    navController = navController,
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                        .navigationBarsPadding()
+                ) {
+                    NavGraph(navController)
+                }
             }
         }
     }
