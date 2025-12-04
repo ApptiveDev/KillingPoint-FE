@@ -11,6 +11,7 @@ import com.killingpart.killingpoint.data.model.UpdateTagRequest
 import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.TestAuthResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
+import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -23,12 +24,9 @@ import retrofit2.http.Query
 
 interface ApiService {
 
-    @GET("youtube")
+    @POST("youtube/search")
     suspend fun searchVideos(
-        @Header("Authorization") accessToken: String,
-        @Query("id") id: String,
-        @Query("artist") artist: String,
-        @Query("title") title: String
+        @Body body: YoutubeVideoRequest
     ): List<YouTubeVideo>
 
     @GET("oauth2/test")

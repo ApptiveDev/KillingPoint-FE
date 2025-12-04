@@ -41,7 +41,7 @@ fun MusicCueBtn(
         contentAlignment = Alignment.Center
     ) {
         Row(
-            modifier = Modifier.height(70.dp),
+            modifier = Modifier.height(60.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(35.dp)
         ) {
@@ -53,7 +53,7 @@ fun MusicCueBtn(
 
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(36.dp)
                     .background(color = Color(0xFF161616), RoundedCornerShape(30.dp))
                     .clickable { onPrevious() },
                 contentAlignment = Alignment.Center
@@ -66,7 +66,7 @@ fun MusicCueBtn(
             }
 
             Box(
-                modifier = Modifier.size(70.dp)
+                modifier = Modifier.size(60.dp)
                     .background(color = Color.White, RoundedCornerShape(50.dp))
                     .clickable { onPlayPause() },
                 contentAlignment = Alignment.Center
@@ -89,7 +89,7 @@ fun MusicCueBtn(
 
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(36.dp)
                     .background(color = Color(0xFF161616), RoundedCornerShape(30.dp))
                     .clickable { onNext() },
                 contentAlignment = Alignment.Center

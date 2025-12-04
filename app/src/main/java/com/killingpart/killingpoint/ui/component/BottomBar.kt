@@ -34,8 +34,8 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
     Row (
         modifier = Modifier.fillMaxWidth()
             .background(color = Color.Black)
-            .height(94.dp)
-            .padding(horizontal = 42.dp,),
+            .height(60.dp)
+            .padding(horizontal = 20.dp,),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ){
@@ -47,13 +47,13 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(id = R.drawable.navi_home),
                 contentDescription = "MY 네비게이션 바",
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(36.dp)
             )
             Text(
                 text = "MY",
                 fontFamily = UnboundedFontFamily,
                 fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
+                fontSize = 10.sp,
                 color = Color.White
             )
         }
@@ -101,13 +101,13 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(id = R.drawable.navi_add),
                 contentDescription = "추가 네비게이션 바",
-                modifier = Modifier.size(48.dp).clickable { navController.navigate("add_music") }
+                modifier = Modifier.size(36.dp).clickable { navController.navigate("add_music") }
             )
             Text(
                 text = "추가",
                 fontFamily = UnboundedFontFamily,
                 fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
+                fontSize = 10.sp,
                 color = Color.White
             )
         }

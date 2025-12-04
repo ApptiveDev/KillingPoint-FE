@@ -136,7 +136,7 @@ fun DiaryCard(
             Text(
                 text = diary.musicTitle,
                 color = Color.White,
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -150,7 +150,7 @@ fun DiaryCard(
             Text(
                 text = diary.artist,
                 color = Color.White,
-                fontSize = 13.sp,
+                fontSize = 10.sp,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -164,7 +164,7 @@ fun DiaryCard(
             Text(
                 text = dateOnly,
                 color = Color.White,
-                fontSize = 12.sp,
+                fontSize = 8.sp,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Normal,
                 textAlign = TextAlign.Center

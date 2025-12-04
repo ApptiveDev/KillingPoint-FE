@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.ui.screen.MainScreen
 
+import android.util.Log
 import android.view.RoundedCorner
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -97,7 +98,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     val userState by userViewModel.state.collectAsState()
 
     val MusicCueBtnHeight = 60.dp
-    val BottomBarHeight = 94.dp
+    val BottomBarHeight = 60.dp
     val MusicCueBtnGap = 12.dp
 
     var listExpanded by remember { mutableStateOf(false ) }
@@ -133,37 +134,38 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     }
 
 
+    // 프로필 설정 화면 상태 관리 (최상위 레벨로 이동)
+    var showProfileSettings by remember { mutableStateOf(false) }
+    // TopPillTabs 위치 측정을 위한 상태
+    var topPillTabsBottomY by remember { mutableStateOf(0.dp) }
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+
     AppBackground {
         Box(modifier = Modifier.fillMaxSize()) {
-            // 프로필 설정 화면 상태 관리 (전역)
-            var showProfileSettings by remember { mutableStateOf(false) }
-            // TopPillTabs 위치 측정을 위한 상태
-            var topPillTabsBottomY by remember { mutableStateOf(0.dp) }
-            val density = LocalDensity.current
-            val configuration = LocalConfiguration.current
-            val screenHeight = configuration.screenHeightDp.dp
-            
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Spacer(modifier = Modifier.height(35.dp))
 
-                Spacer(modifier = Modifier.height(60.dp))
-                Text(
-                    text = "MY MUSIC SPACE",
-                    color = Color.White,
-                    fontFamily = UnboundedFontFamily,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 28.sp
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "나만의 뮤직 스페이스",
-                    color = Color(0xFFA4A4A6),
-                    fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(26.dp))
+                if (selected == MainTab.PLAY) {
+                    Text(
+                        text = "MY MUSIC SPACE",
+                        color = Color.White,
+                        fontFamily = UnboundedFontFamily,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 24.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "나만의 뮤직 스페이스",
+                        color = Color(0xFFA4A4A6),
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 12.sp
+                    )
+                    Spacer(modifier = Modifier.height(26.dp))
+                }
 
                 TopPillTabs(
                     options = listOf("내 프로필", "킬링파트 재생", "뮤직캘린더"),
@@ -190,7 +192,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         }
                 )
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(7.dp))
 
                 when (selected) {
                     MainTab.PROFILE -> {
@@ -222,7 +224,11 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                             OuterBox(
                                                 navController = navController,
                                                 diaries = state.diaries,
-                                                onProfileClick = { showProfileSettings = true },
+                                                onProfileClick = { 
+                                                    android.util.Log.d("MainScreen", "프로필 편집 버튼 클릭됨")
+                                                    showProfileSettings = true
+                                                    android.util.Log.d("MainScreen", "showProfileSettings: $showProfileSettings")
+                                                },
                                                 modifier = Modifier.fillParentMaxHeight() // 가능한 최대 높이 사용
                                             )
                                         }
@@ -284,25 +290,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                     )
                                 }
                             }
-
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .offset(y = (-40).dp)
-                                        .padding(horizontal = 16.dp)
-                                        .background(color = Color.Black, RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
-                                ) {
-                                    MusicListBox(
-                                        currentIndex = currentIndex,
-                                        expanded = listExpanded,
-                                        onToggle = { willOpen ->
-                                            listExpanded = willOpen
-                                        },
-                                        diaries = diaries
-                                    )
-                                }
-                            }
                         }
                     }
                     MainTab.CALENDAR -> {
@@ -323,8 +310,40 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                 BottomBar(navController = navController)
             }
 
-            // MusicCueBtn은 PLAY 탭에서만 표시
             if (selected == MainTab.PLAY) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val currentDiary = diaries.getOrNull(currentIndex)
+                        val videoTotalDuration = currentDiary?.totalDuration
+                        val startTime = currentDiary?.start?.toFloatOrNull()?.toInt() ?: 0
+                        val durationTime = currentDiary?.duration?.toFloatOrNull()?.toInt() ?: 0
+                        val totalTime = videoTotalDuration ?: 180
+                        MusicListBox(
+                            currentIndex = currentIndex,
+                            expanded = listExpanded,
+                            onToggle = { willOpen ->
+                                listExpanded = willOpen
+                            },
+                            diaries = diaries
+                        )
+
+                        MusicTimeBar(
+                            title = currentDiary?.musicTitle,
+                            start = startTime,
+                            during = durationTime,
+                            total = totalTime
+                        )
+                    }
+                }
+
                 MusicCueBtn(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -346,25 +365,32 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         isPlaying = !isPlaying
                     },
                     isPlaying = isPlaying
-
-            )
-
-
-            if (showProfileSettings) {
-                val topOffset = topPillTabsBottomY + 15.dp
-                val maxHeight = screenHeight - topOffset - BottomBarHeight
-                ProfileSettingsScreen(
-                    onDismiss = { showProfileSettings = false },
-                    topOffset = topOffset,
-                    maxHeight = maxHeight,
-                    onLogout = {
-                        // 로그아웃/회원탈퇴 후 로그인 화면으로 이동
-                        navController.navigate("home") {
-                            popUpTo("home") { inclusive = true }
-                        }
-                    }
                 )
             }
+        
+        // ProfileSettingsScreen을 AppBackground 최상위에 배치하여 항상 표시되도록 함
+        LaunchedEffect(showProfileSettings) {
+            android.util.Log.d("MainScreen", "showProfileSettings 변경됨: $showProfileSettings")
+        }
+        
+        if (showProfileSettings) {
+            android.util.Log.d("MainScreen", "ProfileSettingsScreen 렌더링 시작")
+            val topOffset = topPillTabsBottomY + 120.dp
+            val maxHeight = screenHeight - topOffset - BottomBarHeight
+            ProfileSettingsScreen(
+                onDismiss = { 
+                    android.util.Log.d("MainScreen", "ProfileSettingsScreen 닫기")
+                    showProfileSettings = false 
+                },
+                topOffset = topOffset,
+                maxHeight = maxHeight,
+                onLogout = {
+                    // 로그아웃/회원탈퇴 후 로그인 화면으로 이동
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

@@ -33,7 +33,7 @@ fun TopPillTabs(
     selectedIndex: Int,
     onSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 58.dp,
+    height: Dp = 45.dp,
     containerColor: Color = Color(0xFF101010),
     indicatorColor: Color = Color(0xFFEEEFF3),
     selectedTextColor: Color = Color.Black,
@@ -100,7 +100,7 @@ fun TopPillTabs(
                         color = if (isSelected) selectedTextColor else unselectedTextColor,
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
+                        fontSize = 12.sp
                     )
                 }
             }

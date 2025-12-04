@@ -179,11 +179,10 @@ private fun TrackRowWithVideoSearch(
         isLoading = true
         scope.launch {
             try {
-                val videos = repo.searchVideos(track.id, track.artist, track.title)
+                val videos = repo.searchVideos(track.title, track.artist)
                 val firstVideo = videos.firstOrNull()
-                val videoUrl = firstVideo?.url ?: ""
-                
-                // duration 파싱하여 초 단위로 변환
+                val videoId = firstVideo?.id ?: ""
+
                 val totalDuration = firstVideo?.duration?.let { durationStr ->
                     parseDurationToSeconds(durationStr)
                 } ?: 180 // 기본값 180초
@@ -191,14 +190,14 @@ private fun TrackRowWithVideoSearch(
                 val encodedTitle = java.net.URLEncoder.encode(track.title, "UTF-8")
                 val encodedArtist = java.net.URLEncoder.encode(track.artist, "UTF-8")
                 val encodedImage = java.net.URLEncoder.encode(track.albumImageUrl ?: "", "UTF-8")
-                val encodedVideoUrl = java.net.URLEncoder.encode(videoUrl, "UTF-8")
+                val encodedVideoId = java.net.URLEncoder.encode(videoId, "UTF-8")
                 
                 navController.navigate(
                     "select_duration" +
                             "?title=$encodedTitle" +
                             "&artist=$encodedArtist" +
                             "&image=$encodedImage" +
-                            "&videoUrl=$encodedVideoUrl" +
+                            "&videoId=$encodedVideoId" +
                             "&totalDuration=$totalDuration"
                 )
             } catch (e: Exception) {

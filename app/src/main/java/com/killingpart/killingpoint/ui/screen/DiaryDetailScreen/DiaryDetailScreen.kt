@@ -31,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -60,6 +59,7 @@ import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import com.killingpart.killingpoint.ui.screen.MainScreen.AlbumDiaryBox
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import java.net.URLDecoder
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -137,7 +137,7 @@ fun DiaryDetailScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 35.dp),
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -257,7 +257,7 @@ fun DiaryDetailScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
+                            .height(150.dp)
                             .offset(x = if (pagerState.currentPage == 1) 0.dp else (-10000).dp) // 화면 밖으로 이동
                     ) {
                         Column(
@@ -272,9 +272,6 @@ fun DiaryDetailScreen(
                             )
                             
                             Spacer(modifier = Modifier.height(24.dp))
-                            
-                            // 앨범 정보
-                            AlbumDiaryBox(diary)
                         }
                     }
                     
@@ -297,7 +294,7 @@ fun DiaryDetailScreen(
                                         model = albumImageUrl,
                                         contentDescription = "앨범 아트",
                                         modifier = Modifier
-                                            .size(120.dp)
+                                            .size(110.dp)
                                             .clip(RoundedCornerShape(12.dp)),
                                         contentScale = ContentScale.Crop,
                                         placeholder = painterResource(id = R.drawable.example_video),
@@ -315,7 +312,7 @@ fun DiaryDetailScreen(
                                             color = Color.White,
                                             fontFamily = PaperlogyFontFamily,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 20.sp,
+                                            fontSize = 14.sp,
                                             maxLines = 2
                                         )
 
@@ -326,7 +323,7 @@ fun DiaryDetailScreen(
                                             color = Color.White,
                                             fontFamily = PaperlogyFontFamily,
                                             fontWeight = FontWeight.Medium,
-                                            fontSize = 16.sp,
+                                            fontSize = 10.sp,
                                             maxLines = 1
                                         )
                                         // 진행 바
@@ -347,11 +344,8 @@ fun DiaryDetailScreen(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
 
             // 다이어리 콘텐츠 영역 - 남은 공간을 모두 차지
             Box(
@@ -412,7 +406,7 @@ fun DiaryDetailScreen(
                 Column(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(bottom = 20.dp),
+                        .padding(bottom = 5.dp),
                     horizontalAlignment = Alignment.End
                 ) {
                     // 날짜

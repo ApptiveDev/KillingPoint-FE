@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.data.repository
 
+import android.R
 import android.content.Context
 import com.killingpart.killingpoint.data.local.TokenStore
 import com.killingpart.killingpoint.data.model.KakaoAuthRequest
@@ -13,8 +14,10 @@ import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.UpdateTagRequest
 import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
+import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.remote.RetrofitClient
 import com.killingpart.killingpoint.data.remote.ApiService
+import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -22,11 +25,13 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.Retrofit
 import java.io.File
 
 class AuthRepository(
     private val context: Context,
     private val api: ApiService = RetrofitClient.getApi(context),
+    private val youtubeApi: ApiService = RetrofitClient.getYoutubeApi(),
     private val tokenStore: TokenStore = TokenStore(context.applicationContext)
 ) {
     /**
@@ -95,7 +100,7 @@ class AuthRepository(
     suspend fun refreshAccessToken(): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
-                val refreshToken = getRefreshToken() 
+                val refreshToken = getRefreshToken()
                     ?: throw IllegalStateException("리프레시 토큰이 없습니다")
                 val response = api.refreshAccessToken(refreshToken)
                 tokenStore.save(response.accessToken, response.refreshToken)
@@ -112,26 +117,19 @@ class AuthRepository(
             }
         }
 
-    suspend fun searchVideos(id: String, artist: String, title: String): List<YouTubeVideo> =
+    suspend fun searchVideos(title: String, artist: String): List<YouTubeVideo> =
         withContext(Dispatchers.IO) {
             try {
-                val accessToken = getAccessToken()
-                    ?: throw IllegalStateException("액세스 토큰이 없습니다")
-                android.util.Log.d("AuthRepository", "searchVideos API 호출:")
-                android.util.Log.d("AuthRepository", "  - id: \"$id\"")
-                android.util.Log.d("AuthRepository", "  - artist: \"$artist\"")
-                android.util.Log.d("AuthRepository", "  - title: \"$title\"")
-                android.util.Log.d("AuthRepository", "  - accessToken: ${if (accessToken.isNotEmpty()) "있음" else "없음"}")
-                val result = api.searchVideos("Bearer $accessToken", id, artist, title)
-                android.util.Log.d("AuthRepository", "searchVideos 응답: ${result.size}개 비디오")
+                val result = youtubeApi.searchVideos(YoutubeVideoRequest(title, artist))
                 result.forEachIndexed { index, video ->
-                    android.util.Log.d("AuthRepository", "  비디오[$index]: url=${video.url}, duration=${video.duration}")
+                    android.util.Log.d("AuthRepository", "  비디오[$index]: id=${video.id}, duration=${video.duration}")
                 }
                 result
             } catch (e: HttpException) {
                 val code = e.code()
                 val msg = e.response()?.errorBody()?.string().orEmpty()
                 android.util.Log.e("AuthRepository", "searchVideos HTTP 에러 ($code): $msg")
+                android.util.Log.e("YoutubeApi", "$title, $artist")
                 throw IllegalStateException("비디오 검색 실패 ($code): $msg")
             }
         }

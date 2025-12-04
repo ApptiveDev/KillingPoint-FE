@@ -114,7 +114,6 @@ fun SelectDurationScreen(
         endValue
     }
 
-    // 네비게이션으로 전달받은 videoUrl과 totalDuration 사용
     var currentVideoUrl by remember { mutableStateOf<String?>(if (videoUrl.isNotEmpty()) videoUrl else null) }
     var currentTotalDuration by remember { mutableStateOf(if (totalDuration > 0) totalDuration else 10) }
     var isLoadingVideo by remember { mutableStateOf(false) }
@@ -122,43 +121,28 @@ fun SelectDurationScreen(
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
 
-    // videoUrl이 비어있을 때만 searchVideos 호출
     LaunchedEffect(title, artist) {
         if (videoUrl.isEmpty()) {
             isLoadingVideo = true
             try {
-                android.util.Log.d("SelectDurationScreen", "searchVideos 호출 전:")
-                android.util.Log.d("SelectDurationScreen", "  - id: \"\" (빈 문자열)")
-                android.util.Log.d("SelectDurationScreen", "  - artist: $artist")
-                android.util.Log.d("SelectDurationScreen", "  - title: $title")
-                val videos = repo.searchVideos("", artist, title)
-                android.util.Log.d("SelectDurationScreen", "searchVideos 응답 받음: ${videos.size}개 비디오")
+                val videos = repo.searchVideos(title, artist)
                 videos.forEachIndexed { index, video ->
-                    android.util.Log.d("SelectDurationScreen", "  비디오[$index]: url=${video.url}")
+                    android.util.Log.d("SelectDurationScreen", "  비디오[$index]: url=${video.id}")
                 }
                 val firstVideo = videos.firstOrNull()
-                val newVideoUrl = firstVideo?.url
-                android.util.Log.d("SelectDurationScreen", "이전 videoUrl: $currentVideoUrl")
-                android.util.Log.d("SelectDurationScreen", "새로운 videoUrl: $newVideoUrl")
-                currentVideoUrl = newVideoUrl
-                android.util.Log.d("SelectDurationScreen", "videoUrl 업데이트 후: $currentVideoUrl")
+                val newVideoId = firstVideo?.id
+                currentVideoUrl = newVideoId
                 firstVideo?.duration?.let { durationStr ->
                     val seconds = parseDurationToSeconds(durationStr)
                     currentTotalDuration = seconds
-                    android.util.Log.d("SelectDurationScreen", "비디오 duration: $durationStr -> $seconds 초")
                 } ?: run {
-                    currentTotalDuration = 10 // 기본값
-                    android.util.Log.d("SelectDurationScreen", "duration 없음, 기본값 10초 사용")
+                    currentTotalDuration = 10
                 }
             } catch (e: Exception) {
-                android.util.Log.e("SelectDurationScreen", "searchVideos 실패: ${e.message}", e)
                 currentVideoUrl = null
-                currentTotalDuration = 10 // 기본값
+                currentTotalDuration = 10
             }
             isLoadingVideo = false
-        } else {
-            android.util.Log.d("SelectDurationScreen", "네비게이션으로 전달받은 videoUrl 사용: $videoUrl")
-            android.util.Log.d("SelectDurationScreen", "네비게이션으로 전달받은 totalDuration 사용: $totalDuration")
         }
     }
 

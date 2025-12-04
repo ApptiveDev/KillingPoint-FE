@@ -275,6 +275,7 @@ fun MusicCalendarScreen(
                 )
             }
         } else if (selectedDate != null) {
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "이 날짜에 등록된 킬링파트가 없습니다.",
                 color = Color(0xFFA4A4A6),
@@ -743,7 +744,7 @@ fun DiaryEntryCard(
                 model = diary.albumImageUrl,
                 contentDescription = "앨범 아트",
                 modifier = Modifier
-                    .size(65.dp)
+                    .size(60.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 placeholder = painterResource(id = R.drawable.example_video),
@@ -760,7 +761,7 @@ fun DiaryEntryCard(
                     color = Color.White,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    fontSize = 12.sp,
                     maxLines = 1
                 )
 
@@ -771,7 +772,7 @@ fun DiaryEntryCard(
                     color = Color.White,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
+                    fontSize = 10.sp,
                     maxLines = 1
                 )
             }
@@ -816,20 +817,18 @@ fun DiaryEntryCard(
                     text = "코멘트읽기",
                     color = mainGreen,
                     fontFamily = PaperlogyFontFamily,
-                    fontSize = 12.sp
+                    fontSize = 10.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Image(
                     painter = painterResource(id = R.drawable.yellow_right_arrow),
                     contentDescription = "이동",
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .align(Alignment.CenterHorizontally)
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
     }
 }
