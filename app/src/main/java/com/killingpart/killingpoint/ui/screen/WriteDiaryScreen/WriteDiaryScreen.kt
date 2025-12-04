@@ -38,7 +38,10 @@ import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.screen.AddMusicScreen.korean_font_medium
 import com.killingpart.killingpoint.ui.screen.MainScreen.AlbumDiaryBox
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
+import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
@@ -60,22 +63,49 @@ fun WriteDiaryScreen(
     videoUrl: String,
     totalDuration: Int = 0 // YouTube 비디오 전체 길이 (초 단위)
 ) {
-    // 파라미터 확인 로그
-    LaunchedEffect(Unit) {
-        android.util.Log.d("WriteDiaryScreen", "WriteDiaryScreen received parameters:")
-        android.util.Log.d("WriteDiaryScreen", "  - duration: $duration")
-        android.util.Log.d("WriteDiaryScreen", "  - start: $start")
-        android.util.Log.d("WriteDiaryScreen", "  - end: $end")
-        android.util.Log.d("WriteDiaryScreen", "  - videoUrl: $videoUrl")
-        android.util.Log.d("WriteDiaryScreen", "  - totalDuration: $totalDuration")
-    }
-    
     val coroutineScope = rememberCoroutineScope()
     var content by remember { mutableStateOf("") }
     var scope by remember { mutableStateOf("PUBLIC") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
+
+    var currentVideoUrl by remember { mutableStateOf<String?>(if (videoUrl.isNotEmpty()) videoUrl else null) }
+    var currentTotalDuration by remember { mutableStateOf(if (totalDuration > 0) totalDuration else 10) }
+    var isLoadingVideo by remember { mutableStateOf(false) }
+
+    var duration by remember { mutableStateOf(10f) }
+    var start by remember { mutableStateOf(0f) }
+
+    val startSeconds = remember(start) {
+        val seconds = start ?: 0f
+        seconds
+    }
+
+    val durationSeconds = remember(duration) {
+        val seconds = duration ?: 10f
+        seconds
+    }
+
+    LaunchedEffect(title, artist) {
+        if (videoUrl.isEmpty()) {
+            isLoadingVideo = true
+            try {
+                val videos = repo.searchVideos(title, artist)
+                videos.forEachIndexed { index, video ->
+                    android.util.Log.d("SelectDurationScreen", "  비디오[$index]: url=${video.id}")
+                }
+                val firstVideo = videos.firstOrNull()
+                val newVideoId = firstVideo?.id
+                currentVideoUrl = newVideoId
+                currentTotalDuration = firstVideo?.duration ?: 10
+            } catch (e: Exception) {
+                currentVideoUrl = null
+                currentTotalDuration = 10
+            }
+            isLoadingVideo = false
+        }
+    }
 
     val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
 
@@ -121,7 +151,42 @@ fun WriteDiaryScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (isLoadingVideo || currentVideoUrl == null) {
+                Box(
+                    modifier = Modifier
+                        .size(220.dp, 140.dp)
+                        .background(Color(0xFF1A1A1A), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (isLoadingVideo) "비디오 검색 중..." else "비디오를 찾을 수 없습니다",
+                        fontFamily = PaperlogyFontFamily,
+                        color = Color.White,
+                        fontSize = 10.sp
+                    )
+                }
+            } else {
+                val tempDiary = Diary(
+                    artist = artist,
+                    musicTitle = title,
+                    albumImageUrl = imageUrl,
+                    videoUrl = currentVideoUrl!!,
+                    content = "",
+                    scope = Scope.PUBLIC,
+                    duration = "0",
+                    start = "0",
+                    end = "0",
+                    createDate = "",
+                    updateDate = ""
+                )
+                Box(
+                    modifier = Modifier.size(200.dp, 120.dp)
+                ) {
+
+                    YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
 
             AlbumDiaryBoxWithoutContent(
                 track = SimpleTrack(
@@ -245,8 +310,8 @@ fun WriteDiaryScreen(
                                 videoUrl = videoUrl,
                                 scope = scope,
                                 content = content,
-                                duration = duration,
-                                start = start,
+                                duration = duration.toString(),
+                                start = start.toString(),
                                 end = end,
                                 totalDuration = totalDuration
                             )

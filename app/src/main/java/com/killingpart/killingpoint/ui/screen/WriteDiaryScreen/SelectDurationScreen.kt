@@ -147,15 +147,6 @@ fun SelectDurationScreen(
     val density = LocalDensity.current
 
 
-    LaunchedEffect(currentVideoUrl) {
-        if (currentVideoUrl != null) {
-            kotlinx.coroutines.delay(500)
-            val scrollOffset = with(density) { 350.dp.toPx().toInt() }
-
-            scrollState.animateScrollTo(scrollOffset)
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -203,28 +194,24 @@ fun SelectDurationScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(scrollState)
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (isLoadingVideo || currentVideoUrl == null) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
+                            .size(220.dp, 140.dp)
                             .background(Color(0xFF1A1A1A), RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (isLoadingVideo) "YouTube 비디오 검색 중..." else "YouTube 비디오를 찾을 수 없습니다",
+                            text = if (isLoadingVideo) "비디오 검색 중..." else "비디오를 찾을 수 없습니다",
                             fontFamily = PaperlogyFontFamily,
                             color = Color.White,
-                            fontSize = 14.sp
+                            fontSize = 10.sp
                         )
                     }
                 } else {
-                    android.util.Log.d("SelectDurationScreen", "YouTubePlayerBox 렌더링:")
-                    android.util.Log.d("SelectDurationScreen", "  - title: $title")
-                    android.util.Log.d("SelectDurationScreen", "  - artist: $artist")
-                    android.util.Log.d("SelectDurationScreen", "  - videoUrl: $currentVideoUrl")
                     val tempDiary = Diary(
                         artist = artist,
                         musicTitle = title,
@@ -238,10 +225,14 @@ fun SelectDurationScreen(
                         createDate = "",
                         updateDate = ""
                     )
-                    android.util.Log.d("SelectDurationScreen", "tempDiary 생성 완료, videoUrl: ${tempDiary.videoUrl}")
-                    YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+                    Box(
+                        modifier = Modifier.size(200.dp, 120.dp)
+                    ) {
+
+                        YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+                    }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 AlbumDiaryBoxWithoutContent(
                     track = SimpleTrack(
