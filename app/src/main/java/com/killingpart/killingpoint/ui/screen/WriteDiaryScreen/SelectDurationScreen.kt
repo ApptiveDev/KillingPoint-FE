@@ -2,6 +2,7 @@ package com.killingpart.killingpoint.ui.screen.WriteDiaryScreen
 
 import android.R.attr.fontWeight
 import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -94,7 +95,7 @@ fun SelectDurationScreen(
     artist: String,
     imageUrl: String,
     videoUrl: String = "",
-    totalDuration: Int = 0
+    totalDuration: Int
 ) {
     var duration by remember { mutableStateOf(10f) }
     var start by remember { mutableStateOf(0f) }
@@ -132,12 +133,7 @@ fun SelectDurationScreen(
                 val firstVideo = videos.firstOrNull()
                 val newVideoId = firstVideo?.id
                 currentVideoUrl = newVideoId
-                firstVideo?.duration?.let { durationStr ->
-                    val seconds = parseDurationToSeconds(durationStr)
-                    currentTotalDuration = seconds
-                } ?: run {
-                    currentTotalDuration = 10
-                }
+                currentTotalDuration = firstVideo?.duration ?: 10
             } catch (e: Exception) {
                 currentVideoUrl = null
                 currentTotalDuration = 10

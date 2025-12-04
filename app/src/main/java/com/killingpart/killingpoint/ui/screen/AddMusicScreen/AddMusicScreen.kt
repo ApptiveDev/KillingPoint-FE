@@ -183,9 +183,7 @@ private fun TrackRowWithVideoSearch(
                 val firstVideo = videos.firstOrNull()
                 val videoId = firstVideo?.id ?: ""
 
-                val totalDuration = firstVideo?.duration?.let { durationStr ->
-                    parseDurationToSeconds(durationStr)
-                } ?: 180 // 기본값 180초
+                val totalDuration = firstVideo?.duration ?: 180
                 
                 val encodedTitle = java.net.URLEncoder.encode(track.title, "UTF-8")
                 val encodedArtist = java.net.URLEncoder.encode(track.artist, "UTF-8")
