@@ -492,7 +492,7 @@ private fun ProfileSettingsContent(
                 color = mainGreen,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.W500,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
 
 
                 )
@@ -555,7 +555,7 @@ private fun ProfileSettingsContent(
                             text = "프로필 사진",
                             color = mainGreen,
                             fontFamily = PaperlogyFontFamily,
-                            fontSize = 12.sp
+                            fontSize = 11.sp
                         )
                         
                         // 기본 이미지로 설정 버튼
@@ -589,7 +589,7 @@ private fun ProfileSettingsContent(
                                 text = imageUploadError!!,
                                 color = Color(0xFFFF6B6B),
                                 fontFamily = PaperlogyFontFamily,
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 lineHeight = 14.sp,
                                 maxLines = 2
                             )
@@ -608,7 +608,7 @@ private fun ProfileSettingsContent(
                             color = mainGreen,
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.W400,
-                            fontSize = 18.sp
+                            fontSize = 17.sp
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
@@ -631,7 +631,7 @@ private fun ProfileSettingsContent(
                                         text = "@ ",
                                         color = mainGreen,
                                         fontFamily = PaperlogyFontFamily,
-                                        fontSize = 14.sp
+                                        fontSize = 13.sp
                                     )
                                     
                                     androidx.compose.foundation.text.BasicTextField(
@@ -646,7 +646,7 @@ private fun ProfileSettingsContent(
                                         textStyle = androidx.compose.ui.text.TextStyle(
                                             color = mainGreen,
                                             fontFamily = PaperlogyFontFamily,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         ),
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
@@ -683,13 +683,13 @@ private fun ProfileSettingsContent(
                                             text = "@",
                                             color = mainGreen,
                                             fontFamily = PaperlogyFontFamily,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         )
                                         Text(
                                             text = state.userInfo.tag,
                                             color = mainGreen,
                                             fontFamily = PaperlogyFontFamily,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         )
                                     }
                                     
