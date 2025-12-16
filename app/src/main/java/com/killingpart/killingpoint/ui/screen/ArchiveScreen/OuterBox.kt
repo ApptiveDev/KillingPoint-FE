@@ -243,17 +243,11 @@ fun OuterBox(
                                                 navController?.let { nav ->
                                                     val diaryIdParam =
                                                         diary.id?.let { "&diaryId=$it" } ?: ""
-                                                    android.util.Log.d(
-                                                        "OuterBox",
-                                                        "diary.totalDuration: ${diary.totalDuration}"
-                                                    )
+
                                                     val totalDurationParam =
                                                         diary.totalDuration?.let { "&totalDuration=$it" }
                                                             ?: ""
-                                                    android.util.Log.d(
-                                                        "OuterBox",
-                                                        "totalDurationParam: '$totalDurationParam'"
-                                                    )
+
                                                     val scopeParam = "&scope=${diary.scope.name}"
 
                                                     nav.navigate(

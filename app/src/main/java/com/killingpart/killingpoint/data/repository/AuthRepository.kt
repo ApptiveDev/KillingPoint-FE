@@ -128,8 +128,6 @@ class AuthRepository(
             } catch (e: HttpException) {
                 val code = e.code()
                 val msg = e.response()?.errorBody()?.string().orEmpty()
-                android.util.Log.e("AuthRepository", "searchVideos HTTP 에러 ($code): $msg")
-                android.util.Log.e("YoutubeApi", "$title, $artist")
                 throw IllegalStateException("비디오 검색 실패 ($code): $msg")
             }
         }
@@ -141,9 +139,7 @@ class AuthRepository(
                 val accessToken = getAccessToken() 
                     ?: throw IllegalStateException("액세스 토큰이 없습니다")
                 val result = api.getMyDiaries("Bearer $accessToken", page, size)
-                
-                // 디버깅: 받은 다이어리 데이터 로깅
-                android.util.Log.d("AuthRepository", "getMyDiaries 응답 - 총 ${result.content.size}개")
+
                 result.content.forEachIndexed { index, diary ->
                     android.util.Log.d("AuthRepository", "Diary[$index]: id=${diary.id}, title=${diary.musicTitle}, artist=${diary.artist}, totalDuration=${diary.totalDuration}")
                 }
