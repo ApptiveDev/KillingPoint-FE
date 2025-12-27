@@ -359,6 +359,9 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         if (currentIndex < diaries.size - 1) {
                             currentIndex++
                             isPlaying = true
+                        } else if (diaries.isNotEmpty()) {
+                            currentIndex = 0
+                            isPlaying = true
                         }
                     },
                     onPlayPause = {
