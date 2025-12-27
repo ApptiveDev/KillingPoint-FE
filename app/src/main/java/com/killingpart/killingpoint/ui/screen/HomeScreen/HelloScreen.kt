@@ -49,10 +49,21 @@ fun HelloScreen(navController: NavController) {
     val loginViewModel: LoginViewModel = viewModel()
     val loginState by loginViewModel.state.collectAsState()
 
+    LaunchedEffect(Unit) {
+        loginViewModel.tryAutoLogin(context)
+    }
+
     LaunchedEffect(loginState) {
-        if (loginState is LoginUiState.Success) {
-            navController.navigate("main") {
-                popUpTo("home") { inclusive = true }
+        when (val state = loginState) {
+            is LoginUiState.AutoLoginSuccess -> {
+                if (!state.isNew) {
+                    navController.navigate("main") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            }
+            else -> {
+                // 다른 상태는 처리x
             }
         }
     }

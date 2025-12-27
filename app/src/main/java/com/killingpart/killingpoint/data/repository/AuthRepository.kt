@@ -39,11 +39,12 @@ class AuthRepository(
      *   1) 우리 서버 /auth/kakao 로 교환
      *   2) 우리 서버 access/refresh 토큰 저장
      */
-    suspend fun exchangeKakaoAccessToken(kakaoAccessToken: String): Result<Unit> =
+    suspend fun exchangeKakaoAccessToken(kakaoAccessToken: String): Result<Boolean> = // isNew 반환
         withContext(Dispatchers.IO) {
             runCatching {
                 val res: KakaoAuthResponse = api.loginWithKakao(KakaoAuthRequest(kakaoAccessToken))
                 tokenStore.save(res.accessToken, res.refreshToken)
+                res.isNew // isNew 반환
             }.recoverCatching { e ->
                 if (e is HttpException) {
                     val code = e.code()
@@ -60,11 +61,12 @@ class AuthRepository(
      *   1) 우리 서버 /oauth2/test 호출
      *   2) 우리 서버 access/refresh 토큰 저장
      */
-    suspend fun loginWithTest(): Result<Unit> =
+    suspend fun loginWithTest(): Result<Boolean> = // isNew 반환
         withContext(Dispatchers.IO) {
             runCatching {
                 val res: TestAuthResponse = api.loginWithTest()
                 tokenStore.save(res.accessToken, res.refreshToken)
+                res.isNew // isNew 반환
             }.recoverCatching { e ->
                 if (e is HttpException) {
                     val code = e.code()
@@ -97,13 +99,14 @@ class AuthRepository(
             }
         }
 
-    suspend fun refreshAccessToken(): Result<Unit> =
+    suspend fun refreshAccessToken(): Result<Boolean> = // isNew 반환
         withContext(Dispatchers.IO) {
             runCatching {
                 val refreshToken = getRefreshToken()
                     ?: throw IllegalStateException("리프레시 토큰이 없습니다")
                 val response = api.refreshAccessToken(refreshToken)
                 tokenStore.save(response.accessToken, response.refreshToken)
+                response.isNew // isNew 반환
             }.recoverCatching { e ->
                 if (e is HttpException) {
                     val code = e.code()

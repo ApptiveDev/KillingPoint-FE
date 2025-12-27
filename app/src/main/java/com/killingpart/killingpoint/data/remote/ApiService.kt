@@ -33,13 +33,19 @@ interface ApiService {
     suspend fun loginWithTest() : TestAuthResponse
 
     @POST("oauth2/kakao")
-    suspend fun loginWithKakao(@Body body: KakaoAuthRequest): KakaoAuthResponse
+    suspend fun loginWithKakao(
+        @Body body: KakaoAuthRequest
+    ): KakaoAuthResponse
 
     @GET("users/my")
-    suspend fun getUserInfo(@Header("Authorization") accessToken: String): UserInfo
+    suspend fun getUserInfo(
+        @Header("Authorization") accessToken: String
+    ): UserInfo
 
     @POST("jwt/exchange")
-    suspend fun refreshAccessToken(@Header("X-Refresh-Token") refreshToken: String): KakaoAuthResponse
+    suspend fun refreshAccessToken(
+        @Header("X-Refresh-Token") refreshToken: String
+    ): KakaoAuthResponse
 
     @GET("diaries/my")
     suspend fun getMyDiaries(

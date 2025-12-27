@@ -16,6 +16,7 @@ sealed interface LoginUiState {
     data object Loading : LoginUiState
     data object Success : LoginUiState
     data class Error(val message: String) : LoginUiState
+    data class AutoLoginSuccess(val isNew: Boolean) : LoginUiState // 자동 로그인 성공 (isNew 포함)
 }
 
 class LoginViewModel(
@@ -44,7 +45,9 @@ class LoginViewModel(
         val repo = repoFactory(context)
         viewModelScope.launch {
             repo.exchangeKakaoAccessToken(kakaoAccessToken)
-                .onSuccess { _state.value = LoginUiState.Success }
+                .onSuccess { isNew ->
+                    _state.value = LoginUiState.AutoLoginSuccess(isNew)
+                }
                 .onFailure { _state.value = LoginUiState.Error(it.message ?: "로그인 실패") }
         }
     }
@@ -54,8 +57,31 @@ class LoginViewModel(
         val repo = repoFactory(context)
         viewModelScope.launch {
             repo.loginWithTest()
-                .onSuccess { _state.value = LoginUiState.Success }
+                .onSuccess { isNew ->
+                    _state.value = LoginUiState.AutoLoginSuccess(isNew)
+                }
                 .onFailure { _state.value = LoginUiState.Error(it.message ?: "테스터 로그인 실패") }
+        }
+    }
+
+    fun tryAutoLogin(context: Context) {
+        _state.value = LoginUiState.Loading
+        val repo = repoFactory(context)
+        viewModelScope.launch {
+            val refreshToken = repo.getRefreshToken()
+            if (refreshToken != null) {
+                repo.refreshAccessToken()
+                    .onSuccess { isNew ->
+                        _state.value = LoginUiState.AutoLoginSuccess(isNew)
+                    }
+                    .onFailure {
+                        // 토큰 갱신 실패 시 로그인 화면 유지
+                        _state.value = LoginUiState.Idle
+                    }
+            } else {
+                // refreshToken이 없으면 로그인 화면 유지
+                _state.value = LoginUiState.Idle
+            }
         }
     }
 }
