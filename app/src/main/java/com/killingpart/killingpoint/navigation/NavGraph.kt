@@ -23,18 +23,8 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = "tutorial"
+        startDestination = "home"
     ) {
-        composable("tutorial") {
-            TutorialScreen(
-                onFinish = {
-                    navController.navigate("home") {
-                        popUpTo("tutorial") { inclusive = true }
-                    }
-                }
-            )
-        }
-
         composable("home") { HelloScreen(navController) }
 
         composable(
