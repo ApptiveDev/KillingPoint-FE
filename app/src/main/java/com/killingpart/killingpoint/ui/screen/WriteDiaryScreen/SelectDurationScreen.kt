@@ -243,7 +243,7 @@ fun SelectDurationScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(38.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -256,7 +256,7 @@ fun SelectDurationScreen(
                         fontSize = 14.sp,
                         color = Color(0xFFEBEBEB)
                     )
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(3.dp))
 
                     KillingPartSelector(
 
