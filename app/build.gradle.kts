@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.androidx.compose.material.core)
     implementation(libs.foundation)
+    implementation(libs.androidx.media3.exoplayer)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

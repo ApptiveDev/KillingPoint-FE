@@ -44,7 +44,7 @@ class DiaryViewModel(
                 }
                 
                 // 다이어리가 없어도 Success로 처리 (프로필은 표시되어야 함)
-                _state.value = DiaryUiState.Success(allDiaries)
+                    _state.value = DiaryUiState.Success(allDiaries)
             } catch (e: Exception) {
                 _state.value = DiaryUiState.Error(e.message ?: "다이어리 로드 실패")
             }
