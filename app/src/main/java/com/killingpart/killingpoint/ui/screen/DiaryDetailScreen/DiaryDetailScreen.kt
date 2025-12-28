@@ -278,7 +278,7 @@ fun DiaryDetailScreen(
                             color = Color(0xFF1D1E20),
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .padding(20.dp)
+                        .padding(16.dp)
                 ) {
                     if (isEditing) {
                         OutlinedTextField(
@@ -286,12 +286,12 @@ fun DiaryDetailScreen(
                             onValueChange = { editedContent = it },
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(bottom = 70.dp),
+                                .padding(bottom = 50.dp),
                             textStyle = TextStyle(
-                                fontSize = 16.sp,
+                                fontSize = 13.sp,
                                 fontFamily = PaperlogyFontFamily,
                                 fontWeight = FontWeight.Medium,
-                                lineHeight = 30.sp,
+                                lineHeight = 20.sp,
                                 color = Color.White
                             ),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -317,8 +317,8 @@ fun DiaryDetailScreen(
                                 color = Color.White,
                                 fontFamily = PaperlogyFontFamily,
                                 fontWeight = FontWeight.Medium,
-                                fontSize = 16.sp,
-                                lineHeight = 30.sp
+                                fontSize = 13.sp,
+                                lineHeight = 20.sp
                             )
                         }
                     }
@@ -333,7 +333,7 @@ fun DiaryDetailScreen(
                             color = Color.White,
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.W400,
-                            fontSize = 14.sp
+                            fontSize = 10.sp
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -347,13 +347,13 @@ fun DiaryDetailScreen(
                             color = Color.White,
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.W400,
-                            fontSize = 14.sp
+                            fontSize = 10.sp
                         )
                     }
                 }
 
                 if (isEditing) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth(),
@@ -364,13 +364,13 @@ fun DiaryDetailScreen(
                             text = "취소",
                             color = Color(0xFFAAAAAA),
                             fontFamily = PaperlogyFontFamily,
-                            fontSize = 14.sp,
+                            fontSize = 10.sp,
                             modifier = Modifier
                                 .clickable {
                                     editedContent = currentContent
                                     isEditing = false
                                 }
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
                         )
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -380,7 +380,7 @@ fun DiaryDetailScreen(
                             color = mainGreen,
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp,
+                            fontSize = 10.sp,
                             modifier = Modifier
                                 .clickable {
                                     if (diaryId == null || isLoading) return@clickable
@@ -417,7 +417,7 @@ fun DiaryDetailScreen(
                                         }
                                     }
                                 }
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
                         )
                     }
                 }
