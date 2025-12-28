@@ -74,4 +74,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
     //    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:chromecast-sender:0.32")
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+
 }

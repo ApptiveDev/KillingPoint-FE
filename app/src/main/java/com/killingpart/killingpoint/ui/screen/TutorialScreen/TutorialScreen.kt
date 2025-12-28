@@ -28,7 +28,6 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TutorialScreen(
-    navController: NavController,
     onFinish: () -> Unit
 ) {
     val context = LocalContext.current
@@ -43,9 +42,7 @@ fun TutorialScreen(
         when (val state = loginState) {
             is LoginUiState.AutoLoginSuccess -> {
                 if (!state.isNew) {
-                    navController.navigate("main") {
-                        popUpTo("tutorial") { inclusive = true }
-                    }
+                    onFinish()
                 }
             }
             else -> {
@@ -98,7 +95,6 @@ fun TutorialScreen(
 @Composable
 fun TutorialScreenPreview() {
     TutorialScreen(
-        navController = rememberNavController(),
         onFinish = {}
     )
 }

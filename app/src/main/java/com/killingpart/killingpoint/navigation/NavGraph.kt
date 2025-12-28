@@ -27,7 +27,6 @@ fun NavGraph(
     ) {
         composable("tutorial") {
             TutorialScreen(
-                navController = navController,
                 onFinish = {
                     navController.navigate("home") {
                         popUpTo("tutorial") { inclusive = true }
