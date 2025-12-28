@@ -56,10 +56,8 @@ fun HelloScreen(navController: NavController) {
     LaunchedEffect(loginState) {
         when (val state = loginState) {
             is LoginUiState.AutoLoginSuccess -> {
-                if (!state.isNew) {
-                    navController.navigate("main") {
-                        popUpTo("home") { inclusive = true }
-                    }
+                navController.navigate("main") {
+                    popUpTo("home") { inclusive = true }
                 }
             }
             else -> {

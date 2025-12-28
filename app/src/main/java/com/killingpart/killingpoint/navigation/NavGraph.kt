@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.screen.HomeScreen.HelloScreen
 import com.killingpart.killingpoint.ui.screen.MainScreen.MainScreen
+import com.killingpart.killingpoint.ui.screen.TutorialScreen.TutorialScreen
 import com.killingpart.killingpoint.ui.screen.AddMusicScreen.AddMusicScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.WriteDiaryScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.SelectDurationScreen
@@ -22,8 +23,19 @@ fun NavGraph(
 ) {
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = "tutorial"
     ) {
+        composable("tutorial") {
+            TutorialScreen(
+                navController = navController,
+                onFinish = {
+                    navController.navigate("home") {
+                        popUpTo("tutorial") { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable("home") { HelloScreen(navController) }
 
         composable(

@@ -42,7 +42,9 @@ fun TutorialPage(step: TutorialStep,
                  onNext: () -> Unit,
                  onPrev: () -> Unit,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()
+        .background(color = Color.Black)
+        .padding(top = 20.dp)) {
         Column(
             modifier = Modifier.fillMaxWidth(),
         ) {

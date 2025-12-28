@@ -33,7 +33,8 @@ import com.killingpart.killingpoint.ui.theme.mainGreen
 @Composable
 fun TutorialLastPage(onStart: () -> Unit) {
     Column (
-        modifier = Modifier.fillMaxSize().padding(bottom = 50.dp),
+        modifier = Modifier.fillMaxSize()
+            .background(Color.Black).padding(bottom = 50.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ){
