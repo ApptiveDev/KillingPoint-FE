@@ -31,7 +31,7 @@ import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 
 @Composable
-fun TutorialLastPage(navController: NavController) {
+fun TutorialLastPage(onStart: () -> Unit) {
     Column (
         modifier = Modifier.fillMaxSize().padding(bottom = 50.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -80,7 +80,7 @@ fun TutorialLastPage(navController: NavController) {
         Box(
             modifier = Modifier.size(342.dp, 48.dp)
                 .background(color = mainGreen, RoundedCornerShape(100))
-                .clickable{navController.navigate("home")},
+                .clickable{ onStart() },
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -96,5 +96,5 @@ fun TutorialLastPage(navController: NavController) {
 @Preview
 @Composable
 fun TutorialLastPagePreview() {
-    TutorialLastPage(rememberNavController())
+    TutorialLastPage(onStart = {})
 }
