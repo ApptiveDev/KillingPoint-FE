@@ -72,6 +72,22 @@ class FriendViewModel(
         }
     }
 
+    fun removeSubscribe(context: Context, subscribeToUserId: Long, currentUserId: Long, onSuccess: () -> Unit = {}) {
+        val repo = repoFactory(context)
+        viewModelScope.launch {
+            repo.removeSubscribe(subscribeToUserId)
+                .onSuccess {
+                    // 구독 취소 성공 후 목록 새로고침
+                    loadFriends(context, currentUserId)
+                    onSuccess()
+                }
+                .onFailure { e ->
+                    // 에러 처리 (필요시 상태 업데이트)
+                    android.util.Log.e("FriendViewModel", "구독 취소 실패: ${e.message}")
+                }
+        }
+    }
+
     fun searchUsers(context: Context, searchCond: String, page: Int = 0, size: Int = 5) {
         val repo = repoFactory(context)
         viewModelScope.launch {

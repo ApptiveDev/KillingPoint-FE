@@ -1,18 +1,23 @@
 package com.killingpart.killingpoint.ui.screen.SocialScreen
 
+import android.R.attr.end
+import android.graphics.fonts.Font
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -21,15 +26,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.killingpart.killingpoint.ui.screen.AddMusicScreen.korean_font_medium
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.FriendViewModel
@@ -90,39 +100,29 @@ fun FriendScreen(navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // 검색 바
-        TextField(
+        BasicTextField(
             value = searchText,
             onValueChange = { searchText = it },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(36.dp),
+                .height(40.dp)
+                // 기존 TextField의 colors와 shape를 여기(modifier)로 옮겨서 처리합니다.
+                .background(
+                    color = Color(0xFF101010),
+                    shape = RoundedCornerShape(20.dp)
+                ),
+            singleLine = true,
+            // 텍스트 스타일 설정 (커서 및 입력 글자 색상)
             textStyle = TextStyle(
-                fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.Light,
+                fontFamily = korean_font_medium,
+                fontWeight = FontWeight.Medium,
                 fontSize = 12.sp,
                 color = Color.White,
-                lineHeight = 12.sp
+                textAlign = TextAlign.Start,
+                // ★ 핵심: 한글 폰트 상하 여백 제거 (잘림 방지)
+                platformStyle = PlatformTextStyle(includeFontPadding = false)
             ),
-            placeholder = {
-                Text(
-                    text = "친구 검색",
-                    fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 12.sp,
-                    color = Color(0xFF7B7B7B)
-                )
-            },
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color(0xFF101010),
-                unfocusedContainerColor = Color(0xFF101010),
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
-            ),
-            shape = RoundedCornerShape(18.dp),
-            singleLine = true,
+            cursorBrush = SolidColor(Color.White), // 커서 색상을 흰색으로
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(
                 onSearch = {
@@ -131,36 +131,67 @@ fun FriendScreen(navController: NavController) {
                     }
                 }
             ),
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search Icon",
-                    tint = Color.White,
+            // 디자인 커스텀 영역 (Placeholder, Icon 배치)
+            decorationBox = { innerTextField ->
+                Row(
                     modifier = Modifier
-                        .size(24.dp)
-                        .padding(2.dp)
-                        .clickable {
-                            if (searchText.isNotBlank()) {
-                                friendViewModel.searchUsers(context, searchText)
-                            }
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp), // 좌우 여백 확보
+                    verticalAlignment = Alignment.CenterVertically // 수직 중앙 정렬
+                ) {
+                    // 텍스트 입력 영역 (Placeholder 포함)
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        // 텍스트가 비어있을 때만 Placeholder 표시
+                        if (searchText.isEmpty()) {
+                            Text(
+                                text = "친구 검색",
+                                color = Color(0xFF7B7B7B),
+                                style = TextStyle(
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 12.sp,
+                                    platformStyle = PlatformTextStyle(includeFontPadding = false)
+                                )
+                            )
                         }
-                )
-            },
+                        // 실제 입력 필드 렌더링
+                        innerTextField()
+                    }
+
+                    // 검색 아이콘
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search Icon",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                if (searchText.isNotBlank()) {
+                                    friendViewModel.searchUsers(context, searchText)
+                                }
+                            }
+                    )
+                }
+            }
         )
 
         // 카테고리 라벨 (탭으로 변경)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+//            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "나의 픽",
+                text = "나의 픽 ",
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = if (selectedTab == FriendTab.PICKS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
                 color = if (selectedTab == FriendTab.PICKS) Color.White else Color(0xFFA4A4A6),
                 modifier = Modifier.clickable { selectedTab = FriendTab.PICKS }
             )
+            Spacer(modifier = Modifier.width(5.dp))
             Text(
                 text = "${friendState.let {
                         if (it is FriendUiState.Success) it.picks?.page?.totalElements ?: 0 else 0
@@ -168,17 +199,29 @@ fun FriendScreen(navController: NavController) {
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = if (selectedTab == FriendTab.PICKS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
-                color = if (selectedTab == FriendTab.PICKS) Color.White else Color(0xFFA4A4A6),
+                color = if (selectedTab == FriendTab.PICKS) Color(0xFFCEFF43) else Color(0xFFA4A4A6),
                 modifier = Modifier.clickable { selectedTab = FriendTab.PICKS }
             )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
             Text(
-                text = "나의 팬덤 ${friendState.let { 
+                text = "나의 팬덤 ",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = if (selectedTab == FriendTab.FANS) FontWeight.Medium else FontWeight.Light,
+                fontSize = 12.sp,
+                color = if (selectedTab == FriendTab.FANS) Color.White else Color(0xFFA4A4A6),
+                modifier = Modifier.clickable { selectedTab = FriendTab.FANS }
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+            Text(
+                text = "${friendState.let { 
                     if (it is FriendUiState.Success) it.fans?.page?.totalElements ?: 0 else 0 
                 }}",
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = if (selectedTab == FriendTab.FANS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
-                color = if (selectedTab == FriendTab.FANS) Color.White else Color(0xFFA4A4A6),
+                color = if (selectedTab == FriendTab.FANS) Color(0xFFCEFF43) else Color(0xFFA4A4A6),
                 modifier = Modifier.clickable { selectedTab = FriendTab.FANS }
             )
         }
@@ -198,11 +241,11 @@ fun FriendScreen(navController: NavController) {
             is FriendUiState.Success -> {
                 // 검색 결과가 있으면 검색 결과를 표시, 없으면 탭 내용 표시
                 val friends = if (state.searchResults != null && searchText.isNotBlank()) {
-                    state.searchResults.content
+                    state.searchResults.content.distinctBy { it.userId }
                 } else {
                     when (selectedTab) {
-                        FriendTab.PICKS -> state.picks?.content ?: emptyList()
-                        FriendTab.FANS -> state.fans?.content ?: emptyList()
+                        FriendTab.PICKS -> (state.picks?.content ?: emptyList()).distinctBy { it.userId }
+                        FriendTab.FANS -> (state.fans?.content ?: emptyList()).distinctBy { it.userId }
                     }
                 }
                 
@@ -230,8 +273,7 @@ fun FriendScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         items(friends) { user ->
                             // 검색 결과인 경우와 일반 목록인 경우를 구분
@@ -289,7 +331,8 @@ fun FriendItemCard(
                 color = Color(0xFF090909),
                 shape = RoundedCornerShape(12.dp)
             )
-            .padding(8.dp),
+            .padding(10.dp)
+            .padding(end=12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -303,12 +346,13 @@ fun FriendItemCard(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF404040))
+                    .border(2.dp, mainGreen, CircleShape)
             ) {
                 AsyncImage(
                     model = user.profileImageUrl,
                     contentDescription = "프로필 이미지",
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
             }
 
@@ -321,7 +365,7 @@ fun FriendItemCard(
                         text = user.username,
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         color = Color.White
                     )
                     // 나의 픽 표시 (이미 구독한 경우에만)
@@ -330,16 +374,17 @@ fun FriendItemCard(
                             text = "나의 픽",
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 12.sp,
+                            fontSize = 10.sp,
                             color = mainGreen
                         )
                     }
                 }
+                Spacer(modifier = Modifier.weight(1f))
                 Text(
                     text = "@${user.tag}",
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Light,
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     color = Color(0xFFFFFFFF)
                 )
             }
@@ -368,7 +413,7 @@ fun FriendItemCard(
             Box(
                 modifier = Modifier
                     .background(
-                        color = Color(0xFF090909),
+                        color = Color(0xFF262626),
                         shape = RoundedCornerShape(8.dp)
                     )
                     .clickable {
@@ -391,7 +436,7 @@ fun FriendItemCard(
                     text = "프로필 방문",
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     color = mainGreen
                 )
             }

@@ -61,6 +61,8 @@ fun FriendProfileScreen(
     isMyPick: Boolean = false
 ) {
     var selectedTab by remember { mutableStateOf(FriendProfileTab.FRIEND) }
+    var currentIsMyPick by remember { mutableStateOf(isMyPick) }
+    var currentUserId by remember { mutableStateOf(0L) }
     
     val context = LocalContext.current
     val profileViewModel: FriendProfileViewModel = viewModel()
@@ -72,12 +74,10 @@ fun FriendProfileScreen(
     LaunchedEffect(userId) {
         profileViewModel.loadFriendProfile(context, userId)
         userViewModel.loadUserInfo(context)
-    }
-
-    // 현재 사용자 ID 가져오기 (구독 추가용)
-    val currentUserId = remember(currentUserState) {
-        // TODO: UserInfo에서 userId를 얻는 방법 필요
-        0L
+        
+        // 현재 사용자 ID 가져오기 (구독 추가/취소용)
+        val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
+        currentUserId = repo.getUserIdFromToken() ?: 0L
     }
 
     AppBackground {
@@ -216,32 +216,44 @@ fun FriendProfileScreen(
                                                         .fillMaxWidth(0.8f)
                                                         .height(32.dp)
                                                         .background(
-                                                            color = if (isMyPick) Color.Transparent else Color(
+                                                            color = if (currentIsMyPick) Color.Transparent else Color(
                                                                 0xFF262626
                                                             ),
                                                             shape = RoundedCornerShape(10.dp)
                                                         )
-                                                        .then(
-                                                            if (!isMyPick) {
-                                                                Modifier.clickable {
-                                                                    friendViewModel.addSubscribe(
-                                                                        context = context,
-                                                                        subscribeToUserId = userId,
-                                                                        currentUserId = currentUserId
-                                                                    ) {
-                                                                        // 구독 성공 후 화면 새로고침
-                                                                        profileViewModel.loadFriendProfile(
-                                                                            context,
-                                                                            userId
-                                                                        )
-                                                                    }
+                                                        .clickable {
+                                                            if (currentIsMyPick) {
+                                                                // 구독 취소
+                                                                friendViewModel.removeSubscribe(
+                                                                    context = context,
+                                                                    subscribeToUserId = userId,
+                                                                    currentUserId = currentUserId
+                                                                ) {
+                                                                    currentIsMyPick = false
+                                                                    // 구독 취소 후 화면 새로고침
+                                                                    profileViewModel.loadFriendProfile(
+                                                                        context,
+                                                                        userId
+                                                                    )
                                                                 }
                                                             } else {
-                                                                Modifier
+                                                                // 구독 추가
+                                                                friendViewModel.addSubscribe(
+                                                                    context = context,
+                                                                    subscribeToUserId = userId,
+                                                                    currentUserId = currentUserId
+                                                                ) {
+                                                                    currentIsMyPick = true
+                                                                    // 구독 성공 후 화면 새로고침
+                                                                    profileViewModel.loadFriendProfile(
+                                                                        context,
+                                                                        userId
+                                                                    )
+                                                                }
                                                             }
-                                                        )
+                                                        }
                                                         .then(
-                                                            if (isMyPick) {
+                                                            if (currentIsMyPick) {
                                                                 Modifier.border(
                                                                     1.dp,
                                                                     mainGreen,
@@ -254,7 +266,7 @@ fun FriendProfileScreen(
                                                     contentAlignment = Alignment.Center
                                                 ) {
                                                     Text(
-                                                        text = if (isMyPick) "나의 PICK!" else "나의 픽으로 추가",
+                                                        text = if (currentIsMyPick) "나의 PICK!" else "나의 픽으로 추가",
                                                         color = mainGreen,
                                                         fontFamily = PaperlogyFontFamily,
                                                         fontSize = 12.sp,

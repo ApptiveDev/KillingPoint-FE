@@ -119,6 +119,12 @@ interface ApiService {
         @Path("subscribeToUserId") subscribeToUserId: Long
     ): retrofit2.Response<Unit>
 
+    @DELETE("subscribes/{subscribeToUserId}")
+    suspend fun removeSubscribe(
+        @Header("Authorization") accessToken: String,
+        @Path("subscribeToUserId") subscribeToUserId: Long
+    ): retrofit2.Response<Unit>
+
     @GET("users")
     suspend fun searchUsers(
         @Header("Authorization") accessToken: String,

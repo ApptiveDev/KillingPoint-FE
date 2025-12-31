@@ -445,6 +445,29 @@ class AuthRepository(
     }
 
     /**
+     * 구독 취소 (나의 픽에서 제거)
+     */
+    suspend fun removeSubscribe(subscribeToUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val response = api.removeSubscribe("Bearer $accessToken", subscribeToUserId)
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string().orEmpty()
+                throw IllegalStateException("구독 취소 실패 (${response.code()}): $errorBody")
+            }
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("구독 취소 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
      * 회원 검색
      */
     suspend fun searchUsers(
