@@ -1,9 +1,11 @@
 package com.killingpart.killingpoint.ui.screen.SocialScreen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.killingpart.killingpoint.ui.component.AppBackground
@@ -20,6 +22,15 @@ fun SocialScreen(navController: NavController) {
 
     AppBackground {
         Box(modifier = Modifier.fillMaxSize()) {
+            // 친구 탭일 때만 단색 배경 적용
+            if (selectedTab == SocialTab.FRIEND) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFF1D1E20))
+                )
+            }
+            
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -43,7 +54,7 @@ fun SocialScreen(navController: NavController) {
                         .padding(horizontal = 30.dp)
                 )
 
-                Spacer(modifier = Modifier.height(7.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Box(
                     modifier = Modifier

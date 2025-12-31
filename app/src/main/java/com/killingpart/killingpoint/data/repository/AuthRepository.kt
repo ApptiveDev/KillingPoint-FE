@@ -15,6 +15,7 @@ import com.killingpart.killingpoint.data.model.UpdateTagRequest
 import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
+import com.killingpart.killingpoint.data.model.SubscribeResponse
 import com.killingpart.killingpoint.data.remote.RetrofitClient
 import com.killingpart.killingpoint.data.remote.ApiService
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
@@ -81,6 +82,42 @@ class AuthRepository(
     suspend fun getAccessToken(): String? = tokenStore.getAccessToken()
     suspend fun getRefreshToken(): String? = tokenStore.getRefreshToken()
     suspend fun clearTokens() = tokenStore.clear()
+    
+    /**
+     * JWT 토큰에서 userId를 추출
+     */
+    suspend fun getUserIdFromToken(): Long? = withContext(Dispatchers.IO) {
+        try {
+            val accessToken = getAccessToken() ?: return@withContext null
+            // "Bearer " 제거
+            val token = accessToken.removePrefix("Bearer ").trim()
+            
+            // JWT는 header.payload.signature 형식
+            val parts = token.split(".")
+            if (parts.size < 2) return@withContext null
+            
+            // payload 디코딩
+            val payload = parts[1]
+            // Base64 URL 디코딩 (패딩 추가)
+            val paddedPayload = payload + "=".repeat((4 - payload.length % 4) % 4)
+            val decodedBytes = android.util.Base64.decode(paddedPayload, android.util.Base64.URL_SAFE)
+            val decodedString = String(decodedBytes, Charsets.UTF_8)
+            
+            // JSON 파싱
+            val json = org.json.JSONObject(decodedString)
+            
+            // userId 또는 sub (subject) 필드에서 추출
+            when {
+                json.has("userId") -> json.getLong("userId")
+                json.has("sub") -> json.getString("sub").toLongOrNull()
+                json.has("id") -> json.getLong("id")
+                else -> null
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AuthRepository", "JWT 디코딩 실패: ${e.message}")
+            null
+        }
+    }
 
     suspend fun getUserInfo(): Result<UserInfo> =
         withContext(Dispatchers.IO) {
@@ -344,6 +381,135 @@ class AuthRepository(
             
             // 프론트에서 토큰 삭제 (에러가 발생해도 토큰은 삭제)
             tokenStore.clear()
+        }
+    }
+
+    /**
+     * 구독 목록 조회 (나의 픽)
+     */
+    suspend fun getSubscribes(userId: Long): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.getSubscribes("Bearer $accessToken", userId)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("구독 목록 조회 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 팬덤 목록 조회 (나의 팬덤)
+     */
+    suspend fun getFans(userId: Long): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.getFans("Bearer $accessToken", userId)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("팬덤 목록 조회 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 구독 추가 (나의 픽으로 추가)
+     */
+    suspend fun addSubscribe(subscribeToUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val response = api.addSubscribe("Bearer $accessToken", subscribeToUserId)
+            if (!response.isSuccessful) {
+                throw IllegalStateException("구독 추가 실패 (${response.code()}): ${response.message()}")
+            }
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("구독 추가 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 구독 취소 (나의 픽에서 제거)
+     */
+    suspend fun removeSubscribe(subscribeToUserId: Long): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val response = api.removeSubscribe("Bearer $accessToken", subscribeToUserId)
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string().orEmpty()
+                throw IllegalStateException("구독 취소 실패 (${response.code()}): $errorBody")
+            }
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("구독 취소 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 회원 검색
+     */
+    suspend fun searchUsers(
+        searchCond: String? = null,
+        page: Int = 0,
+        size: Int = 5
+    ): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.searchUsers("Bearer $accessToken", searchCond, page, size)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("회원 검색 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 특정 유저의 일기 조회
+     */
+    suspend fun getUserDiaries(
+        userId: Long,
+        page: Int = 0,
+        size: Int = 5
+    ): Result<MyDiaries> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.getUserDiaries("Bearer $accessToken", userId, page, size)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("유저 일기 조회 실패 ($code): $msg")
+            } else {
+                throw e
+            }
         }
     }
 }

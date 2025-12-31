@@ -4,7 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -64,7 +66,7 @@ fun WriteDiaryScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
     var content by remember { mutableStateOf("") }
-    var scopeState by remember { mutableStateOf("PUBLIC") }
+    var scope by remember { mutableStateOf("PUBLIC") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
@@ -81,13 +83,14 @@ fun WriteDiaryScreen(
             .background(Color(0xFF060606))
     ) {
         // 본문 영역
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .padding(horizontal = 15.dp)
-                .weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
@@ -149,21 +152,24 @@ fun WriteDiaryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Box(modifier = Modifier.fillMaxWidth(0.9f)) {
+            Box(modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(150.dp)) {
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight(0.65f),
+                        .fillMaxHeight(),
                     placeholder = {
                         Text(
                             text = "코멘트 추가…",
+                            fontSize = 12.sp,
                             fontFamily = korean_font_medium,
                             color = Color(0xFFA4A4A6)
                         )
                     },
-                    textStyle = TextStyle(fontSize = 16.sp, fontFamily = korean_font_medium),
+                    textStyle = TextStyle(fontSize = 12.sp, fontFamily = korean_font_medium),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF232427),
                         unfocusedContainerColor = Color(0xFF232427),
@@ -178,7 +184,7 @@ fun WriteDiaryScreen(
                 Text(
                     text = today,
                     color = Color(0xFFA4A4A6),
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     fontFamily = korean_font_medium,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -189,60 +195,61 @@ fun WriteDiaryScreen(
             Spacer(modifier = Modifier.height(13.dp))
 
             // Scope header
-//            Row(
-//                modifier = Modifier
-//                    .fillMaxWidth(0.9f)
-//                    .clickable { isDropdownExpanded = !isDropdownExpanded },
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Filled.Language,
-//                    contentDescription = "globe",
-//                    tint = Color(0xFFA4A4A6),
-//                    modifier = Modifier.size(18.dp)
-//                )
-//                Spacer(modifier = Modifier.width(5.dp))
-//                Text(
-//                    text = "공개 상태 : ",
-//                    fontFamily = korean_font_medium,
-//                    color = Color(0xFF7B7B7B),
-//                    fontSize = 13.sp
-//                )
-//                Text(
-//                    fontFamily = korean_font_medium,
-//                    text = " ${when (scope) {
-//                        "PUBLIC" -> "전체 공개"
-//                        "KILLING_PART" -> "킬링파트만 공개"
-//                        "PRIVATE" -> "전체 비공개"
-//                        else -> "전체 공개"
-//                    }}",
-//                    color = Color(0xFFFFFFFF),
-//                    fontSize = 13.sp
-//                )
-//                Icon(
-//                    imageVector = if (isDropdownExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-//                    contentDescription = "dropdown",
-//                    tint = Color(0xFF7B7B7B),
-//                    modifier = Modifier.size(20.dp)
-//                )
-//                if (isDropdownExpanded) {
-//                    Box(
-//                        modifier = Modifier.fillMaxWidth(0.9f),
-//                        contentAlignment = Alignment.TopEnd
-//                    ) {
-//                        Column(
-//                            modifier = Modifier
-//                                .background(Color.Transparent, RoundedCornerShape(8.dp))
-//
-//                        ) {
-//                            ScopeOption("전체 공개", "PUBLIC", scope) { scope = it; isDropdownExpanded = false }
-//                            ScopeOption("킬링파트만 공개", "KILLING_PART", scope) { scope = it; isDropdownExpanded = false }
-//                            ScopeOption("전체 비공개", "PRIVATE", scope) { scope = it; isDropdownExpanded = false }
-//                        }
-//                    }
-//                }
-//            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .clickable { isDropdownExpanded = !isDropdownExpanded },
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Language,
+                    contentDescription = "globe",
+                    tint = Color(0xFFA4A4A6),
+                    modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    text = "공개 상태 : ",
+                    fontFamily = korean_font_medium,
+                    color = Color(0xFF7B7B7B),
+                    fontSize = 10.sp
+                )
+                Text(
+                    fontFamily = korean_font_medium,
+                    text = " ${when (scope) {
+                        "PUBLIC" -> "전체 공개"
+                        "KILLING_PART" -> "킬링파트만 공개"
+                        "PRIVATE" -> "전체 비공개"
+                        else -> "전체 공개"
+                    }}",
+                    color = Color(0xFFFFFFFF),
+                    fontSize = 10.sp
+                )
+                Icon(
+                    imageVector = if (isDropdownExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                    contentDescription = "dropdown",
+                    tint = Color(0xFF7B7B7B),
+                    modifier = Modifier.size(15.dp)
+                )
+                if (isDropdownExpanded) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(0.9f),
+                        contentAlignment = Alignment.TopEnd
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .background(Color.Transparent, RoundedCornerShape(8.dp))
+
+                        ) {
+                            ScopeOption("전체 비공개", "PRIVATE", scope) { scope = it; isDropdownExpanded = false }
+                            ScopeOption("킬링파트만 공개", "KILLING_PART", scope) { scope = it; isDropdownExpanded = false }
+                            ScopeOption("전체 공개", "PUBLIC", scope) { scope = it; isDropdownExpanded = false }
+
+                        }
+                    }
+                }
+            }
         }
-        
+        Spacer(modifier = Modifier.height(20.dp))
         // 저장 버튼 (중앙정렬)
         Box(
             modifier = Modifier.fillMaxWidth(),
@@ -257,7 +264,7 @@ fun WriteDiaryScreen(
                                 musicTitle = title,
                                 albumImageUrl = imageUrl,
                                 videoUrl = videoUrl,
-                                scope = scopeState,
+                                scope = scope,
                                 content = content,
                                 duration = duration,
                                 start = start,
@@ -296,12 +303,12 @@ fun WriteDiaryScreen(
                 .clickable { onSelect(value) }
                 .background( color = if (selected == value) Color(0xFF1D1E20) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp) )
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically )
     {
-        Text( fontFamily = korean_font_medium, text = if (selected == value) "●" else "○", color = if (selected == value) Color(0xFFFFFFFF) else Color.Gray, fontSize = 13.sp )
+        Text( fontFamily = korean_font_medium, text = if (selected == value) "●" else "○", color = if (selected == value) Color(0xFFFFFFFF) else Color.Gray, fontSize = 10.sp )
         Spacer(modifier = Modifier.width(8.dp))
-        Text( fontFamily = korean_font_medium, text = label, color = Color.White, fontSize = 13.sp )
+        Text( fontFamily = korean_font_medium, text = label, color = Color.White, fontSize = 10.sp )
     }
 }
 

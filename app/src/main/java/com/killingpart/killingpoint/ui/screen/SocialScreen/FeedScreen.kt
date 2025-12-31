@@ -26,5 +26,4 @@ fun FeedScreen(navController: NavController) {
 
 }
 
-//data class FeedItem()
 

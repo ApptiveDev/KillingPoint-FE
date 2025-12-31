@@ -41,6 +41,9 @@ import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.UserUiState
 import com.killingpart.killingpoint.ui.viewmodel.UserViewModel
+import com.killingpart.killingpoint.ui.viewmodel.FriendViewModel
+import com.killingpart.killingpoint.ui.viewmodel.FriendUiState
+import com.killingpart.killingpoint.data.repository.AuthRepository
 
 @Composable
 fun OuterBox(
@@ -52,9 +55,17 @@ fun OuterBox(
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
+    val friendViewModel: FriendViewModel = viewModel()
+    val friendState by friendViewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
+        // 현재 사용자 ID 가져와서 팬덤과 PICKS 수 로드
+        val repo = AuthRepository(context)
+        val userId = repo.getUserIdFromToken()
+        if (userId != null) {
+            friendViewModel.loadFriends(context, userId)
+        }
     }
 
     Box(
@@ -71,11 +82,11 @@ fun OuterBox(
                     // 프로필 영역
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 프로필 사진과 이름
                         Row(
+                            modifier = Modifier.weight(1f, fill = false),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -110,7 +121,9 @@ fun OuterBox(
 
                             // username과 tag (클릭 가능)
                             Column(
-                                modifier = Modifier.clickable { onProfileClick() }
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onProfileClick() }
                             ) {
                                 Text(
                                     text = when (val s = userState) {
@@ -120,9 +133,12 @@ fun OuterBox(
                                     },
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp,
                                     color = mainGreen,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
+                                Spacer(modifier=Modifier.height(3.dp))
                                 Text(
                                     text = when (val s = userState) {
                                         is UserUiState.Success -> "@${s.userInfo.tag}"
@@ -131,32 +147,96 @@ fun OuterBox(
                                     },
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
-                                    fontSize = 14.sp,
+                                    fontSize = 12.sp,
                                     color = mainGreen,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
                         }
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                        // 다이어리 개수 표시 (오른쪽에 배치)
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        // 통계 표시 (팬덤, PICKS, 킬링파트)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "${diaries.size}",
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.W400,
-                                fontSize = 16.sp,
-                                color = mainGreen,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Text(
-                                text = "킬링파트",
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.W400,
-                                fontSize = 10.sp,
-                                color = mainGreen,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
+                            // 팬덤
+                            val fansCount = when (val state = friendState) {
+                                is FriendUiState.Success -> state.fans?.page?.totalElements ?: 0
+                                else -> 0
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "$fansCount",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "팬덤",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                            Spacer(modifier=Modifier.width(16.dp))
+                            // PICKS
+                            val picksCount = when (val state = friendState) {
+                                is FriendUiState.Success -> state.picks?.page?.totalElements ?: 0
+                                else -> 0
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "$picksCount",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "PICKS",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                            Spacer(modifier=Modifier.width(10.dp))
+                            // 킬링파트
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${diaries.size}",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "킬링파트",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
                         }
                     }
                     Row(

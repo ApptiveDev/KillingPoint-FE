@@ -14,6 +14,7 @@ import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.WriteDiaryScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.SelectDurationScreen
 import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreen
 import com.killingpart.killingpoint.ui.screen.SocialScreen.SocialScreen
+import com.killingpart.killingpoint.ui.screen.SocialScreen.FriendProfileScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import java.net.URLDecoder
@@ -175,6 +176,37 @@ fun NavGraph(
 
         composable("social") {
             SocialScreen(navController)
+        }
+
+        composable(
+            route = "friend_profile" +
+                    "?userId={userId}" +
+                    "&username={username}" +
+                    "&tag={tag}" +
+                    "&profileImageUrl={profileImageUrl}" +
+                    "&isMyPick={isMyPick}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.LongType },
+                navArgument("username") { type = NavType.StringType; defaultValue = "" },
+                navArgument("tag") { type = NavType.StringType; defaultValue = "" },
+                navArgument("profileImageUrl") { type = NavType.StringType; defaultValue = "" },
+                navArgument("isMyPick") { type = NavType.BoolType; defaultValue = false }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            val username = URLDecoder.decode(backStackEntry.arguments?.getString("username").orEmpty(), "UTF-8")
+            val tag = URLDecoder.decode(backStackEntry.arguments?.getString("tag").orEmpty(), "UTF-8")
+            val profileImageUrl = URLDecoder.decode(backStackEntry.arguments?.getString("profileImageUrl").orEmpty(), "UTF-8")
+            val isMyPick = backStackEntry.arguments?.getBoolean("isMyPick") ?: false
+
+            FriendProfileScreen(
+                navController = navController,
+                userId = userId,
+                username = username,
+                tag = tag,
+                profileImageUrl = profileImageUrl,
+                isMyPick = isMyPick
+            )
         }
     }
 }
