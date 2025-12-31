@@ -13,6 +13,7 @@ import com.killingpart.killingpoint.ui.screen.AddMusicScreen.AddMusicScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.WriteDiaryScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.SelectDurationScreen
 import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreen
+import com.killingpart.killingpoint.ui.screen.SocialScreen.SocialScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import java.net.URLDecoder
@@ -170,6 +171,10 @@ fun NavGraph(
                 totalDuration = totalDuration,
                 fromTab = fromTab
             )
+        }
+
+        composable("social") {
+            SocialScreen(navController)
         }
     }
 }

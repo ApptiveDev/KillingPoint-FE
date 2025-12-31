@@ -78,7 +78,8 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
 //        }
         Column (
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable { navController.navigate("social") }
         ){
             Image(
                 painter = painterResource(id = R.drawable.navi_social),
