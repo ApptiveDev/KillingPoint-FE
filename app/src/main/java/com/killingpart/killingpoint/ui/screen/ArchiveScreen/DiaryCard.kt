@@ -57,47 +57,47 @@ fun DiaryCard(
             .fillMaxWidth()
             .then(clickableModifier)
     ) {
-        // 상단 아이콘들 (좋아요 + 공개 범위)
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(bottom = 8.dp)
-//                .padding(horizontal = 3.dp),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            // 좋아요 수
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Filled.Favorite,
-//                    contentDescription = "Likes",
-//                    tint = Color(0xFFCCFF33),
-//                    modifier = Modifier.size(23.dp)
-//                )
-//                Spacer(modifier = Modifier.width(3.dp))
-//                Text(
-//                    text = "25", // TODO: 실제 좋아요 수로 교체
-//                    color = Color.White,
-//                    fontSize = 15.sp,
-//                    fontFamily = PaperlogyFontFamily,
-//                    fontWeight = FontWeight.Medium
-//                )
-//            }
-//
-//            // 공개 범위 아이콘
-//            Icon(
-//                imageVector = when (diary.scope) {
-//                    Scope.PUBLIC -> Icons.Filled.Language
-//                    Scope.PRIVATE -> Icons.Filled.Lock
-//                    Scope.KILLING_PART -> Icons.Filled.MusicNote
-//                },
-//                contentDescription = "Scope",
-//                tint = Color.White,
-//                modifier = Modifier.size(23.dp)
-//            )
-//        }
+//         상단 아이콘들 (좋아요 + 공개 범위)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp)
+                .padding(horizontal = 3.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 좋아요 수
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = "Likes",
+                    tint = Color(0xFFCCFF33),
+                    modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    text = "25", // TODO: 실제 좋아요 수로 교체
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+
+            // 공개 범위 아이콘
+            Icon(
+                imageVector = when (diary.scope) {
+                    Scope.PUBLIC -> Icons.Filled.Language
+                    Scope.PRIVATE -> Icons.Filled.Lock
+                    Scope.KILLING_PART -> Icons.Filled.MusicNote
+                },
+                contentDescription = "Scope",
+                tint = Color.White,
+                modifier = Modifier.size(15.dp)
+            )
+        }
         
         Box(
             modifier = Modifier
