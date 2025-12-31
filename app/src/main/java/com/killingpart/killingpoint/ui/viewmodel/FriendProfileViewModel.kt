@@ -14,7 +14,9 @@ sealed interface FriendProfileUiState {
     data object Loading : FriendProfileUiState
     data class Success(
         val user: SubscribeUser?,
-        val diaries: MyDiaries?
+        val diaries: MyDiaries?,
+        val fansCount: Int = 0,
+        val picksCount: Int = 0
     ) : FriendProfileUiState
     data class Error(val message: String) : FriendProfileUiState
 }
@@ -32,20 +34,28 @@ class FriendProfileViewModel(
         _state.value = FriendProfileUiState.Loading
         val repo = repoFactory(context)
         viewModelScope.launch {
-            // TODO: 유저 정보를 가져오는 API가 필요할 수 있음
-            // 일단 일기만 로드
-            repo.getUserDiaries(userId)
-                .onSuccess { diaries ->
+            // 일기, 팬덤 수, PICKS 수를 병렬로 로드
+            val diariesResult = repo.getUserDiaries(userId)
+            val fansResult = repo.getFans(userId)
+            val picksResult = repo.getSubscribes(userId)
+            
+            when {
+                diariesResult.isSuccess -> {
+                    val fansCount = fansResult.getOrNull()?.page?.totalElements ?: 0
+                    val picksCount = picksResult.getOrNull()?.page?.totalElements ?: 0
                     _state.value = FriendProfileUiState.Success(
                         user = null, // TODO: 유저 정보 API 추가 필요
-                        diaries = diaries
+                        diaries = diariesResult.getOrNull(),
+                        fansCount = fansCount,
+                        picksCount = picksCount
                     )
                 }
-                .onFailure { e ->
+                else -> {
                     _state.value = FriendProfileUiState.Error(
-                        e.message ?: "프로필 로드 실패"
+                        diariesResult.exceptionOrNull()?.message ?: "프로필 로드 실패"
                     )
                 }
+            }
         }
     }
 }

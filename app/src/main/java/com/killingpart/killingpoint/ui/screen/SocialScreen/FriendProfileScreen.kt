@@ -61,15 +61,25 @@ fun FriendProfileScreen(
     isMyPick: Boolean = false
 ) {
     var selectedTab by remember { mutableStateOf(FriendProfileTab.FRIEND) }
-    var currentIsMyPick by remember { mutableStateOf(isMyPick) }
     var currentUserId by remember { mutableStateOf(0L) }
     
     val context = LocalContext.current
     val profileViewModel: FriendProfileViewModel = viewModel()
     val profileState by profileViewModel.state.collectAsState()
     val friendViewModel: FriendViewModel = viewModel()
+    val friendState by friendViewModel.state.collectAsState()
     val userViewModel: com.killingpart.killingpoint.ui.viewmodel.UserViewModel = viewModel()
     val currentUserState by userViewModel.state.collectAsState()
+
+    // picks 목록에서 현재 userId가 있는지 확인하여 isMyPick 상태 결정
+    val currentIsMyPick = remember(friendState, userId) {
+        when (val state = friendState) {
+            is com.killingpart.killingpoint.ui.viewmodel.FriendUiState.Success -> {
+                state.picks?.content?.any { it.userId == userId } ?: isMyPick
+            }
+            else -> isMyPick
+        }
+    }
 
     LaunchedEffect(userId) {
         profileViewModel.loadFriendProfile(context, userId)
@@ -77,7 +87,12 @@ fun FriendProfileScreen(
         
         // 현재 사용자 ID 가져오기 (구독 추가/취소용)
         val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
-        currentUserId = repo.getUserIdFromToken() ?: 0L
+        val userIdFromToken = repo.getUserIdFromToken()
+        if (userIdFromToken != null) {
+            currentUserId = userIdFromToken
+            // picks 목록 로드하여 isMyPick 상태 확인
+            friendViewModel.loadFriends(context, userIdFromToken)
+        }
     }
 
     AppBackground {
@@ -139,11 +154,11 @@ fun FriendProfileScreen(
                                             // 프로필 영역 (OuterBox 스타일)
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
                                                 // 프로필 사진과 이름
                                                 Row(
+                                                    modifier = Modifier.weight(1f, fill = false),
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                                 ) {
@@ -165,44 +180,107 @@ fun FriendProfileScreen(
                                                     )
 
                                                     // username과 tag
-                                                    Column {
+                                                    Column(modifier = Modifier.weight(1f)) {
                                                         Text(
                                                             text = username.ifEmpty { "사용자" },
                                                             fontFamily = PaperlogyFontFamily,
                                                             fontWeight = FontWeight.W400,
-                                                            fontSize = 16.sp,
-                                                            color = mainGreen
+                                                            fontSize = 14.sp,
+                                                            color = mainGreen,
+                                                            maxLines = 1,
+                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                         )
+                                                        Spacer(modifier=Modifier.height(6.dp))
+
                                                         Text(
                                                             text = "@${tag.ifEmpty { "unknown" }}",
                                                             fontFamily = PaperlogyFontFamily,
                                                             fontWeight = FontWeight.W400,
-                                                            fontSize = 14.sp,
-                                                            color = mainGreen
+                                                            fontSize = 12.sp,
+                                                            color = mainGreen,
+                                                            maxLines = 1,
+                                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                         )
                                                     }
                                                 }
+                                                
+                                                Spacer(modifier = Modifier.width(8.dp))
 
-                                                // 킬링파트 개수 표시 (오른쪽에 배치)
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                // 통계 표시 (팬덤, PICKS, 킬링파트)
+                                                Row(
+//                                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Text(
-                                                        text = "${state.diaries?.content?.size ?: 0}",
-                                                        fontFamily = PaperlogyFontFamily,
-                                                        fontWeight = FontWeight.W400,
-                                                        fontSize = 16.sp,
-                                                        color = mainGreen,
-                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                    )
-                                                    Text(
-                                                        text = "킬링파트",
-                                                        fontFamily = PaperlogyFontFamily,
-                                                        fontWeight = FontWeight.W400,
-                                                        fontSize = 10.sp,
-                                                        color = mainGreen,
-                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                    )
+                                                    // 팬덤
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                    ) {
+                                                        Text(
+                                                            text = "${state.fansCount}",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 16.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                        Spacer(modifier=Modifier.height(3.dp))
+                                                        Text(
+                                                            text = "팬덤",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 10.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                    }
+                                                    Spacer(modifier=Modifier.width(16.dp))
+                                                    // PICKS
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                    ) {
+                                                        Text(
+                                                            text = "${state.picksCount}",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 16.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                        Spacer(modifier=Modifier.height(3.dp))
+
+                                                        Text(
+                                                            text = "PICKS",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 10.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                    }
+                                                    Spacer(modifier=Modifier.width(10.dp))
+
+                                                    // 킬링파트
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                    ) {
+                                                        Text(
+                                                            text = "${state.diaries?.content?.size ?: 0}",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 16.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                        Spacer(modifier=Modifier.height(3.dp))
+                                                        Text(
+                                                            text = "킬링파트",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 10.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                    }
                                                 }
                                             }
 
@@ -216,7 +294,7 @@ fun FriendProfileScreen(
                                                         .fillMaxWidth(0.8f)
                                                         .height(32.dp)
                                                         .background(
-                                                            color = if (currentIsMyPick) Color.Transparent else Color(
+                                                            color = if (currentIsMyPick) Color(0xFFCEFF43) else Color(
                                                                 0xFF262626
                                                             ),
                                                             shape = RoundedCornerShape(10.dp)
@@ -229,8 +307,8 @@ fun FriendProfileScreen(
                                                                     subscribeToUserId = userId,
                                                                     currentUserId = currentUserId
                                                                 ) {
-                                                                    currentIsMyPick = false
-                                                                    // 구독 취소 후 화면 새로고침
+                                                                    // 구독 취소 후 picks 목록 새로고침하여 상태 업데이트
+                                                                    friendViewModel.loadFriends(context, currentUserId)
                                                                     profileViewModel.loadFriendProfile(
                                                                         context,
                                                                         userId
@@ -243,8 +321,8 @@ fun FriendProfileScreen(
                                                                     subscribeToUserId = userId,
                                                                     currentUserId = currentUserId
                                                                 ) {
-                                                                    currentIsMyPick = true
-                                                                    // 구독 성공 후 화면 새로고침
+                                                                    // 구독 추가 후 picks 목록 새로고침하여 상태 업데이트
+                                                                    friendViewModel.loadFriends(context, currentUserId)
                                                                     profileViewModel.loadFriendProfile(
                                                                         context,
                                                                         userId
@@ -267,9 +345,9 @@ fun FriendProfileScreen(
                                                 ) {
                                                     Text(
                                                         text = if (currentIsMyPick) "나의 PICK!" else "나의 픽으로 추가",
-                                                        color = mainGreen,
+                                                        color = if (currentIsMyPick) Color(0xFF000000) else Color(0xFFCEFF43),
                                                         fontFamily = PaperlogyFontFamily,
-                                                        fontSize = 12.sp,
+                                                        fontSize = 10.sp,
                                                         fontWeight = FontWeight.W400
                                                     )
                                                 }

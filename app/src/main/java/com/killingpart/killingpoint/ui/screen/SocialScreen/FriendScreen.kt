@@ -379,7 +379,7 @@ fun FriendItemCard(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "@${user.tag}",
                     fontFamily = PaperlogyFontFamily,
