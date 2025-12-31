@@ -36,8 +36,8 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
         modifier = Modifier.fillMaxWidth()
             .background(color = Color.Black)
             .height(60.dp)
-            .padding(horizontal = 20.dp,),
-        horizontalArrangement = Arrangement.Center,
+            .padding(horizontal = 40.dp,),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
         Column (
@@ -59,8 +59,6 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             )
         }
 
-        Spacer(modifier = Modifier.width(120.dp))
-
 //        Column (
 //            verticalArrangement = Arrangement.Center,
 //            horizontalAlignment = Alignment.CenterHorizontally
@@ -68,33 +66,34 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
 //            Image(
 //                painter = painterResource(id = R.drawable.navi_search),
 //                contentDescription = "탐색 네비게이션 바",
-//                modifier = Modifier.size(48.dp)
+//                modifier = Modifier.size(36.dp)
 //            )
 //            Text(
 //                text = "탐색",
-//                fontFamily = UnboundedFontFamily,
+//                fontFamily = PaperlogyFontFamily,
 //                fontWeight = FontWeight.Light,
-//                fontSize = 14.sp,
+//                fontSize = 10.sp,
 //                color = Color.White
 //            )
 //        }
-//        Column (
-//            verticalArrangement = Arrangement.Center,
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ){
-//            Image(
-//                painter = painterResource(id = R.drawable.navi_social),
-//                contentDescription = "소셜 네비게이션 바",
-//                modifier = Modifier.size(48.dp)
-//            )
-//            Text(
-//                text = "소셜",
-//                fontFamily = UnboundedFontFamily,
-//                fontWeight = FontWeight.Light,
-//                fontSize = 14.sp,
-//                color = Color.White
-//            )
-//        }
+        Column (
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable { navController.navigate("social") }
+        ){
+            Image(
+                painter = painterResource(id = R.drawable.navi_social),
+                contentDescription = "소셜 네비게이션 바",
+                modifier = Modifier.size(36.dp)
+            )
+            Text(
+                text = "소셜",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Light,
+                fontSize = 10.sp,
+                color = Color.White
+            )
+        }
         Column (
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
