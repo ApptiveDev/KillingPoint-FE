@@ -12,6 +12,7 @@ import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.TestAuthResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
+import com.killingpart.killingpoint.data.model.SubscribeResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -99,4 +100,38 @@ interface ApiService {
     suspend fun unregister(
         @Header("Authorization") accessToken: String
     ): retrofit2.Response<Unit>
+
+    @GET("subscribes/{userId}")
+    suspend fun getSubscribes(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long
+    ): SubscribeResponse
+
+    @GET("subscribes/{userId}/fans")
+    suspend fun getFans(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long
+    ): SubscribeResponse
+
+    @POST("subscribes/{subscribeToUserId}")
+    suspend fun addSubscribe(
+        @Header("Authorization") accessToken: String,
+        @Path("subscribeToUserId") subscribeToUserId: Long
+    ): retrofit2.Response<Unit>
+
+    @GET("users")
+    suspend fun searchUsers(
+        @Header("Authorization") accessToken: String,
+        @Query("searchCond") searchCond: String? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 5
+    ): SubscribeResponse
+
+    @GET("diaries/user/{userId}")
+    suspend fun getUserDiaries(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 5
+    ): MyDiaries
 }

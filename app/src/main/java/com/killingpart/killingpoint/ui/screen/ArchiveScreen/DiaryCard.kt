@@ -123,6 +123,30 @@ fun DiaryCard(
                         Color.Black.copy(alpha = 0.3f)
                     )
             )
+            
+            // 좋아요 수 (앨범 아트 위에 오버레이)
+            if (diary.likeCount > 0) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "❤",
+                        fontSize = 14.sp,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "${diary.likeCount}",
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
         
         // 하단 텍스트 정보 (이미지 아래)
