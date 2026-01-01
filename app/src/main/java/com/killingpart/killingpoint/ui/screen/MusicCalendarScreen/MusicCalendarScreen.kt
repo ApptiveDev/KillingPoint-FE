@@ -689,9 +689,8 @@ fun CalendarDayCell(
             .then(
                 if (isToday && !isSelected) {
                     Modifier.border(
-                        width = 2.dp,
+                        width = 1.5.dp,
                         color = mainGreen,
-//                        shape = RoundedCornerShape(8.dp)
                     )
                 } else {
                     Modifier
