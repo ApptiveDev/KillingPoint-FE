@@ -151,7 +151,7 @@ fun FriendScreen(navController: NavController) {
                                 color = Color(0xFF7B7B7B),
                                 style = TextStyle(
                                     fontFamily = PaperlogyFontFamily,
-                                    fontWeight = FontWeight.Light,
+                                    fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp,
                                     platformStyle = PlatformTextStyle(includeFontPadding = false)
                                 )
