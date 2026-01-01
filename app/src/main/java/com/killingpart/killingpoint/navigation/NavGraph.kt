@@ -119,7 +119,9 @@ fun NavGraph(
                     "&scope={scope}" +
                     "&diaryId={diaryId}" +
                     "&totalDuration={totalDuration}" +
-                    "&fromTab={fromTab}",
+                    "&fromTab={fromTab}" +
+                    "&authorUsername={authorUsername}" +
+                    "&authorTag={authorTag}",
             arguments = listOf(
                 navArgument("artist") { type = NavType.StringType; defaultValue = "" },
                 navArgument("musicTitle") { type = NavType.StringType; defaultValue = "" },
@@ -134,7 +136,9 @@ fun NavGraph(
                 navArgument("scope") { type = NavType.StringType; defaultValue = "" },
                 navArgument("diaryId") { type = NavType.StringType; defaultValue = "" },
                 navArgument("totalDuration") { type = NavType.StringType; defaultValue = "" },
-                navArgument("fromTab") { type = NavType.StringType; defaultValue = "" }
+                navArgument("fromTab") { type = NavType.StringType; defaultValue = "" },
+                navArgument("authorUsername") { type = NavType.StringType; defaultValue = "" },
+                navArgument("authorTag") { type = NavType.StringType; defaultValue = "" }
             )
         ) { backStackEntry ->
             val artist = URLDecoder.decode(backStackEntry.arguments?.getString("artist").orEmpty(), "UTF-8")
@@ -154,6 +158,8 @@ fun NavGraph(
             val totalDuration = totalDurationStr.toIntOrNull()
             android.util.Log.d("NavGraph", "diary_detail - totalDurationStr: '$totalDurationStr', totalDuration: $totalDuration")
             val fromTab = URLDecoder.decode(backStackEntry.arguments?.getString("fromTab").orEmpty(), "UTF-8")
+            val authorUsername = URLDecoder.decode(backStackEntry.arguments?.getString("authorUsername").orEmpty(), "UTF-8")
+            val authorTag = URLDecoder.decode(backStackEntry.arguments?.getString("authorTag").orEmpty(), "UTF-8")
 
             DiaryDetailScreen(
                 navController = navController,
@@ -170,12 +176,20 @@ fun NavGraph(
                 scope = scope,
                 diaryId = diaryId,
                 totalDuration = totalDuration,
-                fromTab = fromTab
+                fromTab = fromTab,
+                authorUsername = authorUsername,
+                authorTag = authorTag
             )
         }
 
-        composable("social") {
-            SocialScreen(navController)
+        composable(
+            route = "social?tab={tab}",
+            arguments = listOf(
+                navArgument("tab") { type = NavType.StringType; defaultValue = "feed" }
+            )
+        ) { backStackEntry ->
+            val tab = backStackEntry.arguments?.getString("tab") ?: "feed"
+            SocialScreen(navController, tab)
         }
 
         composable(

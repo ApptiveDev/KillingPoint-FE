@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
 import com.killingpart.killingpoint.ui.screen.MainScreen.TopPillTabs
@@ -17,8 +18,15 @@ enum class SocialTab {
 }
 
 @Composable
-fun SocialScreen(navController: NavController) {
-    var selectedTab by remember { mutableStateOf(SocialTab.FEED) }
+fun SocialScreen(navController: NavController, initialTab: String = "feed") {
+    var selectedTab by rememberSaveable(initialTab) { 
+        mutableStateOf(
+            when (initialTab) {
+                "friend" -> SocialTab.FRIEND
+                else -> SocialTab.FEED
+            }
+        )
+    }
 
     AppBackground {
         Box(modifier = Modifier.fillMaxSize()) {

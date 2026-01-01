@@ -151,7 +151,7 @@ fun FriendScreen(navController: NavController) {
                                 color = Color(0xFF7B7B7B),
                                 style = TextStyle(
                                     fontFamily = PaperlogyFontFamily,
-                                    fontWeight = FontWeight.Light,
+                                    fontWeight = FontWeight.Medium,
                                     fontSize = 12.sp,
                                     platformStyle = PlatformTextStyle(includeFontPadding = false)
                                 )
@@ -289,7 +289,7 @@ fun FriendScreen(navController: NavController) {
                                     selectedTab == FriendTab.PICKS || user.isMyPick
                                 },
                                 onSubscribeClick = {
-                                    // TODO: userId를 얻는 방법 필요
+
                                     // friendViewModel.addSubscribe(context, user.userId, currentUserId)
                                 }
                             )
@@ -332,7 +332,20 @@ fun FriendItemCard(
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(10.dp)
-            .padding(end=12.dp),
+            .padding(end=12.dp)
+            .clickable {
+                val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                navController.navigate(
+                    "friend_profile" +
+                            "?userId=${user.userId}" +
+                            "&username=$encodedUsername" +
+                            "&tag=$encodedTag" +
+                            "&profileImageUrl=$encodedProfileImageUrl" +
+                            "&isMyPick=${user.isMyPick}"
+                )
+            },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -391,10 +404,10 @@ fun FriendItemCard(
         }
 
         // 버튼 영역
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+//        Row(
+//            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
             // 구독 버튼 (나의 픽이 아닐 때만 표시)
 //            if (!user.isMyPick && !isPickTab && onSubscribeClick != null) {
 //                Text(
@@ -410,36 +423,36 @@ fun FriendItemCard(
 //            }
             
             // 프로필 방문 버튼
-            Box(
-                modifier = Modifier
-                    .background(
-                        color = Color(0xFF262626),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .clickable {
-                        val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
-                        val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
-                        val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
-                        navController.navigate(
-                            "friend_profile" +
-                                    "?userId=${user.userId}" +
-                                    "&username=$encodedUsername" +
-                                    "&tag=$encodedTag" +
-                                    "&profileImageUrl=$encodedProfileImageUrl" +
-                                    "&isMyPick=${user.isMyPick}"
-                        )
-                    }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "프로필 방문",
-                    fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 10.sp,
-                    color = mainGreen
-                )
-            }
-        }
+//            Box(
+//                modifier = Modifier
+//                    .background(
+//                        color = Color(0xFF262626),
+//                        shape = RoundedCornerShape(8.dp)
+//                    )
+//                    .clickable {
+//                        val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+//                        val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+//                        val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+//                        navController.navigate(
+//                            "friend_profile" +
+//                                    "?userId=${user.userId}" +
+//                                    "&username=$encodedUsername" +
+//                                    "&tag=$encodedTag" +
+//                                    "&profileImageUrl=$encodedProfileImageUrl" +
+//                                    "&isMyPick=${user.isMyPick}"
+//                        )
+//                    }
+//                    .padding(horizontal = 12.dp, vertical = 6.dp),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Text(
+//                    text = "프로필 방문",
+//                    fontFamily = PaperlogyFontFamily,
+//                    fontWeight = FontWeight.Medium,
+//                    fontSize = 10.sp,
+//                    color = mainGreen
+//                )
+//            }
+//        }
     }
 }

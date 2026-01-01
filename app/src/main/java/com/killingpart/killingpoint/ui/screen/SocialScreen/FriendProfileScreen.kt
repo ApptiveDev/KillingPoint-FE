@@ -46,6 +46,7 @@ import android.net.Uri
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.filled.Search
+import androidx.activity.compose.BackHandler
 
 enum class FriendProfileTab {
     FEED, FRIEND
@@ -93,6 +94,11 @@ fun FriendProfileScreen(
             // picks 목록 로드하여 isMyPick 상태 확인
             friendViewModel.loadFriends(context, userIdFromToken)
         }
+    }
+
+    // 시스템 뒤로가기 처리 - 네비게이션 스택에서 자동으로 이전 화면으로 이동
+    BackHandler {
+        navController.popBackStack()
     }
 
     AppBackground {
@@ -428,6 +434,11 @@ fun FriendProfileScreen(
 
                                                                             val scopeParam =
                                                                                 "&scope=${diary.scope.name}"
+                                                                            
+                                                                            val authorUsernameParam =
+                                                                                "&authorUsername=${Uri.encode(username)}"
+                                                                            val authorTagParam =
+                                                                                "&authorTag=${Uri.encode(tag)}"
 
                                                                             navController.navigate(
                                                                                 "diary_detail" +
@@ -479,7 +490,9 @@ fun FriendProfileScreen(
                                                                                         scopeParam +
                                                                                         diaryIdParam +
                                                                                         totalDurationParam +
-                                                                                        "&fromTab=social"
+                                                                                        "&fromTab=social" +
+                                                                                        authorUsernameParam +
+                                                                                        authorTagParam
                                                                             )
                                                                         }
                                                                     )
