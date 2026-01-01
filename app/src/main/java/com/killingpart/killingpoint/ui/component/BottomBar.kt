@@ -78,6 +78,23 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
 //        }
         Column (
             verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+            Image(
+                painter = painterResource(id = R.drawable.navi_add),
+                contentDescription = "추가 네비게이션 바",
+                modifier = Modifier.size(36.dp).clickable { navController.navigate("add_music") }
+            )
+            Text(
+                text = "추가",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Light,
+                fontSize = 10.sp,
+                color = Color.White
+            )
+        }
+        Column (
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.clickable { navController.navigate("social") }
         ){
@@ -94,22 +111,6 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
                 color = Color.White
             )
         }
-        Column (
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Image(
-                painter = painterResource(id = R.drawable.navi_add),
-                contentDescription = "추가 네비게이션 바",
-                modifier = Modifier.size(36.dp).clickable { navController.navigate("add_music") }
-            )
-            Text(
-                text = "추가",
-                fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.Light,
-                fontSize = 10.sp,
-                color = Color.White
-            )
-        }
+
     }
 }
