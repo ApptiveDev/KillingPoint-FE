@@ -78,7 +78,7 @@ fun DiaryCard(
                 )
                 Spacer(modifier = Modifier.width(3.dp))
                 Text(
-                    text = "25", // TODO: 실제 좋아요 수로 교체
+                    text = "${diary.likeCount}",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontFamily = PaperlogyFontFamily,

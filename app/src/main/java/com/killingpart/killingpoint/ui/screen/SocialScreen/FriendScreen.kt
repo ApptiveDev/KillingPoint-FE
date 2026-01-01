@@ -289,7 +289,7 @@ fun FriendScreen(navController: NavController) {
                                     selectedTab == FriendTab.PICKS || user.isMyPick
                                 },
                                 onSubscribeClick = {
-                                    // TODO: userId를 얻는 방법 필요
+
                                     // friendViewModel.addSubscribe(context, user.userId, currentUserId)
                                 }
                             )
