@@ -642,6 +642,7 @@ fun CalendarGrid(
                         val date = yearMonth.atDay(dayCounter)
                         val hasDiary = diariesByDate.containsKey(date)
                         val isSelected = selectedDate == date
+                        val isToday = date == LocalDate.now()
                         val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
                         val isSaturday = date.dayOfWeek == DayOfWeek.SATURDAY
                         
@@ -649,6 +650,7 @@ fun CalendarGrid(
                             day = dayCounter,
                             hasDiary = hasDiary,
                             isSelected = isSelected,
+                            isToday = isToday,
                             isSunday = isSunday,
                             isSaturday = isSaturday,
                             isCurrentMonth = true,
@@ -671,6 +673,7 @@ fun CalendarDayCell(
     day: Int,
     hasDiary: Boolean,
     isSelected: Boolean,
+    isToday: Boolean = false,
     isSunday: Boolean,
     isSaturday: Boolean,
     isCurrentMonth: Boolean,
@@ -682,6 +685,16 @@ fun CalendarDayCell(
             .background(
                 if (isSelected) mainGreen // 선택된 날짜는 노란 배경
                 else Color.Transparent
+            )
+            .then(
+                if (isToday && !isSelected) {
+                    Modifier.border(
+                        width = 1.5.dp,
+                        color = mainGreen,
+                    )
+                } else {
+                    Modifier
+                }
             )
             .clickable { onClick() }
     ) {
@@ -713,7 +726,7 @@ fun CalendarDayCell(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .size(22.dp)
-                    .offset(y = (-5).dp) // 아이콘을 위로 2dp 올림
+                    .offset(y = (-7).dp) //
 
             )
         }
