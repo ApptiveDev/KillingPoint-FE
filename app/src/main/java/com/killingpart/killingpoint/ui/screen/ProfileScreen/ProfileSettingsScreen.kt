@@ -57,6 +57,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.focus.focusModifier
+import androidx.activity.compose.BackHandler
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -80,6 +81,16 @@ fun ProfileSettingsScreen(
     
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
+    }
+    
+    // 로그아웃/회원탈퇴 모달이 열려있을 때 뒤로가기 처리
+    BackHandler(enabled = showLogoutModal || showUnregisterModal) {
+        if (showLogoutModal) {
+            showLogoutModal = false
+        }
+        if (showUnregisterModal) {
+            showUnregisterModal = false
+        }
     }
     
     Box(

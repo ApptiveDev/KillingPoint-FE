@@ -388,9 +388,10 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                 topOffset = topOffset,
                 maxHeight = maxHeight,
                 onLogout = {
-                    // 로그아웃/회원탈퇴 후 로그인 화면으로 이동
+                    // 로그아웃/회원탈퇴 후 로그인 화면으로 이동 - 모든 네비게이션 스택 정리
                     navController.navigate("home") {
-                        popUpTo("home") { inclusive = true }
+                        popUpTo(0) { inclusive = false }
+                        launchSingleTop = true
                     }
                 }
             )
