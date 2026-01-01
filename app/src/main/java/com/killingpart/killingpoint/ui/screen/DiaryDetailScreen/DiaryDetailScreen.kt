@@ -83,7 +83,9 @@ fun DiaryDetailScreen(
     scope: String = "",
     diaryId: Long? = null,
     totalDuration: Int? = null, // YouTube 비디오 전체 길이 (초 단위)
-    fromTab: String = "" // 어느 탭에서 왔는지 (profile, calendar, play)
+    fromTab: String = "", // 어느 탭에서 왔는지 (profile, calendar, play)
+    authorUsername: String = "", // 일기 작성자 이름 (친구 프로필에서 올 때 사용)
+    authorTag: String = "" // 일기 작성자 태그 (친구 프로필에서 올 때 사용)
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
@@ -339,10 +341,16 @@ fun DiaryDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = when (val state = userState) {
-                                is UserUiState.Success -> "@${state.userInfo.username}"
-                                is UserUiState.Loading -> "@KILLINGPART"
-                                is UserUiState.Error -> "@KILLINGPART"
+                            text = if (authorUsername.isNotEmpty() && authorTag.isNotEmpty()) {
+                                // 친구 프로필에서 온 경우 친구 이름 표시
+                                "@$authorTag"
+                            } else {
+                                // 내 일기인 경우 내 이름 표시
+                                when (val state = userState) {
+                                    is UserUiState.Success -> "@${state.userInfo.tag}"
+                                    is UserUiState.Loading -> "@KILLINGPART"
+                                    is UserUiState.Error -> "@KILLINGPART"
+                                }
                             },
                             color = Color.White,
                             fontFamily = PaperlogyFontFamily,

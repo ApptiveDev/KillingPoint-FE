@@ -434,6 +434,11 @@ fun FriendProfileScreen(
 
                                                                             val scopeParam =
                                                                                 "&scope=${diary.scope.name}"
+                                                                            
+                                                                            val authorUsernameParam =
+                                                                                "&authorUsername=${Uri.encode(username)}"
+                                                                            val authorTagParam =
+                                                                                "&authorTag=${Uri.encode(tag)}"
 
                                                                             navController.navigate(
                                                                                 "diary_detail" +
@@ -485,7 +490,9 @@ fun FriendProfileScreen(
                                                                                         scopeParam +
                                                                                         diaryIdParam +
                                                                                         totalDurationParam +
-                                                                                        "&fromTab=social"
+                                                                                        "&fromTab=social" +
+                                                                                        authorUsernameParam +
+                                                                                        authorTagParam
                                                                             )
                                                                         }
                                                                     )
