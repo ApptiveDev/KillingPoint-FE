@@ -13,6 +13,7 @@ import com.killingpart.killingpoint.data.model.TestAuthResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
+import com.killingpart.killingpoint.data.model.UserStatistics
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -104,13 +105,15 @@ interface ApiService {
     @GET("subscribes/{userId}")
     suspend fun getSubscribes(
         @Header("Authorization") accessToken: String,
-        @Path("userId") userId: Long
+        @Path("userId") userId: Long,
+        @Query("size") size:Int = 5
     ): SubscribeResponse
 
     @GET("subscribes/{userId}/fans")
     suspend fun getFans(
         @Header("Authorization") accessToken: String,
-        @Path("userId") userId: Long
+        @Path("userId") userId: Long,
+        @Query("size") size:Int = 5
     ): SubscribeResponse
 
     @POST("subscribes/{subscribeToUserId}")
@@ -140,4 +143,10 @@ interface ApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 5
     ): MyDiaries
+
+    @GET("users/{userId}/statics")
+    suspend fun getUserStatistics(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long
+    ): UserStatistics
 }

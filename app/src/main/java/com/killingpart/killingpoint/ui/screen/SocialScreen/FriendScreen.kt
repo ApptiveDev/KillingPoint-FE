@@ -61,19 +61,38 @@ fun FriendScreen(navController: NavController) {
     val userState by userViewModel.state.collectAsState()
     val friendViewModel: FriendViewModel = viewModel()
     val friendState by friendViewModel.state.collectAsState()
+    
+    // 통계 상태 관리
+    var userStatistics by remember { mutableStateOf<com.killingpart.killingpoint.data.model.UserStatistics?>(null) }
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
     }
 
-    // JWT 토큰에서 userId 추출
+    // JWT 토큰에서 userId 추출 및 통계 로드
     LaunchedEffect(userState) {
         when (userState) {
             is UserUiState.Success -> {
                 val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
                 val userId = repo.getUserIdFromToken()
                 if (userId != null) {
-                    friendViewModel.loadFriends(context, userId)
+                    // 통계 먼저 로드
+                    repo.getUserStatistics(userId)
+                        .onSuccess { statistics ->
+                            userStatistics = statistics
+                            // 통계 로드 후 친구 목록 로드
+                            friendViewModel.loadFriends(
+                                context, 
+                                userId, 
+                                statistics.pickCount, 
+                                statistics.fanCount
+                            )
+                        }
+                        .onFailure { e ->
+                            android.util.Log.e("FriendScreen", "통계 조회 실패: ${e.message}")
+                            // 통계 조회 실패해도 기본값으로 친구 목록 로드
+                            friendViewModel.loadFriends(context, userId)
+                        }
                 } else {
                     // 토큰에서 userId를 추출할 수 없으면 에러 상태로 설정
                     android.util.Log.e("FriendScreen", "userId를 토큰에서 추출할 수 없습니다")
@@ -193,7 +212,7 @@ fun FriendScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
-                text = "${friendState.let {
+                text = "${userStatistics?.pickCount ?: friendState.let {
                         if (it is FriendUiState.Success) it.picks?.page?.totalElements ?: 0 else 0
                     }}",
                 fontFamily = PaperlogyFontFamily,
@@ -215,7 +234,7 @@ fun FriendScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
-                text = "${friendState.let { 
+                text = "${userStatistics?.fanCount ?: friendState.let { 
                     if (it is FriendUiState.Success) it.fans?.page?.totalElements ?: 0 else 0 
                 }}",
                 fontFamily = PaperlogyFontFamily,
@@ -272,7 +291,8 @@ fun FriendScreen(navController: NavController) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .weight(1f),
+                            .weight(1f)
+                            .padding(bottom = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         items(friends) { user ->

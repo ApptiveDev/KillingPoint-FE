@@ -41,8 +41,6 @@ import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.UserUiState
 import com.killingpart.killingpoint.ui.viewmodel.UserViewModel
-import com.killingpart.killingpoint.ui.viewmodel.FriendViewModel
-import com.killingpart.killingpoint.ui.viewmodel.FriendUiState
 import com.killingpart.killingpoint.data.repository.AuthRepository
 
 @Composable
@@ -55,16 +53,27 @@ fun OuterBox(
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
-    val friendViewModel: FriendViewModel = viewModel()
-    val friendState by friendViewModel.state.collectAsState()
+    
+    // 통계 상태 관리
+    var userStatistics by remember { mutableStateOf<com.killingpart.killingpoint.data.model.UserStatistics?>(null) }
+    var isLoadingStatistics by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
-        // 현재 사용자 ID 가져와서 팬덤과 PICKS 수 로드
+        // 현재 사용자 ID 가져와서 통계 로드
         val repo = AuthRepository(context)
         val userId = repo.getUserIdFromToken()
         if (userId != null) {
-            friendViewModel.loadFriends(context, userId)
+            isLoadingStatistics = true
+            repo.getUserStatistics(userId)
+                .onSuccess { statistics ->
+                    userStatistics = statistics
+                    isLoadingStatistics = false
+                }
+                .onFailure { e ->
+                    android.util.Log.e("OuterBox", "통계 조회 실패: ${e.message}")
+                    isLoadingStatistics = false
+                }
         }
     }
 
@@ -166,7 +175,7 @@ fun OuterBox(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "${diaries.size}",
+                                    text = "${userStatistics?.killingPartCount ?: diaries.size}",
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
                                     fontSize = 16.sp,
@@ -185,15 +194,11 @@ fun OuterBox(
                             }
                             Spacer(modifier=Modifier.width(10.dp))
                             // 팬덤
-                            val fansCount = when (val state = friendState) {
-                                is FriendUiState.Success -> state.fans?.page?.totalElements ?: 0
-                                else -> 0
-                            }
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "$fansCount",
+                                    text = "${userStatistics?.fanCount ?: 0}",
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
                                     fontSize = 16.sp,
@@ -212,15 +217,11 @@ fun OuterBox(
                             }
                             Spacer(modifier=Modifier.width(12.dp))
                             // PICKS
-                            val picksCount = when (val state = friendState) {
-                                is FriendUiState.Success -> state.picks?.page?.totalElements ?: 0
-                                else -> 0
-                            }
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "$picksCount",
+                                    text = "${userStatistics?.pickCount ?: 0}",
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
                                     fontSize = 16.sp,
