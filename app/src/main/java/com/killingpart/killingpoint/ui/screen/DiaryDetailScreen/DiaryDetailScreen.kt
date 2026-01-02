@@ -66,6 +66,7 @@ import com.killingpart.killingpoint.data.spotify.SimpleTrack
 import java.net.URLDecoder
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.activity.compose.BackHandler
 
 @Composable
 fun DiaryDetailScreen(
@@ -122,6 +123,74 @@ fun DiaryDetailScreen(
         createDate.split("T")[0]
     }
 
+    // 시스템 뒤로가기 처리 - 네비게이션 스택 확인
+    BackHandler {
+        val previousEntry = navController.previousBackStackEntry
+        if (previousEntry != null) {
+            // 이전 화면의 route 확인
+            val previousRoute = previousEntry.destination.route
+            // 이전 화면이 main이면 fromTab에 따라 올바른 탭으로 navigate
+            if (previousRoute?.startsWith("main") == true) {
+                when (fromTab) {
+                    "profile" -> {
+                        navController.navigate("main?tab=profile") {
+                            popUpTo("main") { inclusive = false }
+                        }
+                    }
+                    "calendar" -> {
+                        val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
+                        navController.navigate("main?tab=calendar$selectedDateParam") {
+                            popUpTo("main") { inclusive = false }
+                        }
+                    }
+                    "play" -> {
+                        navController.navigate("main?tab=play") {
+                            popUpTo("main") { inclusive = false }
+                        }
+                    }
+                    else -> {
+                        navController.popBackStack()
+                    }
+                }
+            } else {
+                // 이전 화면이 main이 아니면 (예: friend_profile) 네비게이션 스택에서 pop
+                navController.popBackStack()
+            }
+        } else {
+            // 이전 화면이 없으면 fromTab에 따라 main으로 이동
+            when (fromTab) {
+                "profile" -> {
+                    navController.navigate("main?tab=profile") {
+                        popUpTo("main") { inclusive = false }
+                    }
+                }
+                "calendar" -> {
+                    val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
+                    navController.navigate("main?tab=calendar$selectedDateParam") {
+                        popUpTo("main") { inclusive = false }
+                    }
+                }
+                "play" -> {
+                    navController.navigate("main?tab=play") {
+                        popUpTo("main") { inclusive = false }
+                    }
+                }
+                else -> {
+                    if (selectedDate.isNotEmpty()) {
+                        val selectedDateParam = "&selectedDate=${android.net.Uri.encode(selectedDate)}"
+                        navController.navigate("main?tab=calendar$selectedDateParam") {
+                            popUpTo("main") { inclusive = false }
+                        }
+                    } else {
+                        navController.navigate("main?tab=profile") {
+                            popUpTo("main") { inclusive = false }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     val diary = remember(diaryId, artist, musicTitle, albumImageUrl, videoUrl, duration, start, end, scope, totalDuration) {
         val scopeEnum = try {
             Scope.valueOf(scope.ifEmpty { "PRIVATE" })
@@ -158,32 +227,67 @@ fun DiaryDetailScreen(
             ) {
                 IconButton(
                     onClick = {
-                        when (fromTab) {
-                            "profile" -> {
-                                navController.navigate("main?tab=profile") {
-                                    popUpTo("main") { inclusive = false }
+                        // 네비게이션 스택 확인
+                        val previousEntry = navController.previousBackStackEntry
+                        if (previousEntry != null) {
+                            // 이전 화면의 route 확인
+                            val previousRoute = previousEntry.destination.route
+                            // 이전 화면이 main이면 fromTab에 따라 올바른 탭으로 navigate
+                            if (previousRoute?.startsWith("main") == true) {
+                                when (fromTab) {
+                                    "profile" -> {
+                                        navController.navigate("main?tab=profile") {
+                                            popUpTo("main") { inclusive = false }
+                                        }
+                                    }
+                                    "calendar" -> {
+                                        val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
+                                        navController.navigate("main?tab=calendar$selectedDateParam") {
+                                            popUpTo("main") { inclusive = false }
+                                        }
+                                    }
+                                    "play" -> {
+                                        navController.navigate("main?tab=play") {
+                                            popUpTo("main") { inclusive = false }
+                                        }
+                                    }
+                                    else -> {
+                                        navController.popBackStack()
+                                    }
                                 }
+                            } else {
+                                // 이전 화면이 main이 아니면 (예: friend_profile) 네비게이션 스택에서 pop
+                                navController.popBackStack()
                             }
-                            "calendar" -> {
-                                val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
-                                navController.navigate("main?tab=calendar$selectedDateParam") {
-                                    popUpTo("main") { inclusive = false }
+                        } else {
+                            // 이전 화면이 없으면 fromTab에 따라 main으로 이동
+                            when (fromTab) {
+                                "profile" -> {
+                                    navController.navigate("main?tab=profile") {
+                                        popUpTo("main") { inclusive = false }
+                                    }
                                 }
-                            }
-                            "play" -> {
-                                navController.navigate("main?tab=play") {
-                                    popUpTo("main") { inclusive = false }
-                                }
-                            }
-                            else -> {
-                                if (selectedDate.isNotEmpty()) {
-                                    val selectedDateParam = "&selectedDate=${android.net.Uri.encode(selectedDate)}"
+                                "calendar" -> {
+                                    val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
                                     navController.navigate("main?tab=calendar$selectedDateParam") {
                                         popUpTo("main") { inclusive = false }
                                     }
-                                } else {
-                                    navController.navigate("main?tab=profile") {
+                                }
+                                "play" -> {
+                                    navController.navigate("main?tab=play") {
                                         popUpTo("main") { inclusive = false }
+                                    }
+                                }
+                                else -> {
+                                    if (selectedDate.isNotEmpty()) {
+                                        val selectedDateParam = "&selectedDate=${android.net.Uri.encode(selectedDate)}"
+                                        navController.navigate("main?tab=calendar$selectedDateParam") {
+                                            popUpTo("main") { inclusive = false }
+                                        }
+                                    } else {
+                                        navController.navigate("main?tab=profile") {
+                                            popUpTo("main") { inclusive = false }
+                                        }
                                     }
                                 }
                             }
