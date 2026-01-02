@@ -81,14 +81,19 @@ fun parseDurationToSeconds(duration: String): Int {
 fun RunMusicBox(
     currentIndex: Int,
     currentDiary: Diary?,
-    isPlaying: Boolean? = null
+    isPlaying: Boolean? = null,
+    authorUsername: String? = null,
+    authorTag: String? = null,
+    authorProfileImageUrl: String? = null
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
 
     LaunchedEffect(Unit) {
-        userViewModel.loadUserInfo(context)
+        if (authorUsername == null) {
+            userViewModel.loadUserInfo(context)
+        }
     }
 
 
@@ -105,39 +110,52 @@ fun RunMusicBox(
                 modifier = Modifier.padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                when (val s = userState) {
-                    is UserUiState.Success -> {
-                        AsyncImage(
-                            model = s.userInfo.profileImageUrl,
-                            contentDescription = "프로필 사진",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(RoundedCornerShape(100))
-                                .border(3.dp, mainGreen, RoundedCornerShape(50)),
-                            placeholder = painterResource(id = R.drawable.default_profile),
-                            error = painterResource(id = R.drawable.default_profile)
-                        )
-                    }
-                    else -> {
-                        Image(
-                            painter = painterResource(id = R.drawable.default_profile),
-                            contentDescription = "프로필 사진",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(50.dp)
-                                .clip(RoundedCornerShape(100))
-                                .border(3.dp, mainGreen, RoundedCornerShape(50))
-                        )
+                if (authorProfileImageUrl != null) {
+                    AsyncImage(
+                        model = authorProfileImageUrl,
+                        contentDescription = "프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(100))
+                            .border(3.dp, mainGreen, RoundedCornerShape(50)),
+                        placeholder = painterResource(id = R.drawable.default_profile),
+                        error = painterResource(id = R.drawable.default_profile)
+                    )
+                } else {
+                    when (val s = userState) {
+                        is UserUiState.Success -> {
+                            AsyncImage(
+                                model = s.userInfo.profileImageUrl,
+                                contentDescription = "프로필 사진",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(RoundedCornerShape(100))
+                                    .border(3.dp, mainGreen, RoundedCornerShape(50)),
+                                placeholder = painterResource(id = R.drawable.default_profile),
+                                error = painterResource(id = R.drawable.default_profile)
+                            )
+                        }
+                        else -> {
+                            Image(
+                                painter = painterResource(id = R.drawable.default_profile),
+                                contentDescription = "프로필 사진",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(RoundedCornerShape(100))
+                                    .border(3.dp, mainGreen, RoundedCornerShape(50))
+                            )
+                        }
                     }
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
                 
-                // username과 tag (클릭 가능 - RunMusicBox에서는 클릭 불가)
                 Column {
                     Text(
-                        text = when (val s = userState) {
+                        text = authorUsername ?: when (val s = userState) {
                             is UserUiState.Success -> s.userInfo.username
                             is UserUiState.Loading -> "LOADING..."
                             is UserUiState.Error -> "KILLING_PART"
@@ -149,7 +167,7 @@ fun RunMusicBox(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = when (val s = userState) {
+                        text = if (authorTag != null) "@$authorTag" else when (val s = userState) {
                             is UserUiState.Success -> "@${s.userInfo.tag}"
                             is UserUiState.Loading -> "@LOADING"
                             is UserUiState.Error -> "@KILLING_PART"

@@ -13,6 +13,7 @@ import com.killingpart.killingpoint.data.model.TestAuthResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
+import com.killingpart.killingpoint.data.model.FeedResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -140,4 +141,11 @@ interface ApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 5
     ): MyDiaries
+
+    @GET("diaries/my/feeds")
+    suspend fun getFeeds(
+        @Header("Authorization") accessToken: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 5
+    ): FeedResponse
 }

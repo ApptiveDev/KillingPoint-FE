@@ -16,6 +16,7 @@ import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
+import com.killingpart.killingpoint.data.model.FeedResponse
 import com.killingpart.killingpoint.data.remote.RetrofitClient
 import com.killingpart.killingpoint.data.remote.ApiService
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
@@ -189,6 +190,26 @@ class AuthRepository(
                 val code = e.code()
                 val msg = e.response()?.errorBody()?.string().orEmpty()
                 throw IllegalStateException("다이어리 조회 실패 ($code): $msg")
+            }
+        }
+
+    suspend fun getFeeds(page: Int = 0, size: Int = 5): FeedResponse =
+        withContext(Dispatchers.IO) {
+            try {
+                val accessToken = getAccessToken()
+                    ?: throw IllegalStateException("액세스 토큰이 없습니다")
+                val result = api.getFeeds("Bearer $accessToken", page, size)
+                
+                android.util.Log.d("AuthRepository", "피드 조회 성공: page=$page, size=$size, totalElements=${result.page.totalElements}")
+                result.content.forEachIndexed { index, feed ->
+                    android.util.Log.d("AuthRepository", "Feed[$index]: diaryId=${feed.diaryId}, userId=${feed.userId}, username=${feed.username}, tag=${feed.tag}, musicTitle=${feed.musicTitle}, artist=${feed.artist}")
+                }
+                
+                result
+            } catch (e: HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("피드 조회 실패 ($code): $msg")
             }
         }
 

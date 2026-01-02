@@ -325,7 +325,15 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         val videoTotalDuration = currentDiary?.totalDuration
                         val startTime = currentDiary?.start?.toFloatOrNull()?.toInt() ?: 0
                         val durationTime = currentDiary?.duration?.toFloatOrNull()?.toInt() ?: 0
-                        val totalTime = videoTotalDuration ?: 180
+                        val totalTime = videoTotalDuration ?: 18
+
+                        MusicTimeBar(
+                            title = currentDiary?.musicTitle,
+                            start = startTime,
+                            during = durationTime,
+                            total = totalTime
+                        )
+
                         MusicListBox(
                             currentIndex = currentIndex,
                             expanded = listExpanded,
@@ -333,13 +341,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                 listExpanded = willOpen
                             },
                             diaries = diaries
-                        )
-
-                        MusicTimeBar(
-                            title = currentDiary?.musicTitle,
-                            start = startTime,
-                            during = durationTime,
-                            total = totalTime
                         )
                     }
                 }
