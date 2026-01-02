@@ -217,6 +217,29 @@ fun FriendProfileScreen(
 //                                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
+                                                    // 킬링파트
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                    ) {
+                                                        Text(
+                                                            text = "${state.diaries?.content?.size ?: 0}",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 16.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                        Spacer(modifier=Modifier.height(3.dp))
+                                                        Text(
+                                                            text = "킬링파트",
+                                                            fontFamily = PaperlogyFontFamily,
+                                                            fontWeight = FontWeight.W400,
+                                                            fontSize = 10.sp,
+                                                            color = mainGreen,
+                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                                        )
+                                                    }
+                                                    Spacer(modifier=Modifier.width(10.dp))
                                                     // 팬덤
                                                     Column(
                                                         horizontalAlignment = Alignment.CenterHorizontally
@@ -239,7 +262,7 @@ fun FriendProfileScreen(
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
                                                     }
-                                                    Spacer(modifier=Modifier.width(16.dp))
+                                                    Spacer(modifier=Modifier.width(12.dp))
                                                     // PICKS
                                                     Column(
                                                         horizontalAlignment = Alignment.CenterHorizontally
@@ -263,30 +286,9 @@ fun FriendProfileScreen(
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
                                                     }
-                                                    Spacer(modifier=Modifier.width(10.dp))
 
-                                                    // 킬링파트
-                                                    Column(
-                                                        horizontalAlignment = Alignment.CenterHorizontally
-                                                    ) {
-                                                        Text(
-                                                            text = "${state.diaries?.content?.size ?: 0}",
-                                                            fontFamily = PaperlogyFontFamily,
-                                                            fontWeight = FontWeight.W400,
-                                                            fontSize = 16.sp,
-                                                            color = mainGreen,
-                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                        )
-                                                        Spacer(modifier=Modifier.height(3.dp))
-                                                        Text(
-                                                            text = "킬링파트",
-                                                            fontFamily = PaperlogyFontFamily,
-                                                            fontWeight = FontWeight.W400,
-                                                            fontSize = 10.sp,
-                                                            color = mainGreen,
-                                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                                        )
-                                                    }
+
+
                                                 }
                                             }
 

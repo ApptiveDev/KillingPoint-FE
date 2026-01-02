@@ -161,6 +161,29 @@ fun OuterBox(
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            // 킬링파트
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${diaries.size}",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "킬링파트",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                            Spacer(modifier=Modifier.width(10.dp))
                             // 팬덤
                             val fansCount = when (val state = friendState) {
                                 is FriendUiState.Success -> state.fans?.page?.totalElements ?: 0
@@ -187,7 +210,7 @@ fun OuterBox(
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                 )
                             }
-                            Spacer(modifier=Modifier.width(16.dp))
+                            Spacer(modifier=Modifier.width(12.dp))
                             // PICKS
                             val picksCount = when (val state = friendState) {
                                 is FriendUiState.Success -> state.picks?.page?.totalElements ?: 0
@@ -214,29 +237,8 @@ fun OuterBox(
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                 )
                             }
-                            Spacer(modifier=Modifier.width(10.dp))
-                            // 킬링파트
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "${diaries.size}",
-                                    fontFamily = PaperlogyFontFamily,
-                                    fontWeight = FontWeight.W400,
-                                    fontSize = 16.sp,
-                                    color = mainGreen,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                                Spacer(modifier=Modifier.height(3.dp))
-                                Text(
-                                    text = "킬링파트",
-                                    fontFamily = PaperlogyFontFamily,
-                                    fontWeight = FontWeight.W400,
-                                    fontSize = 10.sp,
-                                    color = mainGreen,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                            }
+
+
                         }
                     }
                     Row(
