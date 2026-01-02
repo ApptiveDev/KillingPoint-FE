@@ -58,6 +58,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.focus.focusModifier
 import androidx.activity.compose.BackHandler
+import androidx.navigation.NavController
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -67,7 +68,8 @@ fun ProfileSettingsScreen(
     onDismiss: () -> Unit,
     topOffset: androidx.compose.ui.unit.Dp = 0.dp,
     maxHeight: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    navController: NavController? = null
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
@@ -90,6 +92,17 @@ fun ProfileSettingsScreen(
         }
         if (showUnregisterModal) {
             showUnregisterModal = false
+        }
+    }
+    
+    // 시스템 뒤로가기 처리 - 네비게이션 스택 확인
+    BackHandler(enabled = !showLogoutModal && !showUnregisterModal) {
+        if (navController != null && navController.previousBackStackEntry != null) {
+            // 이전 화면이 있으면 네비게이션 스택에서 pop
+            navController.popBackStack()
+        } else {
+            // 이전 화면이 없으면 onDismiss 호출
+            onDismiss()
         }
     }
     
@@ -129,7 +142,8 @@ fun ProfileSettingsScreen(
                     userViewModel.loadUserInfo(context)
                 },
                 onLogoutClick = { showLogoutModal = true },
-                onUnregisterClick = { showUnregisterModal = true }
+                onUnregisterClick = { showUnregisterModal = true },
+                navController = navController
             )
         }
         
@@ -183,7 +197,8 @@ private fun ProfileSettingsContent(
     onDismiss: () -> Unit,
     onTagUpdateSuccess: () -> Unit,
     onLogoutClick: () -> Unit,
-    onUnregisterClick: () -> Unit
+    onUnregisterClick: () -> Unit,
+    navController: NavController? = null
 ) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -508,7 +523,16 @@ private fun ProfileSettingsContent(
 
                 )
             
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = {
+                // 네비게이션 스택 확인
+                if (navController != null && navController.previousBackStackEntry != null) {
+                    // 이전 화면이 있으면 네비게이션 스택에서 pop
+                    navController.popBackStack()
+                } else {
+                    // 이전 화면이 없으면 onDismiss 호출
+                    onDismiss()
+                }
+            }) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "닫기",
