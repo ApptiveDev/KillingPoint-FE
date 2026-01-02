@@ -726,7 +726,7 @@ fun CalendarDayCell(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .size(22.dp)
-                    .offset(y = (-7).dp) //
+                    .offset(y = (-7).dp) // 아이콘을 위로 2dp 올림
 
             )
         }
