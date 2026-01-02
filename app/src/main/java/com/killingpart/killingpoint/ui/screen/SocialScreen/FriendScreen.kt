@@ -64,6 +64,7 @@ fun FriendScreen(navController: NavController) {
     
     // 통계 상태 관리
     var userStatistics by remember { mutableStateOf<com.killingpart.killingpoint.data.model.UserStatistics?>(null) }
+    var currentUserId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
@@ -76,6 +77,7 @@ fun FriendScreen(navController: NavController) {
                 val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
                 val userId = repo.getUserIdFromToken()
                 if (userId != null) {
+                    currentUserId = userId
                     // 통계 먼저 로드
                     repo.getUserStatistics(userId)
                         .onSuccess { statistics ->
@@ -321,6 +323,7 @@ fun FriendScreen(navController: NavController) {
                             FriendItemCard(
                                 user = user,
                                 navController = navController,
+                                currentUserId = currentUserId,
                                 isPickTab = if (isSearchResult) {
                                     // 검색 결과에서는 user.isMyPick만 확인
                                     user.isMyPick
@@ -361,6 +364,7 @@ fun FriendScreen(navController: NavController) {
 fun FriendItemCard(
     user: com.killingpart.killingpoint.data.model.SubscribeUser,
     navController: NavController,
+    currentUserId: Long? = null,
     isPickTab: Boolean = false,
     onSubscribeClick: (() -> Unit)? = null
 ) {
@@ -374,17 +378,23 @@ fun FriendItemCard(
             .padding(10.dp)
             .padding(end=12.dp)
             .clickable {
-                val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
-                val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
-                val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
-                navController.navigate(
-                    "friend_profile" +
-                            "?userId=${user.userId}" +
-                            "&username=$encodedUsername" +
-                            "&tag=$encodedTag" +
-                            "&profileImageUrl=$encodedProfileImageUrl" +
-                            "&isMyPick=${user.isMyPick}"
-                )
+                // 내 프로필인 경우 main?tab=profile로 이동
+                if (currentUserId != null && user.userId == currentUserId) {
+                    navController.navigate("main?tab=profile")
+                } else {
+                    // 다른 사용자 프로필인 경우 friend_profile로 이동
+                    val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                    val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                    val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                    navController.navigate(
+                        "friend_profile" +
+                                "?userId=${user.userId}" +
+                                "&username=$encodedUsername" +
+                                "&tag=$encodedTag" +
+                                "&profileImageUrl=$encodedProfileImageUrl" +
+                                "&isMyPick=${user.isMyPick}"
+                    )
+                }
             },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
