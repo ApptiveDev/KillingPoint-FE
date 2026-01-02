@@ -1,0 +1,257 @@
+package com.killingpart.killingpoint.ui.screen.SocialScreen
+
+import android.os.Build
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.runtime.key
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.zIndex
+import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import com.killingpart.killingpoint.R
+import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.data.model.FeedDiary
+import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
+import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
+import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
+import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import com.killingpart.killingpoint.ui.theme.mainGreen
+import java.net.URLEncoder
+
+@Composable
+fun FeedRunMusicBox(
+    feedDiary: FeedDiary,
+    navController: NavController,
+    onLikeClick: (() -> Unit)? = null
+) {
+    val context = LocalContext.current
+    val diary = feedDiary.toDiary
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    
+    var isLiked by remember { mutableStateOf(feedDiary.isLiked) }
+    var likeCount by remember { mutableStateOf(feedDiary.likeCount) }
+
+    val videoTotalDuration = diary.totalDuration ?: 180
+    val startTime = diary.start.toFloatOrNull()?.toInt() ?: 0
+    val durationTime = diary.duration.toFloatOrNull()?.toInt() ?: 0
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    AsyncImage(
+                        model = feedDiary.profileImageUrl,
+                        contentDescription = "프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, mainGreen, CircleShape),
+                        placeholder = painterResource(id = R.drawable.default_profile),
+                        error = painterResource(id = R.drawable.default_profile)
+                    )
+                    
+                    Column {
+                        Text(
+                            text = feedDiary.username,
+                            fontFamily = PaperlogyFontFamily,
+                            fontWeight = FontWeight.W400,
+                            fontSize = 12.sp,
+                            color = mainGreen
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "@${feedDiary.tag}",
+                            fontFamily = PaperlogyFontFamily,
+                            fontWeight = FontWeight.W400,
+                            fontSize = 11.sp,
+                            color = mainGreen
+                        )
+                    }
+                }
+                
+                Box(
+                    modifier = Modifier
+                        .background(
+                            color = Color(0xFF262626),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .clickable {
+                            val encodedUsername = URLEncoder.encode(feedDiary.username, "UTF-8")
+                            val encodedTag = URLEncoder.encode(feedDiary.tag, "UTF-8")
+                            val encodedProfileImageUrl = URLEncoder.encode(feedDiary.profileImageUrl, "UTF-8")
+                            navController.navigate(
+                                "friend_profile" +
+                                        "?userId=${feedDiary.userId}" +
+                                        "&username=$encodedUsername" +
+                                        "&tag=$encodedTag" +
+                                        "&profileImageUrl=$encodedProfileImageUrl" +
+                                        "&isMyPick=false"
+                            )
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "프로필 방문",
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 10.sp,
+                        color = mainGreen
+                    )
+                }
+            }
+
+            key(diary.videoUrl) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(scrollState)
+                ) {
+                    val startSeconds = diary.start.toFloatOrNull() ?: 0f
+                    val durationSeconds = diary.duration.toFloatOrNull() ?: 0f
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        YouTubePlayerBox(
+                            diary,
+                            startSeconds,
+                            durationSeconds,
+                            isPlayingState = false
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.clickable {
+                                val newLikedState = !isLiked
+                                isLiked = newLikedState
+                                likeCount = if (newLikedState) likeCount + 1 else (likeCount - 1).coerceAtLeast(0)
+                                onLikeClick?.invoke()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = "좋아요",
+                                tint = if (isLiked) mainGreen else Color(0xFF6A6B6C),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = likeCount.toString(),
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                                color = if (isLiked) mainGreen else Color(0xFF6A6B6C)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        DiaryBox(diary)
+                    }
+
+                    Spacer(modifier = Modifier.height(100.dp))
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .zIndex(1f)
+        ) {
+            MusicTimeBar(
+                title = diary.musicTitle,
+                start = startTime,
+                during = durationTime,
+                total = videoTotalDuration
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .size(316.dp)
+                .offset(y = 170.dp)
+                .background(color = Color.Transparent, shape = RoundedCornerShape(16.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        compositingStrategy = CompositingStrategy.Offscreen
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            renderEffect = android.graphics.RenderEffect
+                                .createBlurEffect(16f, 16f, android.graphics.Shader.TileMode.CLAMP)
+                                .asComposeRenderEffect()
+                        }
+                    }
+                    .background(Color.Black.copy(alpha = 0.2f))
+            )
+        }
+    }
+}
+

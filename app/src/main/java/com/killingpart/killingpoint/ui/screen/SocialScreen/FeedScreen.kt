@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.killingpart.killingpoint.ui.screen.MainScreen.RunMusicBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.FeedUiState
@@ -116,13 +115,9 @@ fun FeedScreen(navController: NavController) {
                                 .height(screenHeight)
                         ) {
                             if (isCurrentItem) {
-                                RunMusicBox(
-                                    currentIndex = index,
-                                    currentDiary = feedDiary.toDiary,
-                                    isPlaying = false,
-                                    authorUsername = feedDiary.username,
-                                    authorTag = feedDiary.tag,
-                                    authorProfileImageUrl = feedDiary.profileImageUrl
+                                FeedRunMusicBox(
+                                    feedDiary = feedDiary,
+                                    navController = navController
                                 )
                             }
                         }
