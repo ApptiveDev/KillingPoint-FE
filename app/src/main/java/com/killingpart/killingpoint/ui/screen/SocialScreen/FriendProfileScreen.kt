@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +48,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.filled.Search
 import androidx.activity.compose.BackHandler
+import kotlinx.coroutines.launch
 
 enum class FriendProfileTab {
     FEED, FRIEND
@@ -65,6 +67,7 @@ fun FriendProfileScreen(
     var currentUserId by remember { mutableStateOf(0L) }
     
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val profileViewModel: FriendProfileViewModel = viewModel()
     val profileState by profileViewModel.state.collectAsState()
     val friendViewModel: FriendViewModel = viewModel()
@@ -91,8 +94,22 @@ fun FriendProfileScreen(
         val userIdFromToken = repo.getUserIdFromToken()
         if (userIdFromToken != null) {
             currentUserId = userIdFromToken
-            // picks 목록 로드하여 isMyPick 상태 확인
-            friendViewModel.loadFriends(context, userIdFromToken)
+            // 통계를 가져와서 전체 picks 목록 로드
+            repo.getUserStatistics(userIdFromToken)
+                .onSuccess { statistics ->
+                    // picks 목록 로드하여 isMyPick 상태 확인 (전체 목록을 가져오기 위해 pickCount 전달)
+                    friendViewModel.loadFriends(
+                        context, 
+                        userIdFromToken, 
+                        statistics.pickCount, 
+                        statistics.fanCount
+                    )
+                }
+                .onFailure { e ->
+                    android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
+                    // 통계 조회 실패해도 충분히 큰 값으로 picks 목록 로드
+                    friendViewModel.loadFriends(context, userIdFromToken, 100, 100)
+                }
         }
     }
 
@@ -308,6 +325,7 @@ fun FriendProfileScreen(
                                                             shape = RoundedCornerShape(10.dp)
                                                         )
                                                         .clickable {
+                                                            val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
                                                             if (currentIsMyPick) {
                                                                 // 구독 취소
                                                                 friendViewModel.removeSubscribe(
@@ -315,12 +333,27 @@ fun FriendProfileScreen(
                                                                     subscribeToUserId = userId,
                                                                     currentUserId = currentUserId
                                                                 ) {
-                                                                    // 구독 취소 후 picks 목록 새로고침하여 상태 업데이트
-                                                                    friendViewModel.loadFriends(context, currentUserId)
-                                                                    profileViewModel.loadFriendProfile(
-                                                                        context,
-                                                                        userId
-                                                                    )
+                                                                    // 구독 취소 후 통계를 다시 가져와서 전체 목록 로드
+                                                                    scope.launch {
+                                                                        repo.getUserStatistics(currentUserId)
+                                                                            .onSuccess { statistics ->
+                                                                                friendViewModel.loadFriends(
+                                                                                    context,
+                                                                                    currentUserId,
+                                                                                    statistics.pickCount,
+                                                                                    statistics.fanCount
+                                                                                )
+                                                                                profileViewModel.loadFriendProfile(
+                                                                                    context,
+                                                                                    userId
+                                                                                )
+                                                                            }
+                                                                            .onFailure { e ->
+                                                                                android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
+                                                                                friendViewModel.loadFriends(context, currentUserId, 100, 100)
+                                                                                profileViewModel.loadFriendProfile(context, userId)
+                                                                            }
+                                                                    }
                                                                 }
                                                             } else {
                                                                 // 구독 추가
@@ -329,12 +362,27 @@ fun FriendProfileScreen(
                                                                     subscribeToUserId = userId,
                                                                     currentUserId = currentUserId
                                                                 ) {
-                                                                    // 구독 추가 후 picks 목록 새로고침하여 상태 업데이트
-                                                                    friendViewModel.loadFriends(context, currentUserId)
-                                                                    profileViewModel.loadFriendProfile(
-                                                                        context,
-                                                                        userId
-                                                                    )
+                                                                    // 구독 추가 후 통계를 다시 가져와서 전체 목록 로드
+                                                                    scope.launch {
+                                                                        repo.getUserStatistics(currentUserId)
+                                                                            .onSuccess { statistics ->
+                                                                                friendViewModel.loadFriends(
+                                                                                    context,
+                                                                                    currentUserId,
+                                                                                    statistics.pickCount,
+                                                                                    statistics.fanCount
+                                                                                )
+                                                                                profileViewModel.loadFriendProfile(
+                                                                                    context,
+                                                                                    userId
+                                                                                )
+                                                                            }
+                                                                            .onFailure { e ->
+                                                                                android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
+                                                                                friendViewModel.loadFriends(context, currentUserId, 100, 100)
+                                                                                profileViewModel.loadFriendProfile(context, userId)
+                                                                            }
+                                                                    }
                                                                 }
                                                             }
                                                         }

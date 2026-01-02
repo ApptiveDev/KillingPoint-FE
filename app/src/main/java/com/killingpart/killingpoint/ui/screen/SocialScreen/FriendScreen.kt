@@ -55,7 +55,7 @@ enum class FriendTab {
 fun FriendScreen(navController: NavController) {
     val context = LocalContext.current
     var searchText by remember { mutableStateOf("") }
-    var selectedTab by remember { mutableStateOf(FriendTab.PICKS) }
+    var selectedTab by remember { mutableStateOf<FriendTab?>(FriendTab.PICKS) }
     
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
@@ -64,6 +64,7 @@ fun FriendScreen(navController: NavController) {
     
     // 통계 상태 관리
     var userStatistics by remember { mutableStateOf<com.killingpart.killingpoint.data.model.UserStatistics?>(null) }
+    var currentUserId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
@@ -76,6 +77,7 @@ fun FriendScreen(navController: NavController) {
                 val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
                 val userId = repo.getUserIdFromToken()
                 if (userId != null) {
+                    currentUserId = userId
                     // 통계 먼저 로드
                     repo.getUserStatistics(userId)
                         .onSuccess { statistics ->
@@ -106,7 +108,13 @@ fun FriendScreen(navController: NavController) {
     LaunchedEffect(searchText) {
         if (searchText.isBlank()) {
             friendViewModel.clearSearch()
+            // 검색어가 없으면 기본 탭 선택
+            if (selectedTab == null) {
+                selectedTab = FriendTab.PICKS
+            }
         } else {
+            // 검색어가 있으면 탭 선택 해제
+            selectedTab = null
             // 검색어가 있으면 검색 실행
             friendViewModel.searchUsers(context, searchText)
         }
@@ -208,7 +216,10 @@ fun FriendScreen(navController: NavController) {
                 fontWeight = if (selectedTab == FriendTab.PICKS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
                 color = if (selectedTab == FriendTab.PICKS) Color.White else Color(0xFFA4A4A6),
-                modifier = Modifier.clickable { selectedTab = FriendTab.PICKS }
+                modifier = Modifier.clickable { 
+                    selectedTab = FriendTab.PICKS
+                    searchText = "" // 탭 선택 시 검색어 초기화
+                }
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
@@ -219,7 +230,10 @@ fun FriendScreen(navController: NavController) {
                 fontWeight = if (selectedTab == FriendTab.PICKS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
                 color = if (selectedTab == FriendTab.PICKS) Color(0xFFCEFF43) else Color(0xFFA4A4A6),
-                modifier = Modifier.clickable { selectedTab = FriendTab.PICKS }
+                modifier = Modifier.clickable { 
+                    selectedTab = FriendTab.PICKS
+                    searchText = "" // 탭 선택 시 검색어 초기화
+                }
             )
 
             Spacer(modifier = Modifier.width(10.dp))
@@ -230,7 +244,10 @@ fun FriendScreen(navController: NavController) {
                 fontWeight = if (selectedTab == FriendTab.FANS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
                 color = if (selectedTab == FriendTab.FANS) Color.White else Color(0xFFA4A4A6),
-                modifier = Modifier.clickable { selectedTab = FriendTab.FANS }
+                modifier = Modifier.clickable { 
+                    selectedTab = FriendTab.FANS
+                    searchText = "" // 탭 선택 시 검색어 초기화
+                }
             )
             Spacer(modifier = Modifier.width(5.dp))
             Text(
@@ -241,7 +258,10 @@ fun FriendScreen(navController: NavController) {
                 fontWeight = if (selectedTab == FriendTab.FANS) FontWeight.Medium else FontWeight.Light,
                 fontSize = 12.sp,
                 color = if (selectedTab == FriendTab.FANS) Color(0xFFCEFF43) else Color(0xFFA4A4A6),
-                modifier = Modifier.clickable { selectedTab = FriendTab.FANS }
+                modifier = Modifier.clickable { 
+                    selectedTab = FriendTab.FANS
+                    searchText = "" // 탭 선택 시 검색어 초기화
+                }
             )
         }
 
@@ -265,6 +285,7 @@ fun FriendScreen(navController: NavController) {
                     when (selectedTab) {
                         FriendTab.PICKS -> (state.picks?.content ?: emptyList()).distinctBy { it.userId }
                         FriendTab.FANS -> (state.fans?.content ?: emptyList()).distinctBy { it.userId }
+                        null -> emptyList() // 검색 중이거나 탭이 선택되지 않은 경우
                     }
                 }
                 
@@ -279,7 +300,8 @@ fun FriendScreen(navController: NavController) {
                             text = when {
                                 state.searchResults != null && searchText.isNotBlank() -> "검색 결과가 없습니다"
                                 selectedTab == FriendTab.PICKS -> "구독한 친구가 없습니다"
-                                else -> "팬덤이 없습니다"
+                                selectedTab == FriendTab.FANS -> "팬덤이 없습니다"
+                                else -> ""
                             },
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.Light,
@@ -301,6 +323,7 @@ fun FriendScreen(navController: NavController) {
                             FriendItemCard(
                                 user = user,
                                 navController = navController,
+                                currentUserId = currentUserId,
                                 isPickTab = if (isSearchResult) {
                                     // 검색 결과에서는 user.isMyPick만 확인
                                     user.isMyPick
@@ -341,6 +364,7 @@ fun FriendScreen(navController: NavController) {
 fun FriendItemCard(
     user: com.killingpart.killingpoint.data.model.SubscribeUser,
     navController: NavController,
+    currentUserId: Long? = null,
     isPickTab: Boolean = false,
     onSubscribeClick: (() -> Unit)? = null
 ) {
@@ -354,17 +378,23 @@ fun FriendItemCard(
             .padding(10.dp)
             .padding(end=12.dp)
             .clickable {
-                val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
-                val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
-                val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
-                navController.navigate(
-                    "friend_profile" +
-                            "?userId=${user.userId}" +
-                            "&username=$encodedUsername" +
-                            "&tag=$encodedTag" +
-                            "&profileImageUrl=$encodedProfileImageUrl" +
-                            "&isMyPick=${user.isMyPick}"
-                )
+                // 내 프로필인 경우 main?tab=profile로 이동
+                if (currentUserId != null && user.userId == currentUserId) {
+                    navController.navigate("main?tab=profile")
+                } else {
+                    // 다른 사용자 프로필인 경우 friend_profile로 이동
+                    val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                    val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                    val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                    navController.navigate(
+                        "friend_profile" +
+                                "?userId=${user.userId}" +
+                                "&username=$encodedUsername" +
+                                "&tag=$encodedTag" +
+                                "&profileImageUrl=$encodedProfileImageUrl" +
+                                "&isMyPick=${user.isMyPick}"
+                    )
+                }
             },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -402,7 +432,7 @@ fun FriendItemCard(
                         color = Color.White
                     )
                     // 나의 픽 표시 (이미 구독한 경우에만)
-                    if (user.isMyPick || isPickTab) {
+                    if ( user.isMyPick ) {
                         Text(
                             text = "나의 픽",
                             fontFamily = PaperlogyFontFamily,
