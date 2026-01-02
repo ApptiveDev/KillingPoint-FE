@@ -291,7 +291,8 @@ fun FriendScreen(navController: NavController) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
-                            .weight(1f),
+                            .weight(1f)
+                            .padding(bottom = 10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         items(friends) { user ->
