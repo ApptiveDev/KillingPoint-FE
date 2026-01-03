@@ -69,16 +69,21 @@ class LoginViewModel(
         val repo = repoFactory(context)
         viewModelScope.launch {
             val refreshToken = repo.getRefreshToken()
+            android.util.Log.d("LoginViewModel", "자동 로그인 시도: refreshToken 존재=${refreshToken != null}")
+            
             if (refreshToken != null) {
                 repo.refreshAccessToken()
                     .onSuccess { isNew ->
+                        android.util.Log.d("LoginViewModel", "자동 로그인 성공: isNew=$isNew")
                         _state.value = LoginUiState.AutoLoginSuccess(isNew)
                     }
-                    .onFailure {
+                    .onFailure { e ->
+                        android.util.Log.e("LoginViewModel", "자동 로그인 실패: ${e.message}")
                         // 토큰 갱신 실패 시 로그인 화면 유지
                         _state.value = LoginUiState.Idle
                     }
             } else {
+                android.util.Log.d("LoginViewModel", "자동 로그인 실패: refreshToken 없음")
                 // refreshToken이 없으면 로그인 화면 유지
                 _state.value = LoginUiState.Idle
             }

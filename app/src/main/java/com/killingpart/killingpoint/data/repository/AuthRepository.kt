@@ -142,13 +142,26 @@ class AuthRepository(
             runCatching {
                 val refreshToken = getRefreshToken()
                     ?: throw IllegalStateException("리프레시 토큰이 없습니다")
+                
+                android.util.Log.d("AuthRepository", "토큰 갱신 시도: refreshToken 존재=${refreshToken.isNotBlank()}")
+                
                 val response = api.refreshAccessToken(refreshToken)
+                
+                android.util.Log.d("AuthRepository", "토큰 갱신 성공: isNew=${response.isNew}, 새 accessToken 길이=${response.accessToken.length}, 새 refreshToken 길이=${response.refreshToken.length}")
+                
                 tokenStore.save(response.accessToken, response.refreshToken)
+                
+                val savedAccessToken = tokenStore.getAccessToken()
+                val savedRefreshToken = tokenStore.getRefreshToken()
+                android.util.Log.d("AuthRepository", "토큰 저장 확인: accessToken 저장됨=${savedAccessToken != null}, refreshToken 저장됨=${savedRefreshToken != null}")
+                
                 response.isNew // isNew 반환
             }.recoverCatching { e ->
+                android.util.Log.e("AuthRepository", "토큰 갱신 실패: ${e.message}")
                 if (e is HttpException) {
                     val code = e.code()
                     val msg = e.response()?.errorBody()?.string().orEmpty()
+                    android.util.Log.e("AuthRepository", "토큰 갱신 실패 상세: code=$code, message=$msg")
                     // 토큰 갱신 실패 시 토큰 삭제
                     clearTokens()
                     throw IllegalStateException("토큰 갱신 실패 ($code): $msg")

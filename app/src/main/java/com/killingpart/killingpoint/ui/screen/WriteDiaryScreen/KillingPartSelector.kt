@@ -146,7 +146,7 @@ fun KillingPartSelector(
                     val barCenterSec =
                         ((barAbsX - absScrollX) + barWidthPx / 2f) / pxPerSecond
 
-                    val inSelection = barCenterSec - 1f in currentStartSec..currentEndSec
+                    val inSelection = barCenterSec - 1f in currentStartSec + 1..currentEndSec
 
                     val color = if (inSelection) Color.White else Color(0xFF454545)
 

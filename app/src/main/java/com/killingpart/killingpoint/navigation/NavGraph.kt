@@ -21,11 +21,12 @@ import java.net.URLDecoder
 
 @Composable
 fun NavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    startDestination: String = "home"
 ) {
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = startDestination
     ) {
         composable("home") { HelloScreen(navController) }
 

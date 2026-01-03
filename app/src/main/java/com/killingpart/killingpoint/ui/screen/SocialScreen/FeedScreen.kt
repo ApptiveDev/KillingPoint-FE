@@ -11,7 +11,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,8 +23,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.FeedUiState
@@ -48,7 +52,7 @@ fun FeedScreen(navController: NavController) {
             val firstVisible = listState.firstVisibleItemIndex
             val scrollOffset = listState.firstVisibleItemScrollOffset
             val itemHeightPx = with(density) { screenHeight.toPx() }
-            if (scrollOffset > itemHeightPx * 0.3f) {
+            if (scrollOffset > itemHeightPx * 0.5f) {
                 firstVisible + 1
             } else {
                 firstVisible
@@ -56,22 +60,27 @@ fun FeedScreen(navController: NavController) {
         }
     }
 
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress) {
-            delay(150)
-            if (!listState.isScrollInProgress) {
-                val firstVisible = listState.firstVisibleItemIndex
-                val scrollOffset = listState.firstVisibleItemScrollOffset
-                val itemHeightPx = with(density) { screenHeight.toPx() }
-                val targetIndex = if (scrollOffset > itemHeightPx * 0.3f) {
-                    (firstVisible + 1).coerceAtMost((feedState as? FeedUiState.Success)?.feeds?.size?.minus(1) ?: 0)
-                } else {
-                    firstVisible
-                }
-                if (targetIndex != firstVisible) {
-                    listState.animateScrollToItem(targetIndex)
-                }
-            }
+    var lastSnappedIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        val firstVisible = listState.firstVisibleItemIndex
+        val scrollOffset = listState.firstVisibleItemScrollOffset
+        val itemHeightPx = with(density) { screenHeight.toPx() }
+        val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
+        val maxIndex = feeds.size - 1
+        
+        val targetIndex = if (scrollOffset > itemHeightPx * 0.5f) {
+            (firstVisible + 1).coerceAtMost(maxIndex)
+        } else {
+            firstVisible
+        }
+        
+        if (targetIndex != lastSnappedIndex && targetIndex != firstVisible) {
+            lastSnappedIndex = targetIndex
+            listState.animateScrollToItem(
+                index = targetIndex,
+                scrollOffset = 0
+            )
         }
     }
 
@@ -99,27 +108,56 @@ fun FeedScreen(navController: NavController) {
                     )
                 }
             } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    itemsIndexed(
-                        items = state.feeds,
-                        key = { _, feed -> feed.diaryId ?: feed.hashCode() }
-                    ) { index, feedDiary ->
-                        val isCurrentItem = index == currentItemIndex.value
+                Box(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        itemsIndexed(
+                            items = state.feeds,
+                            key = { _, feed -> feed.diaryId ?: feed.hashCode() }
+                        ) { index, feedDiary ->
+                            val isCurrentItem = index == currentItemIndex.value
+                            
+                            LaunchedEffect(index, isCurrentItem) {
+                                android.util.Log.d("FeedScreen", "Item[$index]: isCurrentItem=$isCurrentItem, diaryId=${feedDiary.diaryId}, videoUrl=${feedDiary.videoUrl}")
+                            }
+                            
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(screenHeight)
+                            ) {
+                                if (isCurrentItem) {
+                                    FeedRunMusicBox(
+                                        feedDiary = feedDiary,
+                                        navController = navController
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    val currentFeed = state.feeds.getOrNull(currentItemIndex.value)
+                    if (currentFeed != null) {
+                        val diary = currentFeed.toDiary
+                        val videoTotalDuration = diary.totalDuration ?: 180
+                        val startTime = diary.start.toFloatOrNull()?.toInt() ?: 0
+                        val durationTime = diary.duration.toFloatOrNull()?.toInt() ?: 0
                         
                         Box(
                             modifier = Modifier
+                                .align(Alignment.BottomCenter)
                                 .fillMaxWidth()
-                                .height(screenHeight)
+                                .padding(horizontal = 24.dp, vertical = 16.dp)
+                                .zIndex(1f)
                         ) {
-                            if (isCurrentItem) {
-                                FeedRunMusicBox(
-                                    feedDiary = feedDiary,
-                                    navController = navController
-                                )
-                            }
+                            MusicTimeBar(
+                                title = diary.musicTitle,
+                                start = startTime,
+                                during = durationTime,
+                                total = videoTotalDuration
+                            )
                         }
                     }
                 }

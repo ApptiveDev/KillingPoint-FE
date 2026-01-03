@@ -32,14 +32,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
-import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
@@ -59,9 +57,11 @@ fun FeedRunMusicBox(
     var isLiked by remember { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember { mutableStateOf(feedDiary.likeCount) }
 
-    val videoTotalDuration = diary.totalDuration ?: 180
-    val startTime = diary.start.toFloatOrNull()?.toInt() ?: 0
-    val durationTime = diary.duration.toFloatOrNull()?.toInt() ?: 0
+    LaunchedEffect(diary.videoUrl) {
+        android.util.Log.d("FeedRunMusicBox", "FeedRunMusicBox 렌더링: diaryId=${diary.id}, videoUrl=${diary.videoUrl}")
+        android.util.Log.d("FeedRunMusicBox", "Start: ${diary.start}, Duration: ${diary.duration}")
+        android.util.Log.d("FeedRunMusicBox", "Music: ${diary.musicTitle} - ${diary.artist}")
+    }
 
     Box(
         modifier = Modifier
@@ -149,7 +149,6 @@ fun FeedRunMusicBox(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
                         .verticalScroll(scrollState)
                 ) {
                     val startSeconds = diary.start.toFloatOrNull() ?: 0f
@@ -163,7 +162,7 @@ fun FeedRunMusicBox(
                             diary,
                             startSeconds,
                             durationSeconds,
-                            isPlayingState = false
+                            isPlayingState = null
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                     }
@@ -179,26 +178,30 @@ fun FeedRunMusicBox(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.clickable {
                                 val newLikedState = !isLiked
                                 isLiked = newLikedState
                                 likeCount = if (newLikedState) likeCount + 1 else (likeCount - 1).coerceAtLeast(0)
                                 onLikeClick?.invoke()
                             }
+                                .size(49.dp, 24.dp)
+                            .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
+                                RoundedCornerShape(8.dp)),
                         ) {
                             Icon(
-                                imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                imageVector = Icons.Filled.Favorite,
                                 contentDescription = "좋아요",
-                                tint = if (isLiked) mainGreen else Color(0xFF6A6B6C),
+                                tint = if (isLiked) Color.Black else mainGreen,
                                 modifier = Modifier.size(16.dp)
                             )
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = likeCount.toString(),
                                 fontFamily = PaperlogyFontFamily,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 12.sp,
-                                color = if (isLiked) mainGreen else Color(0xFF6A6B6C)
+                                color = if (isLiked) Color.Black else Color.White
                             )
                         }
                     }
@@ -211,24 +214,9 @@ fun FeedRunMusicBox(
                         DiaryBox(diary)
                     }
 
-                    Spacer(modifier = Modifier.height(100.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .zIndex(1f)
-        ) {
-            MusicTimeBar(
-                title = diary.musicTitle,
-                start = startTime,
-                during = durationTime,
-                total = videoTotalDuration
-            )
         }
 
         Box(

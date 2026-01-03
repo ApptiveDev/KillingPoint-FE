@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
             val loginState by loginViewModel.state.collectAsState()
 
             var launchState by remember {
-                mutableStateOf(LaunchState.SPLASH)
+                mutableStateOf<LaunchState?>(null)
             }
 
             // 자동 로그인 시도
@@ -49,49 +49,45 @@ class MainActivity : ComponentActivity() {
                 loginViewModel.tryAutoLogin(context)
             }
 
-            // 로그인 상태에 따라 튜토리얼 표시 여부 결정
+            // 자동 로그인 완료 후 스플래시 표시
             LaunchedEffect(loginState) {
                 when (val state = loginState) {
-                    is LoginUiState.AutoLoginSuccess -> {
-                        if (state.isNew) {
-                            // 새 사용자는 튜토리얼 표시
-                            if (launchState == LaunchState.SPLASH) {
-                                launchState = LaunchState.TUTORIAL
-                            }
-                        } else {
-                            // 기존 사용자는 바로 메인으로
-                            if (launchState == LaunchState.SPLASH) {
-                                launchState = LaunchState.MAIN
-                            }
-                        }
-                    }
-                    is LoginUiState.Idle -> {
-                        // 로그인 안 된 상태면 튜토리얼 후 로그인 화면
-                        if (launchState == LaunchState.SPLASH) {
-                            launchState = LaunchState.TUTORIAL
+                    is LoginUiState.AutoLoginSuccess,
+                    is LoginUiState.Idle,
+                    is LoginUiState.Error -> {
+                        // 자동 로그인 성공/실패 여부와 관계없이 스플래시 표시
+                        if (launchState == null) {
+                            launchState = LaunchState.SPLASH
                         }
                     }
                     else -> {
-                        // Loading, Error 등은 처리하지 않음
+                        // Loading 상태는 처리하지 않음
                     }
                 }
             }
 
             when (launchState) {
+                null -> {
+                    // 자동 로그인 확인 중 - 로딩 화면 표시
+                    Box(modifier = Modifier.fillMaxSize())
+                }
 
                 LaunchState.SPLASH -> {
                     VideoSplashScreen(
                         onFinish = {
-                            // 스플래시 종료 후 로그인 상태 확인
+                            // 스플래시 종료 후 로그인 상태에 따라 화면 전환
                             when (val state = loginState) {
                                 is LoginUiState.AutoLoginSuccess -> {
                                     if (state.isNew) {
+                                        // 새 사용자는 튜토리얼 표시
                                         launchState = LaunchState.TUTORIAL
                                     } else {
+                                        // 기존 사용자는 메인으로
                                         launchState = LaunchState.MAIN
                                     }
                                 }
                                 else -> {
+                                    // 자동 로그인 실패 시 튜토리얼로
                                     launchState = LaunchState.TUTORIAL
                                 }
                             }
@@ -109,12 +105,33 @@ class MainActivity : ComponentActivity() {
 
                 LaunchState.MAIN -> {
                     val navController = rememberNavController()
+                    
+                    val startDestination = remember {
+                        when (val state = loginState) {
+                            is LoginUiState.AutoLoginSuccess -> {
+                                if (!state.isNew) "main" else "home"
+                            }
+                            else -> "home"
+                        }
+                    }
+                    
+                    LaunchedEffect(Unit) {
+                        if (startDestination != "home") {
+                            navController.navigate(startDestination) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
+                    
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .navigationBarsPadding()
                     ) {
-                        NavGraph(navController)
+                        NavGraph(
+                            navController = navController,
+                            startDestination = startDestination
+                        )
                     }
                 }
             }
