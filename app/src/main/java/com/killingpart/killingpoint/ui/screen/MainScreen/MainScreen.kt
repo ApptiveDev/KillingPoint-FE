@@ -331,7 +331,8 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                     RunMusicBox(
                                         currentIndex = currentIndex,
                                         currentDiary = diaries.getOrNull(currentIndex),
-                                        isPlaying = isPlaying
+                                        isPlaying = isPlaying,
+                                        navController = navController
                                     )
                                 }
                             }

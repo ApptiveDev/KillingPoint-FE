@@ -46,7 +46,7 @@ fun MusicTimeBar(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = title ?: "로딩 중...",
+                    text = title ?: "킬링파트",
                     fontSize = 14.sp,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Thin,

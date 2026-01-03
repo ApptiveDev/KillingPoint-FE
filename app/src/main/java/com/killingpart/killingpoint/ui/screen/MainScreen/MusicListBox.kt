@@ -105,7 +105,7 @@ fun MusicListBox(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "플레이리스트를 불러오는 중...",
+                                text = "",
                                 fontFamily = PaperlogyFontFamily,
                                 fontWeight = FontWeight.Light,
                                 fontSize = 12.sp,

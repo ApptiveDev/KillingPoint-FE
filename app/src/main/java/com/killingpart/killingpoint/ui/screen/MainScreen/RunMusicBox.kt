@@ -13,11 +13,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.key
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import android.graphics.Shader
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
@@ -84,7 +85,8 @@ fun RunMusicBox(
     isPlaying: Boolean? = null,
     authorUsername: String? = null,
     authorTag: String? = null,
-    authorProfileImageUrl: String? = null
+    authorProfileImageUrl: String? = null,
+    navController: NavController
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
@@ -183,57 +185,84 @@ fun RunMusicBox(
 
             }
 
-            val scrollState = rememberScrollState()
-            val density = LocalDensity.current
-
-            
-            key(currentDiary?.videoUrl) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(500.dp)
-                        .verticalScroll(scrollState),
+            if (currentDiary == null) {
+                Column (
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    
-                    // Diary의 duration, start, end 값 확인 및 로그
-                    val startSeconds = currentDiary?.start?.toFloatOrNull() ?: 0f
-                    val durationSeconds = currentDiary?.duration?.toFloatOrNull() ?: 0f
-                    val endSeconds = currentDiary?.end?.toFloatOrNull()
+                    Spacer(modifier = Modifier.height(80.dp))
+                    Text(
+                        text = "재생 가능한 킬링파트가 없습니다",
+                        fontFamily = PaperlogyFontFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = mainGreen,
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = "킬링 파트를 추가해 보세요",
+                        fontSize = 14.sp,
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF9C9C9C)
+                    )
+                    Spacer(modifier = Modifier.height(26.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.navi_add),
+                        contentDescription = "킬링파트 추가 아이콘",
+                        modifier = Modifier.size(60.dp)
+                            .clickable { navController.navigate("add_music") }
+                    )
+                    Spacer(modifier = Modifier.height(50.dp))
+                }
+            } else {
+                val scrollState = rememberScrollState()
+                val density = LocalDensity.current
 
-                    
+                key(currentDiary.videoUrl) {
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(500.dp)
+                            .verticalScroll(scrollState),
                     ) {
-                        YouTubePlayerBox(
-                            currentDiary, 
-                            startSeconds, 
-                            durationSeconds,
-                            isPlayingState = isPlaying
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(
-                            text = currentDiary?.musicTitle.toString(),
-                            fontFamily = PaperlogyFontFamily,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        val startSeconds = currentDiary.start?.toFloatOrNull() ?: 0f
+                        val durationSeconds = currentDiary.duration?.toFloatOrNull() ?: 0f
+                        val endSeconds = currentDiary.end?.toFloatOrNull()
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            YouTubePlayerBox(
+                                currentDiary, 
+                                startSeconds, 
+                                durationSeconds,
+                                isPlayingState = isPlaying
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+                            Text(
+                                text = currentDiary.musicTitle ?: "",
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = currentDiary.artist ?: "",
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Light
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            DiaryBox(currentDiary)
+                        }
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = currentDiary?.artist.toString(),
-                            fontFamily = PaperlogyFontFamily,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Light
-                        )
-
                     }
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        DiaryBox(currentDiary)
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
         }

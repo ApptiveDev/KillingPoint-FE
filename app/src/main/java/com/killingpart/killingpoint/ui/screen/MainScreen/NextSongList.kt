@@ -48,7 +48,7 @@ fun NextSongList(title: String?, label: String, onToggle: ()-> Unit,) {
         Spacer(modifier = Modifier.width(13.dp))
 
         Text(
-            text = title ?: "킬링파트를 추가하세요",
+            text = title ?: "",
             fontSize = 14.sp,
             fontFamily = PaperlogyFontFamily,
             fontWeight = FontWeight.Light,
