@@ -57,6 +57,7 @@ fun MusicListBox(
     onToggle: (Boolean) -> Unit,
     diaries: List<Diary>,
     showCurrentHeader: Boolean = false,
+    onItemClick: (Int) -> Unit = {}
 )
 {
 
@@ -123,7 +124,9 @@ fun MusicListBox(
                                     imageUrl = d.albumImageUrl,
                                     musicTitle = d.musicTitle,
                                     artist = d.artist,
-                                    isNow = if (index == currentIndex) Color(0xFF060606) else Color.Transparent
+                                    isNow = if (index == currentIndex) Color(0xFF060606) else Color.Transparent,
+                                    onClick = { onItemClick(index) },
+                                    isPlaying = index == currentIndex
                                 )
                             }
                         }

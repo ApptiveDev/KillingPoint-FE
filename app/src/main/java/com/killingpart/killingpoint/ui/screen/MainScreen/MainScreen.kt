@@ -284,7 +284,10 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                             expanded = listExpanded,
                                             onToggle = { willOpen -> listExpanded = willOpen },
                                             diaries = state.diaries,
-                                            showCurrentHeader = true
+                                            showCurrentHeader = true,
+                                            onItemClick = { index ->
+                                                currentIndex = index
+                                            }
                                         )
                                     }
                                 }
@@ -397,7 +400,10 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                             onToggle = { willOpen ->
                                 listExpanded = willOpen
                             },
-                            diaries = diaries
+                            diaries = diaries,
+                            onItemClick = { index ->
+                                currentIndex = index
+                            }
                         )
                     }
                 }
