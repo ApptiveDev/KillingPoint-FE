@@ -107,14 +107,16 @@ interface ApiService {
     suspend fun getSubscribes(
         @Header("Authorization") accessToken: String,
         @Path("userId") userId: Long,
-        @Query("size") size:Int = 5
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 5
     ): SubscribeResponse
 
     @GET("subscribes/{userId}/fans")
     suspend fun getFans(
         @Header("Authorization") accessToken: String,
         @Path("userId") userId: Long,
-        @Query("size") size:Int = 5
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 5
     ): SubscribeResponse
 
     @POST("subscribes/{subscribeToUserId}")

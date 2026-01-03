@@ -1,6 +1,5 @@
 package com.killingpart.killingpoint.ui.screen.SocialScreen
 
-import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,9 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -217,28 +213,6 @@ fun FeedRunMusicBox(
                     Spacer(modifier = Modifier.height(32.dp))
                 }
             }
-        }
-
-        Box(
-            modifier = Modifier
-                .size(316.dp)
-                .offset(y = 170.dp)
-                .background(color = Color.Transparent, shape = RoundedCornerShape(16.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .graphicsLayer {
-                        compositingStrategy = CompositingStrategy.Offscreen
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            renderEffect = android.graphics.RenderEffect
-                                .createBlurEffect(16f, 16f, android.graphics.Shader.TileMode.CLAMP)
-                                .asComposeRenderEffect()
-                        }
-                    }
-                    .background(Color.Black.copy(alpha = 0.2f))
-            )
         }
     }
 }

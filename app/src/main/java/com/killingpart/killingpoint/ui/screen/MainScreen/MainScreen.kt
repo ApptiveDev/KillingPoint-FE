@@ -65,6 +65,7 @@ import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.ui.component.LoadingVideo
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.UnboundedFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
@@ -150,11 +151,16 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
 
-    AppBackground {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+    when (diaryState) {
+        is DiaryUiState.Loading -> {
+            LoadingVideo()
+        }
+        is DiaryUiState.Success, is DiaryUiState.Error -> {
+            AppBackground {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                 Spacer(modifier = Modifier.height(35.dp))
 
                 if (selected == MainTab.PLAY) {
@@ -243,9 +249,8 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f),
-                                    contentAlignment = Alignment.Center
                                 ) {
-                                    CircularProgressIndicator(color = mainGreen)
+                                    LoadingVideo()
                                 }
                             }
 
@@ -370,20 +375,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         .padding(bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap)
                         .zIndex(1f)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .graphicsLayer {
-                                compositingStrategy = CompositingStrategy.Offscreen
-                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                                    renderEffect = android.graphics.RenderEffect
-                                        .createBlurEffect(16f, 16f, android.graphics.Shader.TileMode.CLAMP)
-                                        .asComposeRenderEffect()
-                                }
-                            }
-                            .background(Color.Black.copy(alpha = 0.3f))
-                    )
-                    
                     Column(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -439,36 +430,38 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                     },
                     isPlaying = isPlaying
                 )
-            }
-        
-        // ProfileSettingsScreen을 AppBackground 최상위에 배치하여 항상 표시되도록 함
-        LaunchedEffect(showProfileSettings) {
-            android.util.Log.d("MainScreen", "showProfileSettings 변경됨: $showProfileSettings")
-        }
-        
-        if (showProfileSettings) {
-            android.util.Log.d("MainScreen", "ProfileSettingsScreen 렌더링 시작")
-            val topOffset = topPillTabsBottomY + 120.dp
-            val maxHeight = screenHeight - topOffset - BottomBarHeight
-            ProfileSettingsScreen(
-                onDismiss = { 
-                    android.util.Log.d("MainScreen", "ProfileSettingsScreen 닫기")
-                    showProfileSettings = false 
-                },
-                topOffset = topOffset,
-                maxHeight = maxHeight,
-                onLogout = {
-                    // 로그아웃/회원탈퇴 후 로그인 화면으로 이동 - 모든 네비게이션 스택 정리
-                    navController.navigate("home") {
-                        popUpTo(0) { inclusive = false }
-                        launchSingleTop = true
                     }
-                },
-                navController = navController
-            )
+        
+                    // ProfileSettingsScreen을 AppBackground 최상위에 배치하여 항상 표시되도록 함
+                    LaunchedEffect(showProfileSettings) {
+                        android.util.Log.d("MainScreen", "showProfileSettings 변경됨: $showProfileSettings")
+                    }
+                    
+                    if (showProfileSettings) {
+                        android.util.Log.d("MainScreen", "ProfileSettingsScreen 렌더링 시작")
+                        val topOffset = topPillTabsBottomY + 120.dp
+                        val maxHeight = screenHeight - topOffset - BottomBarHeight
+                        ProfileSettingsScreen(
+                            onDismiss = { 
+                                android.util.Log.d("MainScreen", "ProfileSettingsScreen 닫기")
+                                showProfileSettings = false 
+                            },
+                            topOffset = topOffset,
+                            maxHeight = maxHeight,
+                            onLogout = {
+                                // 로그아웃/회원탈퇴 후 로그인 화면으로 이동 - 모든 네비게이션 스택 정리
+                                navController.navigate("home") {
+                                    popUpTo(0) { inclusive = false }
+                                    launchSingleTop = true
+                                }
+                            },
+                            navController = navController
+                        )
+                    }
+                }
+            }
         }
     }
-}
 }
 
 

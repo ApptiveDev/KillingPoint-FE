@@ -32,6 +32,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.component.BottomBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -92,6 +93,8 @@ fun parseDurationToSeconds(duration: String): Int {
 
 @Composable
 fun AddMusicScreen(navController: NavController) {
+    var globalLoading by remember { mutableStateOf(false) }
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -145,7 +148,8 @@ fun AddMusicScreen(navController: NavController) {
                                 TrackRowWithVideoSearch(
                                     track = track,
                                     navController = navController,
-                                    context = context
+                                    context = context,
+                                    onLoadingChange = { globalLoading = it }
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                             }
@@ -160,6 +164,20 @@ fun AddMusicScreen(navController: NavController) {
                 }
                 BottomBar(navController = navController)
             }
+            
+            if (globalLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                        .graphicsLayer {
+                            alpha = 0.7f
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
+                }
+            }
     }
 }
 
@@ -167,7 +185,8 @@ fun AddMusicScreen(navController: NavController) {
 private fun TrackRowWithVideoSearch(
     track: SimpleTrack,
     navController: NavController,
-    context: android.content.Context
+    context: android.content.Context,
+    onLoadingChange: (Boolean) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val repo = remember { AuthRepository(context) }
@@ -177,6 +196,7 @@ private fun TrackRowWithVideoSearch(
         if (isLoading) return@TrackRow
         
         isLoading = true
+        onLoadingChange(true)
         scope.launch {
             try {
                 val videos = repo.searchVideos(track.title, track.artist)
@@ -214,6 +234,7 @@ private fun TrackRowWithVideoSearch(
                 )
             } finally {
                 isLoading = false
+                onLoadingChange(false)
             }
         }
     }, isLoading = isLoading)

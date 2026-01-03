@@ -421,11 +421,11 @@ class AuthRepository(
     /**
      * 구독 목록 조회 (나의 픽)
      */
-    suspend fun getSubscribes(userId: Long, pick_total: Int = 5): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+    suspend fun getSubscribes(userId: Long, pick_total: Int = 5, page: Int = 0): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
-            api.getSubscribes("Bearer $accessToken", userId, pick_total)
+            api.getSubscribes("Bearer $accessToken", userId, page, pick_total)
         }.recoverCatching { e ->
             if (e is HttpException) {
                 val code = e.code()
@@ -440,11 +440,30 @@ class AuthRepository(
     /**
      * 팬덤 목록 조회 (나의 팬덤)
      */
-    suspend fun getFans(userId: Long, fan_total: Int = 5): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+    suspend fun getFans(userId: Long, fan_total: Int = 5, page: Int = 0): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
-            val accessToken = getAccessToken()
+            var accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
-            api.getFans("Bearer $accessToken", userId, fan_total)
+
+            try {
+                val result = api.getFans("Bearer $accessToken", userId, page, fan_total)
+                android.util.Log.d("AuthRepository", "팬덤 목록 조회 성공: totalElements=${result.page.totalElements}")
+                result
+            } catch (e: HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+
+                if (code == 401) {
+                    android.util.Log.d("AuthRepository", "토큰 갱신 시도 (401)")
+                    refreshAccessToken().getOrThrow()
+                    accessToken = getAccessToken()
+                        ?: throw IllegalStateException("토큰 갱신 후 액세스 토큰을 가져올 수 없습니다")
+                    android.util.Log.d("AuthRepository", "토큰 갱신 성공, 재시도")
+                    api.getFans("Bearer $accessToken", userId, page, fan_total)
+                } else {
+                    throw IllegalStateException("팬덤 목록 조회 실패 ($code): $msg")
+                }
+            }
         }.recoverCatching { e ->
             if (e is HttpException) {
                 val code = e.code()
