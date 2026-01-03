@@ -28,31 +28,28 @@ class FeedViewModel(
     private val _state = MutableStateFlow<FeedUiState>(FeedUiState.Loading)
     val state: StateFlow<FeedUiState> = _state
 
-    private var currentPage = 0
-    private val pageSize = 5
-
-    fun loadFeeds(context: Context, page: Int = 0) {
+    fun loadFeeds(context: Context) {
         _state.value = FeedUiState.Loading
         val repo = repoFactory(context)
         viewModelScope.launch {
             try {
-                val result = repo.getFeeds(page = page, size = pageSize)
-                currentPage = page
+                val firstPageResult = repo.getFeeds(page = 0, size = 1)
+                val totalElements = firstPageResult.page.totalElements
+                
+                val result = if (totalElements > 0) {
+                    repo.getFeeds(page = 0, size = totalElements)
+                } else {
+                    firstPageResult
+                }
+                
                 _state.value = FeedUiState.Success(
                     feeds = result.content,
                     page = result.page,
-                    hasMore = page < result.page.totalPages - 1
+                    hasMore = false
                 )
             } catch (e: Exception) {
                 _state.value = FeedUiState.Error(e.message ?: "피드 로드 실패")
             }
-        }
-    }
-
-    fun loadMoreFeeds(context: Context) {
-        val currentState = _state.value
-        if (currentState is FeedUiState.Success && currentState.hasMore) {
-            loadFeeds(context, currentPage + 1)
         }
     }
 }

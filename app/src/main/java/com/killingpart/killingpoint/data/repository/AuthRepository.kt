@@ -187,7 +187,7 @@ class AuthRepository(
         }
 
 
-    suspend fun getMyDiaries(page: Int = 0, size: Int = 10): MyDiaries =
+    suspend fun getMyDiaries(page: Int = 0, size: Int): MyDiaries =
         withContext(Dispatchers.IO) {
             try {
                 val accessToken = getAccessToken() 
@@ -206,7 +206,7 @@ class AuthRepository(
             }
         }
 
-    suspend fun getFeeds(page: Int = 0, size: Int = 5): FeedResponse =
+    suspend fun getFeeds(page: Int = 0, size: Int): FeedResponse =
         withContext(Dispatchers.IO) {
             try {
                 val accessToken = getAccessToken()
@@ -421,7 +421,7 @@ class AuthRepository(
     /**
      * 구독 목록 조회 (나의 픽)
      */
-    suspend fun getSubscribes(userId: Long, pick_total: Int = 5, page: Int = 0): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+    suspend fun getSubscribes(userId: Long, pick_total: Int, page: Int = 0): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
@@ -440,7 +440,7 @@ class AuthRepository(
     /**
      * 팬덤 목록 조회 (나의 팬덤)
      */
-    suspend fun getFans(userId: Long, fan_total: Int = 5, page: Int = 0): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+    suspend fun getFans(userId: Long, fan_total: Int, page: Int = 0): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             var accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
@@ -526,7 +526,7 @@ class AuthRepository(
     suspend fun searchUsers(
         searchCond: String? = null,
         page: Int = 0,
-        size: Int = 5
+        size: Int
     ): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()
@@ -549,7 +549,7 @@ class AuthRepository(
     suspend fun getUserDiaries(
         userId: Long,
         page: Int = 0,
-        size: Int = 5
+        size: Int
     ): Result<MyDiaries> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()

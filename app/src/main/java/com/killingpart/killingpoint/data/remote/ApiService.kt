@@ -54,7 +54,7 @@ interface ApiService {
     suspend fun getMyDiaries(
         @Header("Authorization") accessToken: String,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 10
+        @Query("size") size: Int
     ): MyDiaries
 
     @POST("diaries")
@@ -108,7 +108,7 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("userId") userId: Long,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 5
+        @Query("size") size: Int
     ): SubscribeResponse
 
     @GET("subscribes/{userId}/fans")
@@ -116,7 +116,7 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("userId") userId: Long,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 5
+        @Query("size") size: Int
     ): SubscribeResponse
 
     @POST("subscribes/{subscribeToUserId}")
@@ -136,7 +136,7 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Query("searchCond") searchCond: String? = null,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 5
+        @Query("size") size: Int
     ): SubscribeResponse
 
     @GET("diaries/user/{userId}")
@@ -144,14 +144,14 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("userId") userId: Long,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 5
+        @Query("size") size: Int
     ): MyDiaries
 
     @GET("diaries/my/feeds")
     suspend fun getFeeds(
         @Header("Authorization") accessToken: String,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 5
+        @Query("size") size: Int
     ): FeedResponse
     @GET("users/{userId}/statics")
     suspend fun getUserStatistics(

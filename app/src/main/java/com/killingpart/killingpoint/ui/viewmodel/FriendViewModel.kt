@@ -32,8 +32,23 @@ class FriendViewModel(
         _state.value = FriendUiState.Loading
         val repo = repoFactory(context)
         viewModelScope.launch {
-            val picksResult = repo.getSubscribes(userId, pick_total)
-            val fansResult = repo.getFans(userId,fan_total)
+            val firstPicksResult = repo.getSubscribes(userId, 1, 0)
+            val firstFansResult = repo.getFans(userId, 1, 0)
+            
+            val picksTotal = firstPicksResult.getOrNull()?.page?.totalElements ?: pick_total
+            val fansTotal = firstFansResult.getOrNull()?.page?.totalElements ?: fan_total
+            
+            val picksResult = if (picksTotal > 0) {
+                repo.getSubscribes(userId, picksTotal, 0)
+            } else {
+                firstPicksResult
+            }
+            
+            val fansResult = if (fansTotal > 0) {
+                repo.getFans(userId, fansTotal, 0)
+            } else {
+                firstFansResult
+            }
 
             when {
                 picksResult.isSuccess && fansResult.isSuccess -> {
@@ -88,14 +103,21 @@ class FriendViewModel(
         }
     }
 
-    fun searchUsers(context: Context, searchCond: String, page: Int = 0, size: Int = 5) {
+    fun searchUsers(context: Context, searchCond: String) {
         val repo = repoFactory(context)
         viewModelScope.launch {
-            repo.searchUsers(searchCond, page, size)
+            val firstPageResult = repo.searchUsers(searchCond, 0, 1)
+            val totalElements = firstPageResult.getOrNull()?.page?.totalElements ?: 0
+            
+            val searchResult = if (totalElements > 0) {
+                repo.searchUsers(searchCond, 0, totalElements)
+            } else {
+                firstPageResult
+            }
+            
+            searchResult
                 .onSuccess { searchResults ->
-                    // 검색 결과를 현재 상태에 추가
                     val currentState = _state.value
-                    // picks 목록과 비교하여 isMyPick 설정
                     val currentPicks = (currentState as? FriendUiState.Success)?.picks?.content ?: emptyList()
                     val updatedSearchResults = searchResults.copy(
                         content = searchResults.content.map { user ->

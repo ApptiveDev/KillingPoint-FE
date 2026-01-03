@@ -34,15 +34,22 @@ class FriendProfileViewModel(
         _state.value = FriendProfileUiState.Loading
         val repo = repoFactory(context)
         viewModelScope.launch {
-            // 일기와 통계를 병렬로 로드
-            val diariesResult = repo.getUserDiaries(userId)
+            val firstPageResult = repo.getUserDiaries(userId, 0, 1)
+            val totalElements = firstPageResult.getOrNull()?.page?.totalElements ?: 0
+            
+            val diariesResult = if (totalElements > 0) {
+                repo.getUserDiaries(userId, 0, totalElements)
+            } else {
+                firstPageResult
+            }
+            
             val statisticsResult = repo.getUserStatistics(userId)
             
             when {
                 diariesResult.isSuccess -> {
                     val statistics = statisticsResult.getOrNull()
                     _state.value = FriendProfileUiState.Success(
-                        user = null, // TODO: 유저 정보 API 추가 필요
+                        user = null,
                         diaries = diariesResult.getOrNull(),
                         fansCount = statistics?.fanCount ?: 0,
                         picksCount = statistics?.pickCount ?: 0
