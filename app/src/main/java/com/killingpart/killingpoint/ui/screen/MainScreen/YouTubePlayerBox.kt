@@ -32,7 +32,8 @@ fun YouTubePlayerBox(
     startSeconds: Float, 
     durationSeconds: Float = 0f,
     onVideoReady: () -> Unit = {},
-    isPlayingState: Boolean? = null
+    isPlayingState: Boolean? = null,
+    onVideoEnd: () -> Unit = {}
 ) {
     val context = LocalContext.current
     
@@ -43,8 +44,8 @@ fun YouTubePlayerBox(
     var player by remember(currentVideoUrl) { mutableStateOf<YouTubePlayer?>(null) }
     var currentTime by remember(currentVideoUrl) { mutableStateOf(0f) }
     
-    // 콜백을 remember로 저장하여 리스너에서 사용
     val videoReadyCallback = remember(onVideoReady) { onVideoReady }
+    val onVideoEndCallback = remember(onVideoEnd) { onVideoEnd }
     
     val endSeconds = if (durationSeconds > 0f) {
         startSeconds + durationSeconds
@@ -76,9 +77,11 @@ fun YouTubePlayerBox(
                 }
             }
 
+            val onVideoEndCallback = remember(onVideoEnd) { onVideoEnd }
+            
             LaunchedEffect(currentTime, endSeconds, startSeconds, durationSeconds, player) {
                 if (isPlaying && player != null && endSeconds != null && durationSeconds > 0f && currentTime >= endSeconds) {
-                    player?.seekTo(startSeconds)
+                    onVideoEndCallback()
                 }
             }
 
@@ -166,7 +169,9 @@ fun YouTubePlayerBox(
                                         com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.ENDED -> {
                                             android.util.Log.d("YouTubePlayerBox", "비디오 종료")
                                             isPlaying = false
-                                            if (endSeconds == null || durationSeconds == 0f) {
+                                            if (endSeconds != null && durationSeconds > 0f) {
+                                                onVideoEndCallback()
+                                            } else {
                                                 youTubePlayer.seekTo(startSeconds)
                                                 youTubePlayer.play()
                                             }

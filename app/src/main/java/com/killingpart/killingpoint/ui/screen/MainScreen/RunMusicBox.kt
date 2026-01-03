@@ -86,7 +86,8 @@ fun RunMusicBox(
     authorUsername: String? = null,
     authorTag: String? = null,
     authorProfileImageUrl: String? = null,
-    navController: NavController
+    navController: NavController,
+    onVideoEnd: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
@@ -238,7 +239,8 @@ fun RunMusicBox(
                                 currentDiary, 
                                 startSeconds, 
                                 durationSeconds,
-                                isPlayingState = isPlaying
+                                isPlayingState = isPlaying,
+                                onVideoEnd = onVideoEnd
                             )
                             Spacer(modifier = Modifier.height(20.dp))
                             Text(

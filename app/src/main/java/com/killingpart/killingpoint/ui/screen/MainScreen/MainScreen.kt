@@ -332,7 +332,12 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                         currentIndex = currentIndex,
                                         currentDiary = diaries.getOrNull(currentIndex),
                                         isPlaying = isPlaying,
-                                        navController = navController
+                                        navController = navController,
+                                        onVideoEnd = {
+                                            if (diaries.isNotEmpty()) {
+                                                currentIndex = (currentIndex + 1) % diaries.size
+                                            }
+                                        }
                                     )
                                 }
                             }
