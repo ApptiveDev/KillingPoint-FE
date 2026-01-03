@@ -28,12 +28,12 @@ class FriendViewModel(
     private val _state = MutableStateFlow<FriendUiState>(FriendUiState.Loading)
     val state: StateFlow<FriendUiState> = _state
 
-    fun loadFriends(context: Context, userId: Long) {
+    fun loadFriends(context: Context, userId: Long, pick_total: Int = 5, fan_total: Int = 5) {
         _state.value = FriendUiState.Loading
         val repo = repoFactory(context)
         viewModelScope.launch {
-            val picksResult = repo.getSubscribes(userId)
-            val fansResult = repo.getFans(userId)
+            val picksResult = repo.getSubscribes(userId, pick_total)
+            val fansResult = repo.getFans(userId,fan_total)
 
             when {
                 picksResult.isSuccess && fansResult.isSuccess -> {

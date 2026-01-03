@@ -408,11 +408,11 @@ class AuthRepository(
     /**
      * 구독 목록 조회 (나의 픽)
      */
-    suspend fun getSubscribes(userId: Long): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+    suspend fun getSubscribes(userId: Long, pick_total: Int = 5): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
-            api.getSubscribes("Bearer $accessToken", userId)
+            api.getSubscribes("Bearer $accessToken", userId, pick_total)
         }.recoverCatching { e ->
             if (e is HttpException) {
                 val code = e.code()
@@ -427,11 +427,11 @@ class AuthRepository(
     /**
      * 팬덤 목록 조회 (나의 팬덤)
      */
-    suspend fun getFans(userId: Long): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
+    suspend fun getFans(userId: Long, fan_total: Int = 5): Result<SubscribeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
-            api.getFans("Bearer $accessToken", userId)
+            api.getFans("Bearer $accessToken", userId, fan_total)
         }.recoverCatching { e ->
             if (e is HttpException) {
                 val code = e.code()
@@ -533,4 +533,24 @@ class AuthRepository(
             }
         }
     }
+
+    /**
+     * 회원 통계 조회 (팬덤, 픽, 킬링파트 개수)
+     */
+    suspend fun getUserStatistics(userId: Long): Result<com.killingpart.killingpoint.data.model.UserStatistics> = 
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val accessToken = getAccessToken()
+                    ?: throw IllegalStateException("액세스 토큰이 없습니다")
+                api.getUserStatistics("Bearer $accessToken", userId)
+            }.recoverCatching { e ->
+                if (e is HttpException) {
+                    val code = e.code()
+                    val msg = e.response()?.errorBody()?.string().orEmpty()
+                    throw IllegalStateException("회원 통계 조회 실패 ($code): $msg")
+                } else {
+                    throw e
+                }
+            }
+        }
 }

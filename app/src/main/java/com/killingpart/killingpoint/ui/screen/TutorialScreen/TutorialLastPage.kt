@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +35,9 @@ import com.killingpart.killingpoint.ui.theme.mainGreen
 fun TutorialLastPage(onStart: () -> Unit) {
     Column (
         modifier = Modifier.fillMaxSize()
-            .background(Color.Black).padding(bottom = 50.dp),
+            .background(Color.Black)
+            .navigationBarsPadding()
+            .padding(bottom = 50.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween
     ){

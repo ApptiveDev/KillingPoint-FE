@@ -394,7 +394,8 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         popUpTo(0) { inclusive = false }
                         launchSingleTop = true
                     }
-                }
+                },
+                navController = navController
             )
         }
     }

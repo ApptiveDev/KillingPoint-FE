@@ -69,7 +69,13 @@ fun MusicListBox(
             .animateContentSize()
     ) {
             val currentDiary = diaries.getOrNull(currentIndex)
-            val nextDiary = diaries.getOrNull(currentIndex + 1)
+            // 다음 곡 계산 (순환 재생 고려)
+            val nextDiary = if (diaries.isNotEmpty()) {
+                val nextIndex = (currentIndex + 1) % diaries.size
+                diaries.getOrNull(nextIndex)
+            } else {
+                null
+            }
             val headerLabel = if (showCurrentHeader) "재생 중 : " else "다음곡 : "
             val headerTitle = if (showCurrentHeader) currentDiary?.musicTitle else nextDiary?.musicTitle
 
