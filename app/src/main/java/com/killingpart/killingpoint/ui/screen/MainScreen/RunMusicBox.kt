@@ -191,7 +191,7 @@ fun RunMusicBox(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(420.dp)
+                        .height(500.dp)
                         .verticalScroll(scrollState),
                 ) {
                     

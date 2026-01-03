@@ -25,6 +25,11 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +44,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
@@ -49,6 +57,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -149,21 +158,53 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                 Spacer(modifier = Modifier.height(35.dp))
 
                 if (selected == MainTab.PLAY) {
-                    Text(
-                        text = "MY MUSIC SPACE",
-                        color = Color.White,
-                        fontFamily = UnboundedFontFamily,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 24.sp
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "나만의 뮤직 스페이스",
-                        color = Color(0xFFA4A4A6),
-                        fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp
-                    )
+                    var showTitle by remember { mutableStateOf(true) }
+                    
+                    LaunchedEffect(selected) {
+                        if (selected == MainTab.PLAY) {
+                            showTitle = true
+                            kotlinx.coroutines.delay(3000)
+                            showTitle = false
+                        }
+                    }
+                    
+                    if (showTitle) {
+                        AnimatedVisibility(
+                            visible = showTitle,
+                            exit = slideOutVertically(
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    easing = EaseInOut
+                                ),
+                                targetOffsetY = { -it }
+                            ) + fadeOut(
+                                animationSpec = tween(
+                                    durationMillis = 500,
+                                    easing = EaseInOut
+                                )
+                            )
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "MY MUSIC SPACE",
+                                    color = Color.White,
+                                    fontFamily = UnboundedFontFamily,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 24.sp
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "나만의 뮤직 스페이스",
+                                    color = Color(0xFFA4A4A6),
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(26.dp))
                 }
 
@@ -273,8 +314,9 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
-//                            contentPadding = PaddingValues(bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap)
-                            contentPadding = PaddingValues(bottom = BottomBarHeight)
+                            contentPadding = PaddingValues(
+                                bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap + 200.dp
+                            )
                         ) {
                             item {
                                 Box(
@@ -317,7 +359,22 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                         .padding(bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap)
+                        .zIndex(1f)
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer {
+                                compositingStrategy = CompositingStrategy.Offscreen
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                                    renderEffect = android.graphics.RenderEffect
+                                        .createBlurEffect(16f, 16f, android.graphics.Shader.TileMode.CLAMP)
+                                        .asComposeRenderEffect()
+                                }
+                            }
+                            .background(Color.Black.copy(alpha = 0.3f))
+                    )
+                    
                     Column(
                         modifier = Modifier.fillMaxWidth()
                     ) {
