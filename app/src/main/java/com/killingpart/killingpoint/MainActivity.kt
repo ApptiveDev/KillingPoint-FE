@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                                 else -> {
-                                    launchState = LaunchState.MAIN
+                                    launchState = LaunchState.TUTORIAL
                                 }
                             }
                         },
