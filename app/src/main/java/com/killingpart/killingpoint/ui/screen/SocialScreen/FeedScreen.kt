@@ -131,7 +131,70 @@ fun FeedScreen(navController: NavController) {
                                 if (isCurrentItem) {
                                     FeedRunMusicBox(
                                         feedDiary = feedDiary,
-                                        navController = navController
+                                        navController = navController,
+                                        onLikeClick = {
+                                            feedDiary.diaryId?.let { diaryId ->
+                                                val currentState = feedViewModel.state.value
+                                                if (currentState is FeedUiState.Success) {
+                                                    val currentFeed = currentState.feeds.find { it.diaryId == diaryId }
+                                                    val currentIsLiked = currentFeed?.isLiked ?: false
+
+                                                    val updatedFeeds = currentState.feeds.map { feed ->
+                                                        if (feed.diaryId == diaryId) {
+                                                            feed.copy(
+                                                                isLiked = !currentIsLiked,
+                                                                likeCount = if (!currentIsLiked) feed.likeCount + 1 else (feed.likeCount - 1).coerceAtLeast(0)
+                                                            )
+                                                        } else {
+                                                            feed
+                                                        }
+                                                    }
+                                                    feedViewModel.updateFeeds(updatedFeeds)
+
+                                                    feedViewModel.toggleLike(
+                                                        context = context,
+                                                        diaryId = diaryId,
+                                                        onSuccess = { isLiked ->
+                                                            val apiState = feedViewModel.state.value
+                                                            if (apiState is FeedUiState.Success) {
+                                                                val finalFeeds = apiState.feeds.map { feed ->
+                                                                    if (feed.diaryId == diaryId) {
+                                                                        val expectedCount = if (isLiked) {
+                                                                            (currentFeed?.likeCount ?: 0) + 1
+                                                                        } else {
+                                                                            ((currentFeed?.likeCount ?: 0) - 1).coerceAtLeast(0)
+                                                                        }
+                                                                        feed.copy(
+                                                                            isLiked = isLiked,
+                                                                            likeCount = expectedCount
+                                                                        )
+                                                                    } else {
+                                                                        feed
+                                                                    }
+                                                                }
+                                                                feedViewModel.updateFeeds(finalFeeds)
+                                                            }
+                                                        },
+                                                        onFailure = {
+                                                            val apiState = feedViewModel.state.value
+                                                            if (apiState is FeedUiState.Success) {
+                                                                val revertedFeeds = apiState.feeds.map { feed ->
+                                                                    if (feed.diaryId == diaryId) {
+                                                                        feed.copy(
+                                                                            isLiked = currentIsLiked,
+                                                                            likeCount = currentFeed?.likeCount ?: 0
+                                                                        )
+                                                                    } else {
+                                                                        feed
+                                                                    }
+                                                                }
+                                                                feedViewModel.updateFeeds(revertedFeeds)
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
                                     )
                                 }
                             }

@@ -52,8 +52,13 @@ fun FeedRunMusicBox(
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
     
-    var isLiked by remember { mutableStateOf(feedDiary.isLiked) }
-    var likeCount by remember { mutableStateOf(feedDiary.likeCount) }
+    var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
+    var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
+
+    LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
+        isLiked = feedDiary.isLiked
+        likeCount = feedDiary.likeCount
+    }
 
     LaunchedEffect(diary.videoUrl) {
         android.util.Log.d("FeedRunMusicBox", "FeedRunMusicBox 렌더링: diaryId=${diary.id}, videoUrl=${diary.videoUrl}")
@@ -140,9 +145,8 @@ fun FeedRunMusicBox(
                         text = "프로필 방문",
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 10.sp,
+                        fontSize = 9.sp,
                         color = mainGreen,
-                        maxLines = 1,
                     )
                 }
             }
@@ -182,9 +186,6 @@ fun FeedRunMusicBox(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.clickable {
-                                val newLikedState = !isLiked
-                                isLiked = newLikedState
-                                likeCount = if (newLikedState) likeCount + 1 else (likeCount - 1).coerceAtLeast(0)
                                 onLikeClick?.invoke()
                             }
                                 .size(49.dp, 24.dp)
