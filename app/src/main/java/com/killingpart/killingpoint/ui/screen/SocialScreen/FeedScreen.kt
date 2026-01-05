@@ -13,6 +13,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.FeedUiState
 import com.killingpart.killingpoint.ui.viewmodel.FeedViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun FeedScreen(navController: NavController) {
@@ -42,6 +44,7 @@ fun FeedScreen(navController: NavController) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
     val density = LocalDensity.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         feedViewModel.loadFeeds(context)
@@ -75,12 +78,16 @@ fun FeedScreen(navController: NavController) {
             firstVisible
         }
         
-        if (targetIndex != lastSnappedIndex && targetIndex != firstVisible) {
+        // 스크롤 방향과 관계없이 항상 고정 위치로 스크롤
+        if (targetIndex != lastSnappedIndex) {
             lastSnappedIndex = targetIndex
-            listState.animateScrollToItem(
-                index = targetIndex,
-                scrollOffset = 0
-            )
+            kotlinx.coroutines.delay(150) // 스크롤이 진행 중일 때도 고정 위치로 이동하기 위한 딜레이
+            if (targetIndex == lastSnappedIndex) { // 딜레이 중에 targetIndex가 변경되지 않았는지 확인
+                listState.animateScrollToItem(
+                    index = targetIndex,
+                    scrollOffset = 0
+                )
+            }
         }
     }
 
@@ -132,6 +139,18 @@ fun FeedScreen(navController: NavController) {
                                     FeedRunMusicBox(
                                         feedDiary = feedDiary,
                                         navController = navController,
+                                        onVideoEnd = {
+                                            val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@FeedRunMusicBox
+                                            val currentIndex = currentItemIndex.value
+                                            if (currentIndex < feeds.size - 1) {
+                                                scope.launch {
+                                                    listState.animateScrollToItem(
+                                                        index = currentIndex + 1,
+                                                        scrollOffset = 0
+                                                    )
+                                                }
+                                            }
+                                        },
                                         onLikeClick = {
                                             feedDiary.diaryId?.let { diaryId ->
                                                 val currentState = feedViewModel.state.value

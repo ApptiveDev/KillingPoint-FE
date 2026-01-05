@@ -45,7 +45,8 @@ import java.net.URLEncoder
 fun FeedRunMusicBox(
     feedDiary: FeedDiary,
     navController: NavController,
-    onLikeClick: (() -> Unit)? = null
+    onLikeClick: (() -> Unit)? = null,
+    onVideoEnd: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val diary = feedDiary.toDiary
@@ -158,7 +159,12 @@ fun FeedRunMusicBox(
                         .verticalScroll(scrollState)
                 ) {
                     val startSeconds = diary.start.toFloatOrNull() ?: 0f
-                    val durationSeconds = diary.duration.toFloatOrNull() ?: 0f
+                    val endSeconds = diary.end.toFloatOrNull() ?: 0f
+                    val durationSeconds = if (endSeconds > 0f && startSeconds > 0f) {
+                        endSeconds - startSeconds
+                    } else {
+                        diary.duration.toFloatOrNull() ?: 0f
+                    }
 
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -168,7 +174,10 @@ fun FeedRunMusicBox(
                             diary,
                             startSeconds,
                             durationSeconds,
-                            isPlayingState = null
+                            isPlayingState = null,
+                            onVideoEnd = {
+                                onVideoEnd?.invoke()
+                            }
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                     }
