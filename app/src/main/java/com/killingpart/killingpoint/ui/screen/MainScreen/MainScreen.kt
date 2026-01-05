@@ -315,7 +315,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
-                                .padding(start = 16.dp, end = 16.dp, bottom = 40.dp)
+                                .padding(start = 16.dp, end = 16.dp, bottom = 60.dp)
                                 .background(color = Color.Black, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                         ) {
                             RunMusicBox(
