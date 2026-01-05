@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.max
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
@@ -104,13 +106,16 @@ fun FeedRunMusicBox(
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.W400,
                             fontSize = 11.sp,
-                            color = mainGreen
+                            color = mainGreen,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
                 
                 Box(
                     modifier = Modifier
+                        .width(68.dp)
                         .background(
                             color = Color(0xFF262626),
                             shape = RoundedCornerShape(8.dp)
@@ -136,7 +141,8 @@ fun FeedRunMusicBox(
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 10.sp,
-                        color = mainGreen
+                        color = mainGreen,
+                        maxLines = 1,
                     )
                 }
             }

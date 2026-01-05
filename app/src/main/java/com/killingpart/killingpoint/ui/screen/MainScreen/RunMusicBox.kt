@@ -28,7 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -218,13 +217,11 @@ fun RunMusicBox(
                 }
             } else {
                 val scrollState = rememberScrollState()
-                val density = LocalDensity.current
 
                 key(currentDiary.videoUrl) {
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(500.dp)
+                            .fillMaxSize()
                             .verticalScroll(scrollState),
                     ) {
                         val startSeconds = currentDiary.start?.toFloatOrNull() ?: 0f
@@ -246,23 +243,20 @@ fun RunMusicBox(
                             Text(
                                 text = currentDiary.musicTitle ?: "",
                                 fontFamily = PaperlogyFontFamily,
-                                fontSize = 14.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = currentDiary.artist ?: "",
                                 fontFamily = PaperlogyFontFamily,
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Light
                             )
-                        }
 
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
                             DiaryBox(currentDiary)
                         }
+
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                 }

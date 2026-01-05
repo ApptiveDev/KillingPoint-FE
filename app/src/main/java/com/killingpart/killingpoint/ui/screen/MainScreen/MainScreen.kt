@@ -94,7 +94,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
         )
     }
     var currentIndex by remember { mutableStateOf(0) }
-    val mainListState = rememberLazyListState()
 
     var isPlaying by remember { mutableStateOf(true) } // 기본값은 재생 중
     
@@ -134,14 +133,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
         }
     }
 
-    LaunchedEffect(listExpanded) {
-        kotlinx.coroutines.delay(250)
-        if (listExpanded) {
-            mainListState.animateScrollToItem(1)
-        } else {
-            mainListState.animateScrollToItem(0)
-        }
-    }
 
 
     // 프로필 설정 화면 상태 관리 (최상위 레벨로 이동)
@@ -163,6 +154,8 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                     ) {
                 Spacer(modifier = Modifier.height(35.dp))
 
+                /**
+                 * QA: 메인 재생탭 title 없애기(26.01.05 수정)
                 if (selected == MainTab.PLAY) {
                     var showTitle by remember { mutableStateOf(true) }
                     
@@ -213,6 +206,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                     }
                     Spacer(modifier = Modifier.height(26.dp))
                 }
+                 */
 
                 TopPillTabs(
                     options = listOf("내 프로필", "킬링파트 재생", "뮤직캘린더"),
@@ -317,35 +311,24 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                     }
 
                     MainTab.PLAY -> {
-                        LazyColumn(
-                            state = mainListState,
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f),
-                            contentPadding = PaddingValues(
-                                bottom = BottomBarHeight + MusicCueBtnHeight + MusicCueBtnGap + 200.dp
-                            )
+                                .weight(1f)
+                                .padding(start = 16.dp, end = 16.dp, bottom = 40.dp)
+                                .background(color = Color.Black, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                         ) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp)
-                                        .background(color = Color.Black, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                                ) {
-                                    RunMusicBox(
-                                        currentIndex = currentIndex,
-                                        currentDiary = diaries.getOrNull(currentIndex),
-                                        isPlaying = isPlaying,
-                                        navController = navController,
-                                        onVideoEnd = {
-                                            if (diaries.isNotEmpty()) {
-                                                currentIndex = (currentIndex + 1) % diaries.size
-                                            }
-                                        }
-                                    )
+                            RunMusicBox(
+                                currentIndex = currentIndex,
+                                currentDiary = diaries.getOrNull(currentIndex),
+                                isPlaying = isPlaying,
+                                navController = navController,
+                                onVideoEnd = {
+                                    if (diaries.isNotEmpty()) {
+                                        currentIndex = (currentIndex + 1) % diaries.size
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                     MainTab.CALENDAR -> {
