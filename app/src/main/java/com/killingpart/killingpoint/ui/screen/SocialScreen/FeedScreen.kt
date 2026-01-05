@@ -1,6 +1,7 @@
 package com.killingpart.killingpoint.ui.screen.SocialScreen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,7 +33,6 @@ import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.FeedUiState
 import com.killingpart.killingpoint.ui.viewmodel.FeedViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,7 +54,9 @@ fun FeedScreen(navController: NavController) {
         derivedStateOf {
             val firstVisible = listState.firstVisibleItemIndex
             val scrollOffset = listState.firstVisibleItemScrollOffset
-            val itemHeightPx = with(density) { screenHeight.toPx() }
+            val layoutInfo = listState.layoutInfo
+            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
+            val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
             if (scrollOffset > itemHeightPx * 0.5f) {
                 firstVisible + 1
             } else {
@@ -64,31 +66,74 @@ fun FeedScreen(navController: NavController) {
     }
 
     var lastSnappedIndex by remember { mutableStateOf(0) }
+    var lastFirstVisibleIndex by remember { mutableStateOf(0) }
+    var lastScrollOffset by remember { mutableStateOf(0) }
 
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
-        val firstVisible = listState.firstVisibleItemIndex
-        val scrollOffset = listState.firstVisibleItemScrollOffset
-        val itemHeightPx = with(density) { screenHeight.toPx() }
-        val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
-        val maxIndex = feeds.size - 1
-        
-        val targetIndex = if (scrollOffset > itemHeightPx * 0.5f) {
-            (firstVisible + 1).coerceAtMost(maxIndex)
-        } else {
-            firstVisible
-        }
-        
-        // 스크롤 방향과 관계없이 항상 고정 위치로 스크롤
-        if (targetIndex != lastSnappedIndex) {
-            lastSnappedIndex = targetIndex
-            kotlinx.coroutines.delay(150) // 스크롤이 진행 중일 때도 고정 위치로 이동하기 위한 딜레이
-            if (targetIndex == lastSnappedIndex) { // 딜레이 중에 targetIndex가 변경되지 않았는지 확인
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            kotlinx.coroutines.delay(50)
+            val firstVisible = listState.firstVisibleItemIndex
+            val scrollOffset = listState.firstVisibleItemScrollOffset
+            val layoutInfo = listState.layoutInfo
+            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
+            val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
+            val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
+            val maxIndex = feeds.size - 1
+            
+            val targetIndex = if (scrollOffset > itemHeightPx * 0.5f) {
+                (firstVisible + 1).coerceAtMost(maxIndex)
+            } else {
+                firstVisible
+            }
+            
+            if (targetIndex != lastSnappedIndex) {
+                lastSnappedIndex = targetIndex
                 listState.animateScrollToItem(
                     index = targetIndex,
                     scrollOffset = 0
                 )
             }
         }
+    }
+
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        val firstVisible = listState.firstVisibleItemIndex
+        val scrollOffset = listState.firstVisibleItemScrollOffset
+        val layoutInfo = listState.layoutInfo
+        val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
+        val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
+        val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
+        val maxIndex = feeds.size - 1
+
+        val isScrollingDown = firstVisible > lastFirstVisibleIndex || 
+                             (firstVisible == lastFirstVisibleIndex && scrollOffset > lastScrollOffset)
+        
+        val targetIndex = if (isScrollingDown) {
+            if (scrollOffset > itemHeightPx * 0.3f) {
+                (firstVisible + 1).coerceAtMost(maxIndex)
+            } else {
+                firstVisible
+            }
+        } else {
+            if (firstVisible < lastFirstVisibleIndex) {
+                firstVisible.coerceAtLeast(0)
+            } else {
+                firstVisible
+            }
+        }
+        
+        if (targetIndex != lastSnappedIndex) {
+            lastSnappedIndex = targetIndex
+            scope.launch {
+                listState.animateScrollToItem(
+                    index = targetIndex,
+                    scrollOffset = 0
+                )
+            }
+        }
+        
+        lastFirstVisibleIndex = firstVisible
+        lastScrollOffset = scrollOffset
     }
 
     when (val state = feedState) {
@@ -133,89 +178,93 @@ fun FeedScreen(navController: NavController) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(screenHeight)
+                                    .heightIn(min = screenHeight - 160.dp)
                             ) {
-                                if (isCurrentItem) {
-                                    FeedRunMusicBox(
-                                        feedDiary = feedDiary,
-                                        navController = navController,
-                                        onVideoEnd = {
-                                            val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@FeedRunMusicBox
-                                            val currentIndex = currentItemIndex.value
+                                FeedRunMusicBox(
+                                    feedDiary = feedDiary,
+                                    navController = navController,
+                                    isActive = isCurrentItem,
+                                    onVideoEnd = {
+                                        val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@FeedRunMusicBox
+                                        val currentIndex = currentItemIndex.value
+                                        scope.launch {
                                             if (currentIndex < feeds.size - 1) {
-                                                scope.launch {
-                                                    listState.animateScrollToItem(
-                                                        index = currentIndex + 1,
-                                                        scrollOffset = 0
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        onLikeClick = {
-                                            feedDiary.diaryId?.let { diaryId ->
-                                                val currentState = feedViewModel.state.value
-                                                if (currentState is FeedUiState.Success) {
-                                                    val currentFeed = currentState.feeds.find { it.diaryId == diaryId }
-                                                    val currentIsLiked = currentFeed?.isLiked ?: false
-
-                                                    val updatedFeeds = currentState.feeds.map { feed ->
-                                                        if (feed.diaryId == diaryId) {
-                                                            feed.copy(
-                                                                isLiked = !currentIsLiked,
-                                                                likeCount = if (!currentIsLiked) feed.likeCount + 1 else (feed.likeCount - 1).coerceAtLeast(0)
-                                                            )
-                                                        } else {
-                                                            feed
-                                                        }
-                                                    }
-                                                    feedViewModel.updateFeeds(updatedFeeds)
-
-                                                    feedViewModel.toggleLike(
-                                                        context = context,
-                                                        diaryId = diaryId,
-                                                        onSuccess = { isLiked ->
-                                                            val apiState = feedViewModel.state.value
-                                                            if (apiState is FeedUiState.Success) {
-                                                                val finalFeeds = apiState.feeds.map { feed ->
-                                                                    if (feed.diaryId == diaryId) {
-                                                                        val expectedCount = if (isLiked) {
-                                                                            (currentFeed?.likeCount ?: 0) + 1
-                                                                        } else {
-                                                                            ((currentFeed?.likeCount ?: 0) - 1).coerceAtLeast(0)
-                                                                        }
-                                                                        feed.copy(
-                                                                            isLiked = isLiked,
-                                                                            likeCount = expectedCount
-                                                                        )
-                                                                    } else {
-                                                                        feed
-                                                                    }
-                                                                }
-                                                                feedViewModel.updateFeeds(finalFeeds)
-                                                            }
-                                                        },
-                                                        onFailure = {
-                                                            val apiState = feedViewModel.state.value
-                                                            if (apiState is FeedUiState.Success) {
-                                                                val revertedFeeds = apiState.feeds.map { feed ->
-                                                                    if (feed.diaryId == diaryId) {
-                                                                        feed.copy(
-                                                                            isLiked = currentIsLiked,
-                                                                            likeCount = currentFeed?.likeCount ?: 0
-                                                                        )
-                                                                    } else {
-                                                                        feed
-                                                                    }
-                                                                }
-                                                                feedViewModel.updateFeeds(revertedFeeds)
-                                                            }
-                                                        }
-                                                    )
-                                                }
+                                                listState.animateScrollToItem(
+                                                    index = currentIndex + 1,
+                                                    scrollOffset = 0
+                                                )
+                                            } else {
+                                                listState.animateScrollToItem(
+                                                    index = 0,
+                                                    scrollOffset = 0
+                                                )
                                             }
                                         }
-                                    )
-                                }
+                                    },
+                                    onLikeClick = {
+                                        feedDiary.diaryId?.let { diaryId ->
+                                            val currentState = feedViewModel.state.value
+                                            if (currentState is FeedUiState.Success) {
+                                                val currentFeed = currentState.feeds.find { it.diaryId == diaryId }
+                                                val currentIsLiked = currentFeed?.isLiked ?: false
+
+                                                val updatedFeeds = currentState.feeds.map { feed ->
+                                                    if (feed.diaryId == diaryId) {
+                                                        feed.copy(
+                                                            isLiked = !currentIsLiked,
+                                                            likeCount = if (!currentIsLiked) feed.likeCount + 1 else (feed.likeCount - 1).coerceAtLeast(0)
+                                                        )
+                                                    } else {
+                                                        feed
+                                                    }
+                                                }
+                                                feedViewModel.updateFeeds(updatedFeeds)
+
+                                                feedViewModel.toggleLike(
+                                                    context = context,
+                                                    diaryId = diaryId,
+                                                    onSuccess = { isLiked ->
+                                                        val apiState = feedViewModel.state.value
+                                                        if (apiState is FeedUiState.Success) {
+                                                            val finalFeeds = apiState.feeds.map { feed ->
+                                                                if (feed.diaryId == diaryId) {
+                                                                    val expectedCount = if (isLiked) {
+                                                                        (currentFeed?.likeCount ?: 0) + 1
+                                                                    } else {
+                                                                        ((currentFeed?.likeCount ?: 0) - 1).coerceAtLeast(0)
+                                                                    }
+                                                                    feed.copy(
+                                                                        isLiked = isLiked,
+                                                                        likeCount = expectedCount
+                                                                    )
+                                                                } else {
+                                                                    feed
+                                                                }
+                                                            }
+                                                            feedViewModel.updateFeeds(finalFeeds)
+                                                        }
+                                                    },
+                                                    onFailure = {
+                                                        val apiState = feedViewModel.state.value
+                                                        if (apiState is FeedUiState.Success) {
+                                                            val revertedFeeds = apiState.feeds.map { feed ->
+                                                                if (feed.diaryId == diaryId) {
+                                                                    feed.copy(
+                                                                        isLiked = currentIsLiked,
+                                                                        likeCount = currentFeed?.likeCount ?: 0
+                                                                    )
+                                                                } else {
+                                                                    feed
+                                                                }
+                                                            }
+                                                            feedViewModel.updateFeeds(revertedFeeds)
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
                             }
                         }
                     }
@@ -260,5 +309,3 @@ fun FeedScreen(navController: NavController) {
         }
     }
 }
-
-

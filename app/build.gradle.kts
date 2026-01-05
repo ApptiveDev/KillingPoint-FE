@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.compose.material.core)
     implementation(libs.foundation)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.foundation.layout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

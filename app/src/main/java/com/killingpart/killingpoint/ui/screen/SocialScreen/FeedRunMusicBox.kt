@@ -6,10 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -27,7 +25,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.max
 import androidx.navigation.NavController
@@ -45,13 +42,12 @@ import java.net.URLEncoder
 fun FeedRunMusicBox(
     feedDiary: FeedDiary,
     navController: NavController,
+    isActive: Boolean = true,
     onLikeClick: (() -> Unit)? = null,
     onVideoEnd: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val diary = feedDiary.toDiary
-    val scrollState = rememberScrollState()
-    val density = LocalDensity.current
     
     var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
@@ -69,11 +65,11 @@ fun FeedRunMusicBox(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(horizontal = 24.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
@@ -154,9 +150,7 @@ fun FeedRunMusicBox(
 
             key(diary.videoUrl) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(scrollState)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     val startSeconds = diary.start.toFloatOrNull() ?: 0f
                     val endSeconds = diary.end.toFloatOrNull() ?: 0f
@@ -170,15 +164,25 @@ fun FeedRunMusicBox(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        YouTubePlayerBox(
-                            diary,
-                            startSeconds,
-                            durationSeconds,
-                            isPlayingState = null,
-                            onVideoEnd = {
-                                onVideoEnd?.invoke()
-                            }
-                        )
+                        if (isActive) {
+                            YouTubePlayerBox(
+                                diary,
+                                startSeconds,
+                                durationSeconds,
+                                isPlayingState = null,
+                                onVideoEnd = {
+                                    onVideoEnd?.invoke()
+                                }
+                            )
+                        } else {
+                            // 비활성 아이템은 플레이스홀더만 표시
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .background(Color.Black.copy(alpha = 0.3f))
+                            )
+                        }
                         Spacer(modifier = Modifier.height(20.dp))
                     }
 
@@ -226,7 +230,7 @@ fun FeedRunMusicBox(
                         DiaryBox(diary)
                     }
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(30.dp))
                 }
             }
         }
