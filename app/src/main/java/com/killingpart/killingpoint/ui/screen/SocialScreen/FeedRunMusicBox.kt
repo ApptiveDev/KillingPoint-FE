@@ -142,8 +142,10 @@ fun FeedRunMusicBox(
                         text = "프로필 방문",
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 9.sp,
+                        fontSize = 8.sp,
                         color = mainGreen,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
