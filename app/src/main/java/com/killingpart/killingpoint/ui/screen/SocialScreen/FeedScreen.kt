@@ -67,33 +67,28 @@ fun FeedScreen(navController: NavController) {
 
     var lastSnappedIndex by remember { mutableStateOf(0) }
 
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (!listState.isScrollInProgress) {
-            kotlinx.coroutines.delay(100)
-            if (listState.isScrollInProgress) return@LaunchedEffect
-            
-            val firstVisible = listState.firstVisibleItemIndex
-            val scrollOffset = listState.firstVisibleItemScrollOffset
-            val layoutInfo = listState.layoutInfo
-            val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
-            val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
-            val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
-            val maxIndex = feeds.size - 1
-            
-            val targetIndex = if (scrollOffset > itemHeightPx * 0.5f) {
-                (firstVisible + 1).coerceAtMost(maxIndex)
-            } else {
-                firstVisible.coerceAtLeast(0)
-            }
-            
-            if (targetIndex != lastSnappedIndex) {
-                lastSnappedIndex = targetIndex
-                scope.launch {
-                    listState.animateScrollToItem(
-                        index = targetIndex,
-                        scrollOffset = 0
-                    )
-                }
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        val firstVisible = listState.firstVisibleItemIndex
+        val scrollOffset = listState.firstVisibleItemScrollOffset
+        val layoutInfo = listState.layoutInfo
+        val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
+        val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
+        val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
+        val maxIndex = feeds.size - 1
+        
+        val targetIndex = if (scrollOffset > itemHeightPx * 0.5f) {
+            (firstVisible + 1).coerceAtMost(maxIndex)
+        } else {
+            firstVisible.coerceAtLeast(0)
+        }
+        
+        if (targetIndex != lastSnappedIndex && targetIndex != firstVisible) {
+            lastSnappedIndex = targetIndex
+            scope.launch {
+                listState.animateScrollToItem(
+                    index = targetIndex,
+                    scrollOffset = 0
+                )
             }
         }
     }
