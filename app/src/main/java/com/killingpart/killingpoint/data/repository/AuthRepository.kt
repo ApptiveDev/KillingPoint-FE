@@ -17,6 +17,7 @@ import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
 import com.killingpart.killingpoint.data.model.FeedResponse
+import com.killingpart.killingpoint.data.model.LikeResponse
 import com.killingpart.killingpoint.data.remote.RetrofitClient
 import com.killingpart.killingpoint.data.remote.ApiService
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
@@ -225,6 +226,24 @@ class AuthRepository(
                 throw IllegalStateException("피드 조회 실패 ($code): $msg")
             }
         }
+
+    suspend fun toggleLike(diaryId: Long): Result<LikeResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val result = api.toggleLike("Bearer $accessToken", diaryId)
+            android.util.Log.d("AuthRepository", "좋아요 토글 성공: diaryId=$diaryId, isLiked=${result.isLiked}")
+            result
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("좋아요 토글 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
 
     suspend fun createDiary(body: CreateDiaryRequest) = withContext(Dispatchers.IO) {
         try {

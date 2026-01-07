@@ -28,6 +28,17 @@ class FeedViewModel(
     private val _state = MutableStateFlow<FeedUiState>(FeedUiState.Loading)
     val state: StateFlow<FeedUiState> = _state
 
+    fun updateFeeds(feeds: List<FeedDiary>) {
+        val currentState = _state.value
+        if (currentState is FeedUiState.Success) {
+            _state.value = FeedUiState.Success(
+                feeds = feeds,
+                page = currentState.page,
+                hasMore = currentState.hasMore
+            )
+        }
+    }
+
     fun loadFeeds(context: Context) {
         _state.value = FeedUiState.Loading
         val repo = repoFactory(context)
@@ -49,6 +60,24 @@ class FeedViewModel(
                 )
             } catch (e: Exception) {
                 _state.value = FeedUiState.Error(e.message ?: "피드 로드 실패")
+            }
+        }
+    }
+
+    fun toggleLike(context: Context, diaryId: Long, onSuccess: (Boolean) -> Unit, onFailure: (() -> Unit)? = null) {
+        val repo = repoFactory(context)
+        viewModelScope.launch {
+            try {
+                val result = repo.toggleLike(diaryId)
+                result.onSuccess { likeResponse ->
+                    onSuccess(likeResponse.isLiked)
+                }.onFailure { e ->
+                    android.util.Log.e("FeedViewModel", "좋아요 토글 실패: ${e.message}")
+                    onFailure?.invoke()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FeedViewModel", "좋아요 토글 실패: ${e.message}")
+                onFailure?.invoke()
             }
         }
     }

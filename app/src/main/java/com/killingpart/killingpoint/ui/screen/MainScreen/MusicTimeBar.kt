@@ -37,7 +37,7 @@ fun MusicTimeBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Color.Black.copy(alpha = 0.8f), shape = RoundedCornerShape(16.dp))
+            .background(color = Color.Black, shape = RoundedCornerShape(16.dp))
             .padding(horizontal = 45.dp, vertical = 8.dp)
     ) {
 

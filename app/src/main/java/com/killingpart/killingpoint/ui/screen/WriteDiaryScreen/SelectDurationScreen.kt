@@ -228,7 +228,7 @@ fun SelectDurationScreen(
                         modifier = Modifier.size(250.dp, 150.dp)
                     ) {
 
-                        YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+                        YouTubePlayerBox(tempDiary, startSeconds, durationSeconds, shouldLoop = true)
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))

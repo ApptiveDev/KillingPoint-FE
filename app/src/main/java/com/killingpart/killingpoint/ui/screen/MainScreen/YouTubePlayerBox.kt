@@ -33,7 +33,8 @@ fun YouTubePlayerBox(
     durationSeconds: Float = 0f,
     onVideoReady: () -> Unit = {},
     isPlayingState: Boolean? = null,
-    onVideoEnd: () -> Unit = {}
+    onVideoEnd: () -> Unit = {},
+    shouldLoop: Boolean = false
 ) {
     val context = LocalContext.current
     
@@ -79,9 +80,14 @@ fun YouTubePlayerBox(
 
             val onVideoEndCallback = remember(onVideoEnd) { onVideoEnd }
             
-            LaunchedEffect(currentTime, endSeconds, startSeconds, durationSeconds, player) {
+            LaunchedEffect(currentTime, endSeconds, startSeconds, durationSeconds, player, shouldLoop) {
                 if (isPlaying && player != null && endSeconds != null && durationSeconds > 0f && currentTime >= endSeconds) {
-                    onVideoEndCallback()
+                    if (shouldLoop) {
+                        player?.seekTo(startSeconds)
+                        player?.play()
+                    } else {
+                        onVideoEndCallback()
+                    }
                 }
             }
 
@@ -170,7 +176,12 @@ fun YouTubePlayerBox(
                                             android.util.Log.d("YouTubePlayerBox", "비디오 종료")
                                             isPlaying = false
                                             if (endSeconds != null && durationSeconds > 0f) {
-                                                onVideoEndCallback()
+                                                if (shouldLoop) {
+                                                    youTubePlayer.seekTo(startSeconds)
+                                                    youTubePlayer.play()
+                                                } else {
+                                                    onVideoEndCallback()
+                                                }
                                             } else {
                                                 youTubePlayer.seekTo(startSeconds)
                                                 youTubePlayer.play()

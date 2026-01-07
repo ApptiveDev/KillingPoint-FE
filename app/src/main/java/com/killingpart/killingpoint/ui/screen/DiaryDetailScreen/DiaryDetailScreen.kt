@@ -302,7 +302,8 @@ fun DiaryDetailScreen(
                 }
 
                 if (!isEditing) {
-                    if (diaryId != null) {
+                    val isFriendProfile = authorUsername.isNotEmpty() && authorTag.isNotEmpty()
+                    if (diaryId != null && !isFriendProfile) {
                         Row {
                             IconButton(
                                 onClick = { showDeleteDialog = true }

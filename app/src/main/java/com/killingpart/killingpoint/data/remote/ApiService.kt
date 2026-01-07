@@ -15,6 +15,7 @@ import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
 import com.killingpart.killingpoint.data.model.FeedResponse
 import com.killingpart.killingpoint.data.model.UserStatistics
+import com.killingpart.killingpoint.data.model.LikeResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -158,4 +159,10 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("userId") userId: Long
     ): UserStatistics
+
+    @POST("diaries/{diaryId}/like")
+    suspend fun toggleLike(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long
+    ): LikeResponse
 }
