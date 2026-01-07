@@ -173,7 +173,7 @@ fun DiaryDetailScreen(
                 "play" -> {
                     navController.navigate("main?tab=play") {
                         popUpTo("main") { inclusive = false }
-                    }
+                    }ㅇ
                 }
                 else -> {
                     if (selectedDate.isNotEmpty()) {
@@ -578,8 +578,30 @@ fun DiaryDetailScreen(
                                                     if (selectedDate.isNotEmpty()) "&selectedDate=${
                                                         android.net.Uri.encode(selectedDate)
                                                     }" else ""
-                                                navController.navigate("main?tab=calendar$selectedDateParam") {
-                                                    popUpTo("main") { inclusive = false }
+                                                // 삭제 후 fromTab에 따라 올바른 탭으로 이동
+                                                when (fromTab) {
+                                                    "profile" -> {
+                                                        navController.navigate("main?tab=profile") {
+                                                            popUpTo("main") { inclusive = false }
+                                                        }
+                                                    }
+                                                    "calendar" -> {
+                                                        val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
+                                                        navController.navigate("main?tab=calendar$selectedDateParam") {
+                                                            popUpTo("main") { inclusive = false }
+                                                        }
+                                                    }
+                                                    "play" -> {
+                                                        navController.navigate("main?tab=play") {
+                                                            popUpTo("main") { inclusive = false }
+                                                        }
+                                                    }
+                                                    else -> {
+                                                        // 기본값은 profile
+                                                        navController.navigate("main?tab=profile") {
+                                                            popUpTo("main") { inclusive = false }
+                                                        }
+                                                    }
                                                 }
                                             } catch (e: Exception) {
                                                 android.util.Log.e(
