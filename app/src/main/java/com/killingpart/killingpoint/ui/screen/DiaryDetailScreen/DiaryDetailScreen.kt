@@ -477,7 +477,7 @@ fun DiaryDetailScreen(
                             text = "취소",
                             color = Color(0xFFAAAAAA),
                             fontFamily = PaperlogyFontFamily,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             modifier = Modifier
                                 .clickable {
                                     editedContent = currentContent
@@ -493,7 +493,7 @@ fun DiaryDetailScreen(
                             color = mainGreen,
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.Medium,
-                            fontSize = 10.sp,
+                            fontSize = 11.sp,
                             modifier = Modifier
                                 .clickable {
                                     if (diaryId == null || isLoading) return@clickable
