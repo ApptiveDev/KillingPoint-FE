@@ -173,7 +173,7 @@ fun DiaryDetailScreen(
                 "play" -> {
                     navController.navigate("main?tab=play") {
                         popUpTo("main") { inclusive = false }
-                    }ㅇ
+                    }
                 }
                 else -> {
                     if (selectedDate.isNotEmpty()) {
@@ -343,10 +343,16 @@ fun DiaryDetailScreen(
                 Box(
                     modifier = Modifier.size(250.dp, 150.dp)
                 ) {
+//                    YouTubePlayerBox(
+//                        diary = diary,
+//                        startSeconds = startSeconds.toFloat(),
+//                        durationSeconds = duringSeconds.toFloat()
+//                    )
                     YouTubePlayerBox(
                         diary = diary,
                         startSeconds = startSeconds.toFloat(),
-                        durationSeconds = duringSeconds.toFloat()
+                        durationSeconds = duringSeconds.toFloat(),
+                        shouldLoop = true
                     )
                 }
 
