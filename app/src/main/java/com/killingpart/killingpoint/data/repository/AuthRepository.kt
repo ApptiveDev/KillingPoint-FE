@@ -30,6 +30,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Retrofit
 import java.io.File
+import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 
 class AuthRepository(
     private val context: Context,
@@ -604,4 +605,27 @@ class AuthRepository(
                 }
             }
         }
+
+    /**
+     * 게시글 신고
+     */
+    suspend fun reportDiary(diaryId: Long, content: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val response = api.reportDiary("Bearer $accessToken", diaryId, ReportDiaryRequest(content))
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string().orEmpty()
+                throw IllegalStateException("게시글 신고 실패 (${response.code()}): $errorBody")
+            }
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("게시글 신고 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -43,6 +44,11 @@ import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import java.net.URLEncoder
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import com.killingpart.killingpoint.data.repository.AuthRepository
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun FeedRunMusicBox(
@@ -54,10 +60,16 @@ fun FeedRunMusicBox(
 ) {
     val context = LocalContext.current
     val diary = feedDiary.toDiary
-    
+    val coroutineScope = rememberCoroutineScope()
+    val authRepository = remember(context) { AuthRepository(context) }
+
+
     var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
     var showMenu by remember { mutableStateOf(false) }
+    var showReportModal by remember { mutableStateOf(false) }
+    var reportContent by remember { mutableStateOf("") }
+    var isReporting by remember { mutableStateOf(false) }
 
     LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
         isLiked = feedDiary.isLiked
@@ -100,7 +112,7 @@ fun FeedRunMusicBox(
                         placeholder = painterResource(id = R.drawable.default_profile),
                         error = painterResource(id = R.drawable.default_profile)
                     )
-                    
+
                     Column {
                         Text(
                             text = feedDiary.username,
@@ -121,7 +133,7 @@ fun FeedRunMusicBox(
                         )
                     }
                 }
-                
+
                 Box {
                     Icon(
                         imageVector = Icons.Filled.MoreHoriz,
@@ -157,7 +169,7 @@ fun FeedRunMusicBox(
                                 iconRes = R.drawable.ic_block
                             ) {
                                 showMenu = false
-                                // TODO 차단
+                                // TODO 차단하기
                             }
 
                             FeedMenuItem(
@@ -165,7 +177,7 @@ fun FeedRunMusicBox(
                                 iconRes = R.drawable.ic_report
                             ) {
                                 showMenu = false
-                                // TODO 신고
+                                showReportModal = true
                             }
                         }
                     }
@@ -226,8 +238,8 @@ fun FeedRunMusicBox(
                                 onLikeClick?.invoke()
                             }
                                 .size(49.dp, 24.dp)
-                            .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
-                                RoundedCornerShape(8.dp)),
+                                .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
+                                    RoundedCornerShape(8.dp)),
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Favorite,
@@ -258,6 +270,33 @@ fun FeedRunMusicBox(
                 }
             }
         }
+
+        if (showReportModal) {
+            ReportDiaryModal(
+                diaryId = feedDiary.diaryId,
+                reportContent = reportContent,
+                onContentChange = { reportContent = it },
+                onDismiss = {
+                    showReportModal = false
+                    reportContent = ""
+                },
+                onSubmit = {
+                    coroutineScope.launch {
+                        isReporting = true
+                        try {
+                            authRepository.reportDiary(feedDiary.diaryId, reportContent).getOrThrow()
+                            showReportModal = false
+                            reportContent = ""
+                        } catch (e: Exception) {
+                            android.util.Log.e("FeedRunMusicBox", "게시글 신고 실패: ${e.message}")
+                        } finally {
+                            isReporting = false
+                        }
+                    }
+                },
+                isLoading = isReporting
+            )
+        }
     }
 }
 
@@ -272,7 +311,6 @@ fun FeedMenuItem(
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(start = 8.dp, end = 0.dp ,top = 4.dp, bottom = 4.dp),
-//            .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -288,6 +326,133 @@ fun FeedMenuItem(
             painter = painterResource(id = iconRes),
             contentDescription = null,
             modifier = Modifier.size(14.dp)
+        )
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportDiaryModal(
+    diaryId: Long,
+    reportContent: String,
+    onContentChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSubmit: () -> Unit,
+    isLoading: Boolean
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF111111),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+            , horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "불편하거나, 부적절한 콘텐츠를 발견하셨나요?",
+                fontFamily = PaperlogyFontFamily,
+                fontSize = 13.sp,
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "아래에 신고 사유를 작성해주세요.",
+                fontFamily = PaperlogyFontFamily,
+                fontSize = 13.sp,
+                color = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .background(Color(0xFF2A2A2A), RoundedCornerShape(12.dp))
+                    .padding(12.dp)
+            ) {
+                BasicTextField(
+                    value = reportContent,
+                    onValueChange = onContentChange,
+                    modifier = Modifier.fillMaxSize(),
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = Color.White,
+                        fontSize = 13.sp,
+                        fontFamily = PaperlogyFontFamily
+                    ),
+                    decorationBox = { innerTextField ->
+                        if (reportContent.isEmpty()) {
+                            Text(
+                                text = "신고 사유...",
+                                color = Color(0xFF777777),
+                                fontSize = 13.sp,
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ReportButton(
+                    text = "돌아가기",
+                    background = Color.White,
+                    textColor = Color.Black,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    onDismiss()
+                }
+
+                ReportButton(
+                    text = "신고하기",
+                    background = Color(0xFFFF5A5A),
+                    textColor = Color.White,
+                    modifier = Modifier.weight(1f),
+                    enabled = reportContent.isNotBlank() && !isLoading
+                ) {
+                    onSubmit()
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+fun ReportButton(
+    text: String,
+    background: Color,
+    textColor: Color,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .height(48.dp)
+            .background(
+                color = if (enabled) background else background.copy(alpha = 0.5f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable(enabled = enabled) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontFamily = PaperlogyFontFamily,
+            fontWeight = FontWeight.Medium,
+            fontSize = 14.sp,
+            color = textColor
         )
     }
 }

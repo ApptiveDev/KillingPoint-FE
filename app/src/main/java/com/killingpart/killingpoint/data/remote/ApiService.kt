@@ -25,6 +25,7 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
+import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 
 interface ApiService {
 
@@ -165,4 +166,11 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("diaryId") diaryId: Long
     ): LikeResponse
+
+    @POST("diaries/{diaryId}/reports")
+    suspend fun reportDiary(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long,
+        @Body body: ReportDiaryRequest
+    ): retrofit2.Response<Unit>
 }
