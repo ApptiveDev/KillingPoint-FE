@@ -63,17 +63,21 @@ fun FeedRunMusicBox(
     val coroutineScope = rememberCoroutineScope()
     val authRepository = remember(context) { AuthRepository(context) }
 
-
     var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
     var showMenu by remember { mutableStateOf(false) }
     var showReportModal by remember { mutableStateOf(false) }
     var reportContent by remember { mutableStateOf("") }
     var isReporting by remember { mutableStateOf(false) }
+    var currentUserId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
         isLiked = feedDiary.isLiked
         likeCount = feedDiary.likeCount
+    }
+
+    LaunchedEffect(Unit) {
+        currentUserId = authRepository.getUserIdFromToken()
     }
 
     LaunchedEffect(diary.videoUrl) {
@@ -101,6 +105,16 @@ fun FeedRunMusicBox(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    val encodedUsername = remember(feedDiary.username) {
+                        URLEncoder.encode(feedDiary.username, "UTF-8")
+                    }
+                    val encodedTag = remember(feedDiary.tag) {
+                        URLEncoder.encode(feedDiary.tag, "UTF-8")
+                    }
+                    val encodedProfileImageUrl = remember(feedDiary.profileImageUrl) {
+                        URLEncoder.encode(feedDiary.profileImageUrl, "UTF-8")
+                    }
+
                     AsyncImage(
                         model = feedDiary.profileImageUrl,
                         contentDescription = "프로필 사진",
@@ -108,12 +122,41 @@ fun FeedRunMusicBox(
                         modifier = Modifier
                             .size(50.dp)
                             .clip(CircleShape)
-                            .border(3.dp, mainGreen, CircleShape),
+                            .border(3.dp, mainGreen, CircleShape)
+                            .clickable {
+                                if (currentUserId != null && feedDiary.userId == currentUserId) {
+                                    navController.navigate("main?tab=profile")
+                                } else {
+                                    navController.navigate(
+                                        "friend_profile" +
+                                                "?userId=${feedDiary.userId}" +
+                                                "&username=$encodedUsername" +
+                                                "&tag=$encodedTag" +
+                                                "&profileImageUrl=$encodedProfileImageUrl" +
+                                                "&isMyPick=false"
+                                    )
+                                }
+                            },
                         placeholder = painterResource(id = R.drawable.default_profile),
                         error = painterResource(id = R.drawable.default_profile)
                     )
 
-                    Column {
+                    Column(
+                        modifier = Modifier.clickable {
+                            if (currentUserId != null && feedDiary.userId == currentUserId) {
+                                navController.navigate("main?tab=profile")
+                            } else {
+                                navController.navigate(
+                                    "friend_profile" +
+                                            "?userId=${feedDiary.userId}" +
+                                            "&username=$encodedUsername" +
+                                            "&tag=$encodedTag" +
+                                            "&profileImageUrl=$encodedProfileImageUrl" +
+                                            "&isMyPick=false"
+                                )
+                            }
+                        }
+                    ) {
                         Text(
                             text = feedDiary.username,
                             fontFamily = PaperlogyFontFamily,
