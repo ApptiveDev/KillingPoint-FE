@@ -11,6 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -26,7 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.max
+import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
@@ -51,6 +57,7 @@ fun FeedRunMusicBox(
     
     var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
+    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
         isLiked = feedDiary.isLiked
@@ -115,38 +122,53 @@ fun FeedRunMusicBox(
                     }
                 }
                 
-                Box(
-                    modifier = Modifier
-                        .width(68.dp)
-                        .background(
-                            color = Color(0xFF262626),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clickable {
-                            val encodedUsername = URLEncoder.encode(feedDiary.username, "UTF-8")
-                            val encodedTag = URLEncoder.encode(feedDiary.tag, "UTF-8")
-                            val encodedProfileImageUrl = URLEncoder.encode(feedDiary.profileImageUrl, "UTF-8")
-                            navController.navigate(
-                                "friend_profile" +
-                                        "?userId=${feedDiary.userId}" +
-                                        "&username=$encodedUsername" +
-                                        "&tag=$encodedTag" +
-                                        "&profileImageUrl=$encodedProfileImageUrl" +
-                                        "&isMyPick=false"
-                            )
-                        }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "프로필 방문",
-                        fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 8.sp,
-                        color = mainGreen,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                Box {
+                    Icon(
+                        imageVector = Icons.Filled.MoreHoriz,
+                        contentDescription = "메뉴",
+                        tint = Color(0xFF4E4E4E),
+                        modifier = Modifier
+                            .size(30.dp)
+                            .clickable { showMenu = true }
                     )
+
+                    Box {
+                        Icon(
+                            imageVector = Icons.Filled.MoreHoriz,
+                            contentDescription = "메뉴",
+                            tint = Color(0xFF4E4E4E),
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable { showMenu = true }
+                        )
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier
+                                .width(78.dp)
+                                .background(
+                                    color = Color(0xFF101010),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                        ) {
+                            FeedMenuItem(
+                                text = "차단하기",
+                                iconRes = R.drawable.ic_block
+                            ) {
+                                showMenu = false
+                                // TODO 차단
+                            }
+
+                            FeedMenuItem(
+                                text = "신고하기",
+                                iconRes = R.drawable.ic_report
+                            ) {
+                                showMenu = false
+                                // TODO 신고
+                            }
+                        }
+                    }
                 }
             }
 
@@ -239,3 +261,33 @@ fun FeedRunMusicBox(
     }
 }
 
+@Composable
+fun FeedMenuItem(
+    text: String,
+    iconRes: Int,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(start = 8.dp, end = 0.dp ,top = 4.dp, bottom = 4.dp),
+//            .padding(vertical = 4.dp, horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = text,
+            fontFamily = PaperlogyFontFamily,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp,
+            color = Color(0xFFB1B1B1)
+        )
+
+        Image(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(14.dp)
+        )
+    }
+}
