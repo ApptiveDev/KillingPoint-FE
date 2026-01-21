@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class FeedDiary(
     @SerializedName("diaryId")
-    val diaryId: Long?,
+    val diaryId: Long,
     val artist: String,
     @SerializedName("musicTitle")
     val musicTitle: String,
