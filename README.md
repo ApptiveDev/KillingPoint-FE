@@ -1,10 +1,18 @@
 # 🎵 KillingPart_FE ; 짧게 들어도, 길게 남는 순간
 
-> [![Google Play](https://img.shields.io/badge/Google_Play-458CF5?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.killingpart.killingpoint)
+<img width="1185" height="663" alt="image" src="https://github.com/user-attachments/assets/be9e6aec-5ed6-48d7-a1e5-d3a31a0068d0" />
 
-**버전**: 2.0.1 (versionCode: 13)  
-**최소 SDK**: Android 10 (API 29)  
-**타겟 SDK**: Android 14 (API 36)
+### 🚀 Quick Links
+
+- 🎬 **홍보 영상 링크 👉** [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=JO2aY6ki2ok)
+- 🎬 **기능 소개 링크 👉** [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat-square&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=Uh33_kytQlA)
+- 📲 **Google Play 링크 👉** [![Google Play](https://img.shields.io/badge/Google_Play-458CF5?style=flat-square&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.killingpart.killingpoint)
+
+### 📱 App Info
+
+| Version | Min SDK | Target SDK |
+|:---:|:---:|:---:|
+| **2.0.1** (13) | Android 10 (29) | Android 14 (36) |
 
 ## ⁉️ 왜 만들었나요?
 
