@@ -30,7 +30,7 @@ fun DiaryBox(diary: Diary?) {
             fontFamily = PaperlogyFontFamily,
             fontWeight = FontWeight.Medium,
             fontSize = 13.sp,
-            color = mainGreen
+            color = Color(0xFFA4A4A6)
         )
 
         Spacer(modifier = Modifier.height(18.dp))

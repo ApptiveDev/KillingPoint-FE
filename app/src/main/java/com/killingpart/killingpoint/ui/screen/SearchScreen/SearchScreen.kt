@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
 import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
@@ -93,10 +94,11 @@ fun SearchScreen(navController: NavController) {
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        when (val state = searchState) {
+    AppBackground {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(top = 40.dp)
+        ) {
+            when (val state = searchState) {
             is SearchUiState.Loading -> {
                 Box(
                     modifier = Modifier
@@ -146,7 +148,7 @@ fun SearchScreen(navController: NavController) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxHeight()
-                                        .widthIn(min = screenWidth)
+                                        .width(screenWidth)
                                 ) {
                                     SearchRunMusicBox(
                                         feedDiary = feedDiary,
@@ -278,8 +280,9 @@ fun SearchScreen(navController: NavController) {
                     )
                 }
             }
+            }
+            
+            BottomBar(navController)
         }
-        
-        BottomBar(navController)
     }
 }

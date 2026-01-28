@@ -35,7 +35,7 @@ import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
-import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
+import com.killingpart.killingpoint.ui.screen.SearchScreen.SearchYouTubePlayerBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import java.net.URLEncoder
@@ -84,7 +84,7 @@ fun SearchRunMusicBox(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -92,11 +92,12 @@ fun SearchRunMusicBox(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 25.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f, fill = false),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -137,7 +138,7 @@ fun SearchRunMusicBox(
                     )
 
                     Column(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.weight(1f, fill = false).clickable {
                             if (currentUserId != null && feedDiary.userId == currentUserId) {
                                 navController.navigate("main?tab=profile")
                             } else {
@@ -192,13 +193,13 @@ fun SearchRunMusicBox(
                                 shape = RoundedCornerShape(4.dp)
                             )
                     ) {
-                        SearchMenuItem(
-                            text = "차단하기",
-                            iconRes = R.drawable.ic_block
-                        ) {
-                            showMenu = false
-                            // TODO 차단하기
-                        }
+//                        SearchMenuItem(
+//                            text = "차단하기",
+//                            iconRes = R.drawable.ic_block
+//                        ) {
+//                            showMenu = false
+//                            // TODO 차단하기
+//                        }
 
                         SearchMenuItem(
                             text = "신고하기",
@@ -223,41 +224,41 @@ fun SearchRunMusicBox(
                         diary.duration.toFloatOrNull() ?: 0f
                     }
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (isActive) {
-                            YouTubePlayerBox(
-                                diary,
-                                startSeconds,
-                                durationSeconds,
-                                isPlayingState = null,
-                                onVideoEnd = {
-                                    onVideoEnd?.invoke()
-                                }
-                            )
-                        } else {
-                            // 비활성 아이템은 플레이스홀더만 표시
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .background(Color.Black.copy(alpha = 0.3f))
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(20.dp))
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
+                    // 제목과 가수, 좋아요 버튼 Row
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
                     ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            diary.musicTitle?.let { title ->
+                                Text(
+                                    text = title,
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = Color.White
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            diary.artist?.let { artist ->
+                                Text(
+                                    text = artist,
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 14.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+
+                        // 좋아요 버튼 (우측)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
@@ -283,6 +284,35 @@ fun SearchRunMusicBox(
                                 color = if (isLiked) Color.Black else Color.White
                             )
                         }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // SearchYouTubePlayerBox
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (isActive) {
+                            SearchYouTubePlayerBox(
+                                diary,
+                                startSeconds,
+                                durationSeconds,
+                                isPlayingState = null,
+                                onVideoEnd = {
+                                    onVideoEnd?.invoke()
+                                }
+                            )
+                        } else {
+                            // 비활성 아이템은 플레이스홀더만 표시
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                                    .background(Color.Black.copy(alpha = 0.3f))
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
 
                     Spacer(modifier = Modifier.height(18.dp))
