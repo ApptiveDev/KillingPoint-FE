@@ -14,6 +14,7 @@ import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
 import com.killingpart.killingpoint.data.model.FeedResponse
+import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.data.model.UserStatistics
 import com.killingpart.killingpoint.data.model.LikeResponse
 import retrofit2.http.Body
@@ -173,4 +174,9 @@ interface ApiService {
         @Path("diaryId") diaryId: Long,
         @Body body: ReportDiaryRequest
     ): retrofit2.Response<Unit>
+
+    @GET("diaries/randoms")
+    suspend fun getRandomDiaries(
+        @Header("Authorization") accessToken: String
+    ): List<FeedDiary>
 }

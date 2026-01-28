@@ -17,6 +17,7 @@ import com.killingpart.killingpoint.ui.screen.SocialScreen.SocialScreen
 import com.killingpart.killingpoint.ui.screen.SocialScreen.FriendProfileScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import com.killingpart.killingpoint.ui.screen.SearchScreen.SearchScreen
 import java.net.URLDecoder
 
 @Composable
@@ -222,6 +223,9 @@ fun NavGraph(
                 profileImageUrl = profileImageUrl,
                 isMyPick = isMyPick
             )
+        }
+        composable("search") {
+            SearchScreen(navController)
         }
     }
 }

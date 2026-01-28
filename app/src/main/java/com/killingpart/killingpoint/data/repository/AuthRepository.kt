@@ -228,6 +228,26 @@ class AuthRepository(
             }
         }
 
+    suspend fun getRandomDiaries(): List<com.killingpart.killingpoint.data.model.FeedDiary> =
+        withContext(Dispatchers.IO) {
+            try {
+                val accessToken = getAccessToken()
+                    ?: throw IllegalStateException("액세스 토큰이 없습니다")
+                val result = api.getRandomDiaries("Bearer $accessToken")
+                
+                android.util.Log.d("AuthRepository", "무작위 일기 조회 성공: count=${result.size}")
+                result.forEachIndexed { index, diary ->
+                    android.util.Log.d("AuthRepository", "RandomDiary[$index]: diaryId=${diary.diaryId}, userId=${diary.userId}, username=${diary.username}, tag=${diary.tag}, musicTitle=${diary.musicTitle}, artist=${diary.artist}")
+                }
+                
+                result
+            } catch (e: HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("무작위 일기 조회 실패 ($code): $msg")
+            }
+        }
+
     suspend fun toggleLike(diaryId: Long): Result<LikeResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()

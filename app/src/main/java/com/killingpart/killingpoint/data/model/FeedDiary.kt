@@ -24,6 +24,8 @@ data class FeedDiary(
     @SerializedName("updateDate")
     val updateDate: String,
     val isLiked: Boolean,
+    @SerializedName("isStored")
+    val isStored: Boolean,
     val likeCount: Int,
     val userId: Long,
     val username: String,

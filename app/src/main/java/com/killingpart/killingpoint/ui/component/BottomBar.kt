@@ -59,23 +59,23 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             )
         }
 
-//        Column (
-//            verticalArrangement = Arrangement.Center,
-//            horizontalAlignment = Alignment.CenterHorizontally
-//        ){
-//            Image(
-//                painter = painterResource(id = R.drawable.navi_search),
-//                contentDescription = "탐색 네비게이션 바",
-//                modifier = Modifier.size(36.dp)
-//            )
-//            Text(
-//                text = "탐색",
-//                fontFamily = PaperlogyFontFamily,
-//                fontWeight = FontWeight.Light,
-//                fontSize = 10.sp,
-//                color = Color.White
-//            )
-//        }
+        Column (
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+            Image(
+                painter = painterResource(id = R.drawable.navi_search),
+                contentDescription = "탐색 네비게이션 바",
+                modifier = Modifier.size(36.dp).clickable {navController.navigate("search")}
+            )
+            Text(
+                text = "탐색",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Light,
+                fontSize = 10.sp,
+                color = Color.White
+            )
+        }
         Column (
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
