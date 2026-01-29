@@ -209,7 +209,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                  */
 
                 TopPillTabs(
-                    options = listOf("내 프로필", "킬링파트 재생", "뮤직캘린더"),
+                    options = listOf("내 컬렉션", "킬링파트 재생", "뮤직캘린더"),
                     selectedIndex = when (selected) {
                         MainTab.PROFILE -> 0
                         MainTab.PLAY -> 1

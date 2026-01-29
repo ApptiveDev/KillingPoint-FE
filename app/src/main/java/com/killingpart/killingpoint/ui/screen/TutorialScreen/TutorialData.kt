@@ -29,7 +29,7 @@ val tutorialSteps = listOf(
 
     TutorialStep(
         step = 4,
-        description = "내 프로필 뿐만 아니라 캘린더에도 저장해놨어요.\n킬링파트를 모아 나만의 캘린더를 완성해 보세요.",
+        description = "내 컬렉션 뿐만 아니라 캘린더에도 저장해놨어요.\n킬링파트를 모아 나만의 캘린더를 완성해 보세요.",
         image = R.drawable.tutorial4
     ),
 
