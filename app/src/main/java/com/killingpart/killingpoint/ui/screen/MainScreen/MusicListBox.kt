@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -74,9 +75,16 @@ fun MusicListBox(
     val itemHeightPx = with(density) { REORDER_ITEM_HEIGHT_DP.dp.toPx() }
 
     var isEditMode by remember { mutableStateOf(false) }
+    var pendingOrderIds by remember { mutableStateOf<List<Long>?>(null) }
     val reorderableList = remember { mutableStateListOf<Diary>() }
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(diaries, pendingOrderIds) {
+        if (pendingOrderIds != null && diaries.mapNotNull { it.id } == pendingOrderIds) {
+            pendingOrderIds = null
+        }
+    }
 
     val currentDiary = diaries.getOrNull(currentIndex)
     val nextDiary = if (diaries.isNotEmpty()) {
@@ -85,7 +93,7 @@ fun MusicListBox(
     } else null
     val headerLabel = if (showCurrentHeader) "재생 중 : " else "다음곡 : "
     val headerTitle = if (showCurrentHeader) currentDiary?.musicTitle else nextDiary?.musicTitle
-    val displayList = if (isEditMode) reorderableList else diaries
+    val displayList = if (isEditMode || pendingOrderIds != null) reorderableList else diaries
 
     Column(
         modifier = Modifier
@@ -100,6 +108,7 @@ fun MusicListBox(
             onToggle = {
                 if (expanded) {
                     isEditMode = false
+                    pendingOrderIds = null
                     onToggle(false)
                 } else {
                     onToggle(true)
@@ -112,7 +121,10 @@ fun MusicListBox(
                     isEditMode = true
                 } else {
                     val ids = reorderableList.mapNotNull { it.id }
-                    if (ids.isNotEmpty()) onOrderChange(ids)
+                    if (ids.isNotEmpty()) {
+                        pendingOrderIds = ids
+                        onOrderChange(ids)
+                    }
                     isEditMode = false
                 }
             }
@@ -155,7 +167,8 @@ fun MusicListBox(
                             displayList,
                             key = { _, d -> d.id ?: d.hashCode() }
                         ) { index, d ->
-                            MusicListOne(
+                            Box(modifier = Modifier.animateItem()) {
+                                MusicListOne(
                                     imageUrl = d.albumImageUrl,
                                     musicTitle = d.musicTitle,
                                     artist = d.artist,
@@ -188,7 +201,8 @@ fun MusicListBox(
                                                     reorderableList.removeAt(from)
                                                     reorderableList.add(toIndex, item)
                                                     draggedIndex = toIndex
-                                                    dragOffsetY = 0f
+                                                    // 이동한 칸수만큼만 차감해서 남은 드래그량 유지 → 한 번에 여러 칸 이동 가능
+                                                    dragOffsetY -= (toIndex - from) * itemHeightPx
                                                 }
                                             },
                                             onDragEnd = {
@@ -198,6 +212,7 @@ fun MusicListBox(
                                         )
                                     }
                                 )
+                            }
                         }
                     }
                 }
