@@ -67,6 +67,7 @@ fun FeedRunMusicBox(
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
     var showMenu by remember { mutableStateOf(false) }
     var showReportModal by remember { mutableStateOf(false) }
+    var showReportSuccessModal by remember { mutableStateOf(false) }
     var reportContent by remember { mutableStateOf("") }
     var isReporting by remember { mutableStateOf(false) }
     var currentUserId by remember { mutableStateOf<Long?>(null) }
@@ -207,13 +208,13 @@ fun FeedRunMusicBox(
                                     shape = RoundedCornerShape(4.dp)
                                 )
                         ) {
-                            FeedMenuItem(
-                                text = "차단하기",
-                                iconRes = R.drawable.ic_block
-                            ) {
-                                showMenu = false
-                                // TODO 차단하기
-                            }
+//                            FeedMenuItem(
+//                                text = "차단하기",
+//                                iconRes = R.drawable.ic_block
+//                            ) {
+//                                showMenu = false
+//                                // TODO 차단하기
+//                            }
 
                             FeedMenuItem(
                                 text = "신고하기",
@@ -330,6 +331,7 @@ fun FeedRunMusicBox(
                             authRepository.reportDiary(feedDiary.diaryId, reportContent).getOrThrow()
                             showReportModal = false
                             reportContent = ""
+                            showReportSuccessModal = true
                         } catch (e: Exception) {
                             android.util.Log.e("FeedRunMusicBox", "게시글 신고 실패: ${e.message}")
                         } finally {
@@ -339,6 +341,10 @@ fun FeedRunMusicBox(
                 },
                 isLoading = isReporting
             )
+        }
+
+        if (showReportSuccessModal) {
+            ReportSuccessModal(onDismiss = { showReportSuccessModal = false })
         }
     }
 }
@@ -466,6 +472,41 @@ fun ReportDiaryModal(
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReportSuccessModal(onDismiss: () -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF111111),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 70.dp, vertical = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "신고가 정상적으로 완료되었습니다.",
+                fontFamily = PaperlogyFontFamily,
+                fontSize = 13.sp,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            ReportButton(
+                text = "확인",
+                background = Color.White,
+                textColor = Color.Black,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                onDismiss()
+            }
             Spacer(modifier = Modifier.height(10.dp))
         }
     }
