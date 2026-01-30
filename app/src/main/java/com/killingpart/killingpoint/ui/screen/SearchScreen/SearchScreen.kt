@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.ui.screen.SearchScreen
 
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -11,10 +12,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -66,33 +65,7 @@ fun SearchScreen(navController: NavController) {
         }
     }
 
-    var lastSnappedIndex by remember { mutableStateOf(0) }
-
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
-        val firstVisible = listState.firstVisibleItemIndex
-        val scrollOffset = listState.firstVisibleItemScrollOffset
-        val layoutInfo = listState.layoutInfo
-        val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
-        val itemWidthPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenWidth.toPx() }
-        val diaries = (searchState as? SearchUiState.Success)?.diaries ?: return@LaunchedEffect
-        val maxIndex = diaries.size - 1
-        
-        val targetIndex = if (scrollOffset > itemWidthPx * 0.5f) {
-            (firstVisible + 1).coerceAtMost(maxIndex)
-        } else {
-            firstVisible.coerceAtLeast(0)
-        }
-        
-        if (targetIndex != lastSnappedIndex && targetIndex != firstVisible) {
-            lastSnappedIndex = targetIndex
-            scope.launch {
-                listState.animateScrollToItem(
-                    index = targetIndex,
-                    scrollOffset = 0
-                )
-            }
-        }
-    }
+    val snapFlingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
     AppBackground {
         Column(
@@ -133,7 +106,8 @@ fun SearchScreen(navController: NavController) {
                     ) {
                         LazyRow(
                             state = listState,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            flingBehavior = snapFlingBehavior
                         ) {
                             itemsIndexed(
                                 items = state.diaries,
