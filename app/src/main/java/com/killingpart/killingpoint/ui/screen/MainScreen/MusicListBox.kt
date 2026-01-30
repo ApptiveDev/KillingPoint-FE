@@ -181,10 +181,10 @@ fun MusicListBox(
                                     },
                                     isPlaying = d.id == currentDiary?.id,
                                     showDragHandle = isEditMode,
-                                    dragHandleModifier = Modifier.pointerInput(index, d.id) {
+                                    dragHandleModifier = Modifier.pointerInput(d.id) {
                                         detectDragGesturesAfterLongPress(
                                             onDragStart = {
-                                                draggedIndex = index
+                                                draggedIndex = reorderableList.indexOfFirst { it.id == d.id }
                                                 dragOffsetY = 0f
                                             },
                                             onDrag = { change, dragAmount ->
