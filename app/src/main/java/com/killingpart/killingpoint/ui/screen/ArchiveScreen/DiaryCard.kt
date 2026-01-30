@@ -35,7 +35,8 @@ import androidx.compose.material3.Surface
 fun DiaryCard(
     diary: Diary,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    authorTag: String? = null
 ) {
     // 날짜에서 시간 부분 제거하고 포맷 변경 (예: "2025-10-29T23:52:08" -> "2025.10.29")
     val dateOnly = try {
@@ -57,46 +58,58 @@ fun DiaryCard(
             .fillMaxWidth()
             .then(clickableModifier)
     ) {
-//         상단 아이콘들 (좋아요 + 공개 범위)
+        // 상단: authorTag 있으면 @{tag}, 없으면 좋아요 + 공개 범위 아이콘
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 4.dp)
                 .padding(horizontal = 3.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = if (authorTag != null) Arrangement.Start else Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 좋아요 수
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = "Likes",
-                    tint = Color(0xFFCCFF33),
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
+            if (authorTag != null) {
                 Text(
-                    text = "${diary.likeCount}",
+                    text = "@$authorTag",
                     color = Color.White,
                     fontSize = 10.sp,
                     fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                // 좋아요 수
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Likes",
+                        tint = Color(0xFFCCFF33),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = "${diary.likeCount}",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // 공개 범위 아이콘
+                Icon(
+                    imageVector = when (diary.scope) {
+                        Scope.PUBLIC -> Icons.Filled.Language
+                        Scope.PRIVATE -> Icons.Filled.Lock
+                        Scope.KILLING_PART -> Icons.Filled.MusicNote
+                    },
+                    contentDescription = "Scope",
+                    tint = Color.White,
+                    modifier = Modifier.size(15.dp)
                 )
             }
-
-            // 공개 범위 아이콘
-            Icon(
-                imageVector = when (diary.scope) {
-                    Scope.PUBLIC -> Icons.Filled.Language
-                    Scope.PRIVATE -> Icons.Filled.Lock
-                    Scope.KILLING_PART -> Icons.Filled.MusicNote
-                },
-                contentDescription = "Scope",
-                tint = Color.White,
-                modifier = Modifier.size(15.dp)
-            )
         }
         
         Box(

@@ -17,6 +17,7 @@ import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
 import com.killingpart.killingpoint.data.model.SubscribeResponse
 import com.killingpart.killingpoint.data.model.FeedResponse
+import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.data.model.LikeResponse
 import com.killingpart.killingpoint.data.model.StoreResponse
 import com.killingpart.killingpoint.data.remote.RetrofitClient
@@ -279,6 +280,22 @@ class AuthRepository(
                 val code = e.code()
                 val msg = e.response()?.errorBody()?.string().orEmpty()
                 throw IllegalStateException("보관 토글 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    suspend fun getStoredDiariesPage(page: Int = 0, size: Int = 20): Result<FeedResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.getStoredDiaries("Bearer $accessToken", page = page, size = size)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("보관 일기 조회 실패 ($code): $msg")
             } else {
                 throw e
             }

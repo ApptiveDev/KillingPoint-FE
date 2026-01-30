@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -35,8 +36,11 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.ui.screen.ArchiveScreen.DiaryCard
 import android.net.Uri
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.text.style.TextAlign
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.UserUiState
@@ -58,9 +62,17 @@ fun OuterBox(
     var userStatistics by remember { mutableStateOf<com.killingpart.killingpoint.data.model.UserStatistics?>(null) }
     var isLoadingStatistics by remember { mutableStateOf(false) }
 
+    // 탭: 0 = 내 킬링파트, 1 = 보관한 킬링파트
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    var storedDiaries by remember { mutableStateOf<List<FeedDiary>>(emptyList()) }
+    var totalStoredPages by remember { mutableStateOf(0) }
+    var currentStoredPage by remember { mutableStateOf(-1) }
+    var isLoadingStored by remember { mutableStateOf(false) }
+    var isLoadingMoreStored by remember { mutableStateOf(false) }
+    val gridListState = rememberLazyListState()
+
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
-        // 현재 사용자 ID 가져와서 통계 로드
         val repo = AuthRepository(context)
         val userId = repo.getUserIdFromToken()
         if (userId != null) {
@@ -75,6 +87,48 @@ fun OuterBox(
                     isLoadingStatistics = false
                 }
         }
+        isLoadingStored = true
+        repo.getStoredDiariesPage(page = 0, size = 20)
+            .onSuccess { response ->
+                storedDiaries = response.content
+                totalStoredPages = response.page.totalPages
+                currentStoredPage = 0
+            }
+            .onFailure { e ->
+                android.util.Log.e("OuterBox", "보관 일기 조회 실패: ${e.message}")
+            }
+        isLoadingStored = false
+    }
+
+    val chunkedRowsForLoadMore = if (selectedTabIndex == 0) 0 else storedDiaries.chunked(2).size
+    LaunchedEffect(
+        selectedTabIndex,
+        gridListState.firstVisibleItemIndex,
+        gridListState.layoutInfo.visibleItemsInfo.size,
+        chunkedRowsForLoadMore,
+        currentStoredPage,
+        totalStoredPages
+    ) {
+        if (selectedTabIndex != 1 || currentStoredPage < 0) return@LaunchedEffect
+        if (currentStoredPage + 1 >= totalStoredPages) return@LaunchedEffect
+        if (isLoadingMoreStored) return@LaunchedEffect
+        val layoutInfo = gridListState.layoutInfo
+        val totalItems = layoutInfo.totalItemsCount
+        if (totalItems == 0) return@LaunchedEffect
+        val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+        if (lastVisible < totalItems - 2) return@LaunchedEffect
+        val repo = AuthRepository(context)
+        isLoadingMoreStored = true
+        val nextPage = currentStoredPage + 1
+        repo.getStoredDiariesPage(page = nextPage, size = 20)
+            .onSuccess { response ->
+                storedDiaries = storedDiaries + response.content
+                currentStoredPage = nextPage
+            }
+            .onFailure { e ->
+                android.util.Log.e("OuterBox", "보관 일기 추가 로드 실패: ${e.message}")
+            }
+        isLoadingMoreStored = false
     }
 
     Box(
@@ -280,16 +334,58 @@ fun OuterBox(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // 다이어리 그리드 (2x2가 한 화면에 보이도록 높이 계산)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        listOf("내 킬링파트", "보관한 킬링파트").forEachIndexed { index, label ->
+                            val selected = selectedTabIndex == index
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .clickable { selectedTabIndex = index },
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 12.sp,
+                                    color = if (selected) Color.White else Color.White.copy(alpha = 0.6f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(
+                                            color = if (selected) Color.White else Color.Transparent
+                                        )
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 다이어리 그리드 (2x2)
                     val configuration = LocalConfiguration.current
                     val screenWidth = configuration.screenWidthDp.dp
-                    val horizontalContainerPadding = 20.dp // Box padding
+                    val horizontalContainerPadding = 20.dp
                     val interColumnSpacing = 12.dp
                     val rowSpacing = 20.dp
                     val itemSize =
                         (screenWidth - horizontalContainerPadding * 2 - interColumnSpacing) / 2
 
-                    val chunkedDiaries = diaries.chunked(2)
+                    // (Diary, authorTag?) - 보관 탭일 때만 authorTag 있음
+                    val displayList: List<Pair<Diary, String?>> = if (selectedTabIndex == 0) {
+                        diaries.map { it to null }
+                    } else {
+                        storedDiaries.map { it.toDiary to it.tag }
+                    }
+                    val chunkedDiaries = displayList.chunked(2)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -306,7 +402,16 @@ fun OuterBox(
                             alignment = Alignment.Center
                         )
 
+                        if (selectedTabIndex == 1 && isLoadingStored) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = mainGreen)
+                            }
+                        } else {
                         LazyColumn(
+                            state = gridListState,
                             modifier = Modifier.fillMaxSize()
                         ) {
                             items(chunkedDiaries.size) { index ->
@@ -317,12 +422,12 @@ fun OuterBox(
                                         .padding(bottom = rowSpacing),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    rowItems.forEach { diary ->
+                                    rowItems.forEach { (diary, authorTag) ->
                                         DiaryCard(
                                             diary = diary,
+                                            authorTag = authorTag,
                                             modifier = Modifier.weight(1f),
                                             onClick = {
-                                                // DiaryDetailScreen으로 이동
                                                 navController?.let { nav ->
                                                     val diaryIdParam =
                                                         diary.id?.let { "&diaryId=$it" } ?: ""
@@ -359,6 +464,7 @@ fun OuterBox(
                                     }
                                 }
                             }
+                        }
                         }
                     }
                 }

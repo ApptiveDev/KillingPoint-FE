@@ -186,4 +186,11 @@ interface ApiService {
     suspend fun getRandomDiaries(
         @Header("Authorization") accessToken: String
     ): List<FeedDiary>
+
+    @GET("diaries/stores")
+    suspend fun getStoredDiaries(
+        @Header("Authorization") accessToken: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): FeedResponse
 }
