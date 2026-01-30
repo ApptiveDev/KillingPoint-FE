@@ -352,7 +352,7 @@ fun OuterBox(
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
                                     fontSize = 12.sp,
-                                    color = if (selected) Color.White else Color.White.copy(alpha = 0.6f),
+                                    color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -362,7 +362,7 @@ fun OuterBox(
                                         .fillMaxWidth()
                                         .height(1.dp)
                                         .background(
-                                            color = if (selected) Color.White else Color.Transparent
+                                            color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
                                         )
                                 )
                             }
@@ -379,11 +379,11 @@ fun OuterBox(
                     val itemSize =
                         (screenWidth - horizontalContainerPadding * 2 - interColumnSpacing) / 2
 
-                    // (Diary, authorTag?) - 보관 탭일 때만 authorTag 있음
-                    val displayList: List<Pair<Diary, String?>> = if (selectedTabIndex == 0) {
-                        diaries.map { it to null }
+                    // (Diary, authorTag?, authorUsername?) - 보관 탭일 때만 작성자 정보 있음
+                    val displayList: List<Triple<Diary, String?, String?>> = if (selectedTabIndex == 0) {
+                        diaries.map { Triple(it, null, null) }
                     } else {
-                        storedDiaries.map { it.toDiary to it.tag }
+                        storedDiaries.map { Triple(it.toDiary, it.tag, it.username) }
                     }
                     val chunkedDiaries = displayList.chunked(2)
                     Box(
@@ -422,7 +422,7 @@ fun OuterBox(
                                         .padding(bottom = rowSpacing),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    rowItems.forEach { (diary, authorTag) ->
+                                    rowItems.forEach { (diary, authorTag, authorUsername) ->
                                         DiaryCard(
                                             diary = diary,
                                             authorTag = authorTag,
@@ -438,6 +438,11 @@ fun OuterBox(
 
                                                     val scopeParam = "&scope=${diary.scope.name}"
 
+                                                    val authorUsernameParam =
+                                                        "&authorUsername=${Uri.encode(authorUsername.orEmpty())}"
+                                                    val authorTagParam =
+                                                        "&authorTag=${Uri.encode(authorTag.orEmpty())}"
+
                                                     nav.navigate(
                                                         "diary_detail" +
                                                                 "?artist=${Uri.encode(diary.artist)}" +
@@ -452,7 +457,9 @@ fun OuterBox(
                                                                 scopeParam +
                                                                 diaryIdParam +
                                                                 totalDurationParam +
-                                                                "&fromTab=profile"
+                                                                "&fromTab=profile" +
+                                                                authorUsernameParam +
+                                                                authorTagParam
                                                     )
                                                 }
                                             }
