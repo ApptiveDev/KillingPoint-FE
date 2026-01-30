@@ -93,7 +93,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
             }
         )
     }
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentDiaryId by remember { mutableStateOf<Long?>(null) }
 
     var isPlaying by remember { mutableStateOf(true) } // 기본값은 재생 중
     
@@ -101,6 +101,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     val diaryViewModel: DiaryViewModel = viewModel()
     val diaryState by diaryViewModel.state.collectAsState()
     val diaries = (diaryState as? DiaryUiState.Success)?.diaries ?: emptyList()
+    val currentIndex = diaries.indexOfFirst { it.id == currentDiaryId }.takeIf { it >= 0 } ?: 0
     
     // UserViewModel을 MainScreen에서 관리
     val userViewModel: UserViewModel = viewModel()
@@ -130,6 +131,13 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
             webView.clearHistory()
             webView.destroy()
         } catch (e: Exception) {
+        }
+    }
+
+    LaunchedEffect(diaries) {
+        if (diaries.isEmpty()) return@LaunchedEffect
+        if (currentDiaryId == null || diaries.none { it.id == currentDiaryId }) {
+            currentDiaryId = diaries[0].id
         }
     }
 
@@ -285,7 +293,10 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                             diaries = state.diaries,
                                             showCurrentHeader = true,
                                             onItemClick = { index ->
-                                                currentIndex = index
+                                                currentDiaryId = diaries.getOrNull(index)?.id
+                                            },
+                                            onOrderChange = { ids ->
+                                                diaryViewModel.reorderDiaries(context, ids)
                                             }
                                         )
                                     }
@@ -325,7 +336,8 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                 navController = navController,
                                 onVideoEnd = {
                                     if (diaries.isNotEmpty()) {
-                                        currentIndex = (currentIndex + 1) % diaries.size
+                                        val nextIndex = (currentIndex + 1) % diaries.size
+                                        currentDiaryId = diaries.getOrNull(nextIndex)?.id
                                     }
                                 }
                             )
@@ -382,7 +394,10 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                             },
                             diaries = diaries,
                             onItemClick = { index ->
-                                currentIndex = index
+                                currentDiaryId = diaries.getOrNull(index)?.id
+                            },
+                            onOrderChange = { ids ->
+                                diaryViewModel.reorderDiaries(context, ids)
                             }
                         )
                     }
@@ -394,17 +409,17 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                         .padding(bottom = BottomBarHeight),
                     onPrevious = {
                         if (currentIndex > 0) {
-                            currentIndex--
+                            currentDiaryId = diaries.getOrNull(currentIndex - 1)?.id
                             isPlaying = true
                             android.util.Log.d("MainScreen", "Previous clicked, new index: $currentIndex")
                         }
                     },
                     onNext = {
                         if (currentIndex < diaries.size - 1) {
-                            currentIndex++
+                            currentDiaryId = diaries.getOrNull(currentIndex + 1)?.id
                             isPlaying = true
                         } else if (diaries.isNotEmpty()) {
-                            currentIndex = 0
+                            currentDiaryId = diaries[0].id
                             isPlaying = true
                         }
                     },

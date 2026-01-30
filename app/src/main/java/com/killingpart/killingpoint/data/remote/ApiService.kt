@@ -28,6 +28,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 import com.killingpart.killingpoint.data.model.ReportDiaryRequest
+import com.killingpart.killingpoint.data.model.DiaryOrderRequest
 
 interface ApiService {
 
@@ -193,4 +194,10 @@ interface ApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): FeedResponse
+
+    @PATCH("diaries/order")
+    suspend fun reorderDiaries(
+        @Header("Authorization") accessToken: String,
+        @Body body: DiaryOrderRequest
+    ): retrofit2.Response<Unit>
 }

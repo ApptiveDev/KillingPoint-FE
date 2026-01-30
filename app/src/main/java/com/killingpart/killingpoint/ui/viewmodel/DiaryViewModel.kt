@@ -44,4 +44,20 @@ class DiaryViewModel(
             }
         }
     }
+
+    fun reorderDiaries(context: Context, orderedIds: List<Long>) {
+        val repo = repoFactory(context)
+        val current = (_state.value as? DiaryUiState.Success)?.diaries ?: return
+        viewModelScope.launch {
+            repo.reorderDiaryOrder(orderedIds)
+                .onSuccess {
+                    val reordered = orderedIds.mapNotNull { id -> current.find { it.id == id } }
+                    val rest = current.filter { it.id !in orderedIds.toSet() }
+                    _state.value = DiaryUiState.Success(reordered + rest)
+                }
+                .onFailure { e ->
+                    _state.value = DiaryUiState.Error(e.message ?: "순서 변경 실패")
+                }
+        }
+    }
 }

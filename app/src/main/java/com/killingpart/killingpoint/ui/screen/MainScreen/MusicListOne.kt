@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.ui.screen.MainScreen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,15 +33,25 @@ fun MusicListOne(
     artist: String,
     isNow: Color,
     onClick: () -> Unit = {},
-    isPlaying: Boolean = false
+    isPlaying: Boolean = false,
+    showDragHandle: Boolean = false,
+    dragHandleModifier: Modifier = Modifier
 ) {
-    Row (
+    Row(
         modifier = Modifier.fillMaxWidth()
             .clickable(onClick = onClick)
             .padding(10.dp)
             .background(color = isNow, shape = RoundedCornerShape(8.dp)),
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
+        if (showDragHandle) {
+            Image(
+                painter = painterResource(id = R.drawable.play_order_btn),
+                contentDescription = "순서 변경",
+                modifier = Modifier.size(16.dp).then(dragHandleModifier)
+            )
+            Spacer(modifier = Modifier.width(24.dp))
+        }
         AsyncImage(
             model = imageUrl,
             contentDescription = "앨범 표지",
