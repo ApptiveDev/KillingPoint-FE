@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.BasicTextField
@@ -21,14 +22,22 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
@@ -43,6 +52,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.layout.boundsInRoot
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -66,6 +77,11 @@ fun SearchRunMusicBox(
     var reportContent by remember { mutableStateOf("") }
     var isReporting by remember { mutableStateOf(false) }
     var currentUserId by remember { mutableStateOf<Long?>(null) }
+    var showHeartOverlay by remember { mutableStateOf(false) }
+    var heartFadeOut by remember { mutableStateOf(false) }
+    var boxBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
+    var playerBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
+    val view = LocalView.current
 
     LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
         isLiked = feedDiary.isLiked
@@ -86,6 +102,24 @@ fun SearchRunMusicBox(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 20.dp)
+            .onGloballyPositioned { boxBoundsInRoot = it.boundsInRoot() }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = { offset ->
+                        val tapInRoot = Offset(
+                            boxBoundsInRoot.left + offset.x,
+                            boxBoundsInRoot.top + offset.y
+                        )
+                        if (!playerBoundsInRoot.contains(tapInRoot)) {
+                            view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                            showHeartOverlay = true
+                            if (!isLiked) {
+                                onLikeClick?.invoke()
+                            }
+                        }
+                    }
+                )
+            }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -326,6 +360,42 @@ fun SearchRunMusicBox(
 
                     Spacer(modifier = Modifier.height(30.dp))
                 }
+            }
+        }
+
+        if (showHeartOverlay) {
+            LaunchedEffect(showHeartOverlay) {
+                if (showHeartOverlay) {
+                    heartFadeOut = false
+                    delay(350)
+                    heartFadeOut = true
+                    delay(350)
+                    showHeartOverlay = false
+                    heartFadeOut = false
+                }
+            }
+            val heartAlpha by animateFloatAsState(
+                targetValue = if (heartFadeOut) 0f else 1f,
+                animationSpec = tween(350),
+                label = "heartAlpha"
+            )
+            val heartScale by animateFloatAsState(
+                targetValue = 1f,
+                animationSpec = tween(200),
+                label = "heartScale"
+            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = null,
+                    tint = mainGreen,
+                    modifier = Modifier
+                        .size((64 * heartScale).dp)
+                        .alpha(heartAlpha)
+                )
             }
         }
 
