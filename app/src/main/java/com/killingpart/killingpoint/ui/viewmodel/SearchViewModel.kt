@@ -60,4 +60,22 @@ class SearchViewModel(
             }
         }
     }
+
+    fun toggleStore(context: Context, diaryId: Long, onSuccess: (Boolean) -> Unit, onFailure: (() -> Unit)? = null) {
+        val repo = repoFactory(context)
+        viewModelScope.launch {
+            try {
+                val result = repo.toggleStore(diaryId)
+                result.onSuccess { storeResponse ->
+                    onSuccess(storeResponse.isStored)
+                }.onFailure { e ->
+                    android.util.Log.e("SearchViewModel", "보관 토글 실패: ${e.message}")
+                    onFailure?.invoke()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SearchViewModel", "보관 토글 실패: ${e.message}")
+                onFailure?.invoke()
+            }
+        }
+    }
 }

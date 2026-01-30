@@ -17,6 +17,7 @@ import com.killingpart.killingpoint.data.model.FeedResponse
 import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.data.model.UserStatistics
 import com.killingpart.killingpoint.data.model.LikeResponse
+import com.killingpart.killingpoint.data.model.StoreResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -167,6 +168,12 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("diaryId") diaryId: Long
     ): LikeResponse
+
+    @POST("diaries/{diaryId}/stores")
+    suspend fun toggleStore(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long
+    ): StoreResponse
 
     @POST("diaries/{diaryId}/reports")
     suspend fun reportDiary(

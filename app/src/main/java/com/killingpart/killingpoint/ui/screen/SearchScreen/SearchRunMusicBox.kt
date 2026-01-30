@@ -62,6 +62,7 @@ fun SearchRunMusicBox(
     navController: NavController,
     isActive: Boolean = true,
     onLikeClick: (() -> Unit)? = null,
+    onStoreClick: (() -> Unit)? = null,
     onVideoEnd: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -71,6 +72,7 @@ fun SearchRunMusicBox(
 
     var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
+    var isStored by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isStored) }
     var showMenu by remember { mutableStateOf(false) }
     var showReportModal by remember { mutableStateOf(false) }
     var showReportSuccessModal by remember { mutableStateOf(false) }
@@ -83,9 +85,10 @@ fun SearchRunMusicBox(
     var playerBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
     val view = LocalView.current
 
-    LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
+    LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount, feedDiary.isStored) {
         isLiked = feedDiary.isLiked
         likeCount = feedDiary.likeCount
+        isStored = feedDiary.isStored
     }
 
     LaunchedEffect(Unit) {
@@ -259,7 +262,6 @@ fun SearchRunMusicBox(
                         diary.duration.toFloatOrNull() ?: 0f
                     }
 
-                    // 제목과 가수, 좋아요 버튼 Row
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -276,7 +278,9 @@ fun SearchRunMusicBox(
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
 
@@ -288,35 +292,52 @@ fun SearchRunMusicBox(
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.Light,
                                     fontSize = 14.sp,
-                                    color = Color.White
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
 
-                        // 좋아요 버튼 (우측)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.clickable {
-                                onLikeClick?.invoke()
-                            }
-                                .size(49.dp, 24.dp)
-                                .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
-                                    RoundedCornerShape(8.dp)),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Favorite,
-                                contentDescription = "좋아요",
-                                tint = if (isLiked) Color.Black else mainGreen,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = likeCount.toString(),
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 12.sp,
-                                color = if (isLiked) Color.Black else Color.White
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.clickable {
+                                    onLikeClick?.invoke()
+                                }
+                                    .size(49.dp, 24.dp)
+                                    .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
+                                        RoundedCornerShape(8.dp)),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = "좋아요",
+                                    tint = if (isLiked) Color.Black else mainGreen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = likeCount.toString(),
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 12.sp,
+                                    color = if (isLiked) Color.Black else Color.White
+                                )
+                            }
+                            Image(
+                                painter = painterResource(
+                                    id = if (isStored) R.drawable.is_stored else R.drawable.is_not_stored
+                                ),
+                                contentDescription = if (isStored) "보관됨" else "보관하기",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        onStoreClick?.invoke()
+                                    }
                             )
                         }
                     }

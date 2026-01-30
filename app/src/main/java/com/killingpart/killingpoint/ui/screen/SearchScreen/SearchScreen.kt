@@ -208,6 +208,55 @@ fun SearchScreen(navController: NavController) {
                                                     )
                                                 }
                                             }
+                                        },
+                                        onStoreClick = {
+                                            feedDiary.diaryId.let { diaryId ->
+                                                val currentState = searchViewModel.state.value
+                                                if (currentState is SearchUiState.Success) {
+                                                    val currentDiary = currentState.diaries.find { it.diaryId == diaryId }
+                                                    val currentIsStored = currentDiary?.isStored ?: false
+
+                                                    val updatedDiaries = currentState.diaries.map { diary ->
+                                                        if (diary.diaryId == diaryId) {
+                                                            diary.copy(isStored = !currentIsStored)
+                                                        } else {
+                                                            diary
+                                                        }
+                                                    }
+                                                    searchViewModel.updateDiaries(updatedDiaries)
+
+                                                    searchViewModel.toggleStore(
+                                                        context = context,
+                                                        diaryId = diaryId,
+                                                        onSuccess = { isStored ->
+                                                            val apiState = searchViewModel.state.value
+                                                            if (apiState is SearchUiState.Success) {
+                                                                val finalDiaries = apiState.diaries.map { diary ->
+                                                                    if (diary.diaryId == diaryId) {
+                                                                        diary.copy(isStored = isStored)
+                                                                    } else {
+                                                                        diary
+                                                                    }
+                                                                }
+                                                                searchViewModel.updateDiaries(finalDiaries)
+                                                            }
+                                                        },
+                                                        onFailure = {
+                                                            val apiState = searchViewModel.state.value
+                                                            if (apiState is SearchUiState.Success) {
+                                                                val revertedDiaries = apiState.diaries.map { diary ->
+                                                                    if (diary.diaryId == diaryId) {
+                                                                        diary.copy(isStored = currentIsStored)
+                                                                    } else {
+                                                                        diary
+                                                                    }
+                                                                }
+                                                                searchViewModel.updateDiaries(revertedDiaries)
+                                                            }
+                                                        }
+                                                    )
+                                                }
+                                            }
                                         }
                                     )
                                 }
