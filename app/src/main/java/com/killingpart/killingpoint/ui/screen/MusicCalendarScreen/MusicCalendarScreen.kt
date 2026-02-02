@@ -275,6 +275,7 @@ fun MusicCalendarScreen(
                 )
             }
         } else if (selectedDate != null) {
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "이 날짜에 등록된 킬링파트가 없습니다.",
                 color = Color(0xFFA4A4A6),
@@ -641,6 +642,7 @@ fun CalendarGrid(
                         val date = yearMonth.atDay(dayCounter)
                         val hasDiary = diariesByDate.containsKey(date)
                         val isSelected = selectedDate == date
+                        val isToday = date == LocalDate.now()
                         val isSunday = date.dayOfWeek == DayOfWeek.SUNDAY
                         val isSaturday = date.dayOfWeek == DayOfWeek.SATURDAY
                         
@@ -648,6 +650,7 @@ fun CalendarGrid(
                             day = dayCounter,
                             hasDiary = hasDiary,
                             isSelected = isSelected,
+                            isToday = isToday,
                             isSunday = isSunday,
                             isSaturday = isSaturday,
                             isCurrentMonth = true,
@@ -670,6 +673,7 @@ fun CalendarDayCell(
     day: Int,
     hasDiary: Boolean,
     isSelected: Boolean,
+    isToday: Boolean = false,
     isSunday: Boolean,
     isSaturday: Boolean,
     isCurrentMonth: Boolean,
@@ -681,6 +685,16 @@ fun CalendarDayCell(
             .background(
                 if (isSelected) mainGreen // 선택된 날짜는 노란 배경
                 else Color.Transparent
+            )
+            .then(
+                if (isToday && !isSelected) {
+                    Modifier.border(
+                        width = 1.5.dp,
+                        color = mainGreen,
+                    )
+                } else {
+                    Modifier
+                }
             )
             .clickable { onClick() }
     ) {
@@ -712,7 +726,7 @@ fun CalendarDayCell(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .size(22.dp)
-                    .offset(y = (-5).dp) // 아이콘을 위로 2dp 올림
+                    .offset(y = (-7).dp) // 아이콘을 위로 2dp 올림
 
             )
         }
@@ -743,7 +757,7 @@ fun DiaryEntryCard(
                 model = diary.albumImageUrl,
                 contentDescription = "앨범 아트",
                 modifier = Modifier
-                    .size(65.dp)
+                    .size(60.dp)
                     .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop,
                 placeholder = painterResource(id = R.drawable.example_video),
@@ -760,7 +774,7 @@ fun DiaryEntryCard(
                     color = Color.White,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
+                    fontSize = 12.sp,
                     maxLines = 1
                 )
 
@@ -771,7 +785,7 @@ fun DiaryEntryCard(
                     color = Color.White,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
+                    fontSize = 10.sp,
                     maxLines = 1
                 )
             }
@@ -816,20 +830,18 @@ fun DiaryEntryCard(
                     text = "코멘트읽기",
                     color = mainGreen,
                     fontFamily = PaperlogyFontFamily,
-                    fontSize = 12.sp
+                    fontSize = 10.sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Image(
                     painter = painterResource(id = R.drawable.yellow_right_arrow),
                     contentDescription = "이동",
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .align(Alignment.CenterHorizontally)
                 )
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
 
     }
 }

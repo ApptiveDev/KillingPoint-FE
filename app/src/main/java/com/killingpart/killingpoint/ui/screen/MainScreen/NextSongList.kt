@@ -27,15 +27,23 @@ import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 
 @Composable
-fun NextSongList(title: String?, label: String, onToggle: ()-> Unit,) {
-    Row (
+fun NextSongList(
+    title: String?,
+    label: String,
+    expanded: Boolean,
+    isEditMode: Boolean,
+    onToggle: () -> Unit,
+    onEditClick: () -> Unit = {}
+) {
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(41.dp)
             .background(Color.Black, RoundedCornerShape(20.dp))
-            .padding(horizontal = 21.dp, vertical = 8.dp),
+            .padding(horizontal = 21.dp, vertical = 8.dp)
+            .clickable { onToggle() },
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         Text(
             text = label,
             fontSize = 14.sp,
@@ -47,7 +55,7 @@ fun NextSongList(title: String?, label: String, onToggle: ()-> Unit,) {
         Spacer(modifier = Modifier.width(13.dp))
 
         Text(
-            text = title ?: "킬링파트를 추가하세요",
+            text = title ?: "",
             fontSize = 14.sp,
             fontFamily = PaperlogyFontFamily,
             fontWeight = FontWeight.Light,
@@ -59,12 +67,22 @@ fun NextSongList(title: String?, label: String, onToggle: ()-> Unit,) {
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        Image(
-            painter = painterResource(id = R.drawable.music_list),
-            contentDescription = "음악 리스트",
-            modifier = Modifier.size(24.dp)
-                .clickable { onToggle() }
-        )
+        if (expanded) {
+            Text(
+                text = if (isEditMode) "완료" else "편집",
+                fontSize = 14.sp,
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Light,
+                color = mainGreen,
+                modifier = Modifier.clickable { onEditClick() }
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.music_list),
+                contentDescription = "음악 리스트",
+                modifier = Modifier.size(24.dp)
+            )
+        }
     }
 }
 

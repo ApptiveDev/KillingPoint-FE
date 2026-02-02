@@ -32,7 +32,9 @@ fun YouTubePlayerBox(
     startSeconds: Float, 
     durationSeconds: Float = 0f,
     onVideoReady: () -> Unit = {},
-    isPlayingState: Boolean? = null
+    isPlayingState: Boolean? = null,
+    onVideoEnd: () -> Unit = {},
+    shouldLoop: Boolean = false
 ) {
     val context = LocalContext.current
     
@@ -43,8 +45,8 @@ fun YouTubePlayerBox(
     var player by remember(currentVideoUrl) { mutableStateOf<YouTubePlayer?>(null) }
     var currentTime by remember(currentVideoUrl) { mutableStateOf(0f) }
     
-    // 콜백을 remember로 저장하여 리스너에서 사용
     val videoReadyCallback = remember(onVideoReady) { onVideoReady }
+    val onVideoEndCallback = remember(onVideoEnd) { onVideoEnd }
     
     val endSeconds = if (durationSeconds > 0f) {
         startSeconds + durationSeconds
@@ -57,7 +59,15 @@ fun YouTubePlayerBox(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (diary != null) {
-            val videoId = diary.videoUrl.substringAfter("/embed/").substringBefore("?")
+            val videoId = if (diary.videoUrl.contains("/embed/")) {
+                diary.videoUrl.substringAfter("/embed/").substringBefore("?")
+            } else {
+                diary.videoUrl.substringBefore("?")
+            }
+            
+            LaunchedEffect(diary.videoUrl) {
+                android.util.Log.d("YouTubePlayerBox", "YouTubePlayerBox 초기화: videoUrl=${diary.videoUrl}, videoId=$videoId")
+            }
             
             // startSeconds가 변경될 때 seekTo로 위치 이동 (디바운싱 적용)
             LaunchedEffect(startSeconds) {
@@ -68,9 +78,16 @@ fun YouTubePlayerBox(
                 }
             }
 
-            LaunchedEffect(currentTime, endSeconds, startSeconds, durationSeconds, player) {
+            val onVideoEndCallback = remember(onVideoEnd) { onVideoEnd }
+            
+            LaunchedEffect(currentTime, endSeconds, startSeconds, durationSeconds, player, shouldLoop) {
                 if (isPlaying && player != null && endSeconds != null && durationSeconds > 0f && currentTime >= endSeconds) {
-                    player?.seekTo(startSeconds)
+                    if (shouldLoop) {
+                        player?.seekTo(startSeconds)
+                        player?.play()
+                    } else {
+                        onVideoEndCallback()
+                    }
                 }
             }
 
@@ -128,17 +145,21 @@ fun YouTubePlayerBox(
                                 
                                 addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
                                 override fun onReady(youTubePlayer: YouTubePlayer) {
+                                    android.util.Log.d("YouTubePlayerBox", "onReady 호출: videoId=$videoId, startSeconds=$startSeconds")
                                     player = youTubePlayer
                                     hasCalledReady = false
                                     youTubePlayer.loadVideo(videoId, startSeconds)
                                     youTubePlayer.play()
                                     isPlaying = true
+                                    android.util.Log.d("YouTubePlayerBox", "비디오 로드 및 재생 시작")
                                 }
                                 
                                 override fun onStateChange(youTubePlayer: YouTubePlayer, state: com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState) {
                                     super.onStateChange(youTubePlayer, state)
+                                    android.util.Log.d("YouTubePlayerBox", "onStateChange: state=$state")
                                     when (state) {
                                         com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.PLAYING -> {
+                                            android.util.Log.d("YouTubePlayerBox", "비디오 재생 중")
                                             isPlaying = true
                                             if (!hasCalledReady) {
                                                 hasCalledReady = true
@@ -148,16 +169,36 @@ fun YouTubePlayerBox(
                                             }
                                         }
                                         com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.PAUSED -> {
+                                            android.util.Log.d("YouTubePlayerBox", "비디오 일시정지")
                                             isPlaying = false
                                         }
                                         com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.ENDED -> {
+                                            android.util.Log.d("YouTubePlayerBox", "비디오 종료")
                                             isPlaying = false
-                                            if (endSeconds == null || durationSeconds == 0f) {
+                                            if (endSeconds != null && durationSeconds > 0f) {
+                                                if (shouldLoop) {
+                                                    youTubePlayer.seekTo(startSeconds)
+                                                    youTubePlayer.play()
+                                                } else {
+                                                    onVideoEndCallback()
+                                                }
+                                            } else {
                                                 youTubePlayer.seekTo(startSeconds)
                                                 youTubePlayer.play()
                                             }
                                         }
-                                        else -> {}
+                                        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.UNSTARTED -> {
+                                            android.util.Log.d("YouTubePlayerBox", "비디오 시작 전")
+                                        }
+                                        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.BUFFERING -> {
+                                            android.util.Log.d("YouTubePlayerBox", "비디오 버퍼링 중")
+                                        }
+                                        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState.VIDEO_CUED -> {
+                                            android.util.Log.d("YouTubePlayerBox", "비디오 큐됨")
+                                        }
+                                        else -> {
+                                            android.util.Log.d("YouTubePlayerBox", "알 수 없는 상태: $state")
+                                        }
                                     }
                                 }
                                 

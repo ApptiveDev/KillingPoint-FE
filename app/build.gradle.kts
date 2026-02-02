@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         applicationId = "com.killingpart.killingpoint"
-        minSdk = 30
+        minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 13
+        versionName = "2.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.androidx.compose.material.core)
     implementation(libs.foundation)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.foundation.layout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -74,4 +76,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.6.7")
     //    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:chromecast-sender:0.32")
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+
 }

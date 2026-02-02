@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -35,12 +36,16 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.ui.screen.ArchiveScreen.DiaryCard
 import android.net.Uri
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.text.style.TextAlign
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.UserUiState
 import com.killingpart.killingpoint.ui.viewmodel.UserViewModel
+import com.killingpart.killingpoint.data.repository.AuthRepository
 
 @Composable
 fun OuterBox(
@@ -52,9 +57,78 @@ fun OuterBox(
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
+    
+    // 통계 상태 관리
+    var userStatistics by remember { mutableStateOf<com.killingpart.killingpoint.data.model.UserStatistics?>(null) }
+    var isLoadingStatistics by remember { mutableStateOf(false) }
+
+    // 탭: 0 = 내 킬링파트, 1 = 보관한 킬링파트
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    var storedDiaries by remember { mutableStateOf<List<FeedDiary>>(emptyList()) }
+    var totalStoredPages by remember { mutableStateOf(0) }
+    var currentStoredPage by remember { mutableStateOf(-1) }
+    var isLoadingStored by remember { mutableStateOf(false) }
+    var isLoadingMoreStored by remember { mutableStateOf(false) }
+    val gridListState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
+        val repo = AuthRepository(context)
+        val userId = repo.getUserIdFromToken()
+        if (userId != null) {
+            isLoadingStatistics = true
+            repo.getUserStatistics(userId)
+                .onSuccess { statistics ->
+                    userStatistics = statistics
+                    isLoadingStatistics = false
+                }
+                .onFailure { e ->
+                    android.util.Log.e("OuterBox", "통계 조회 실패: ${e.message}")
+                    isLoadingStatistics = false
+                }
+        }
+        isLoadingStored = true
+        repo.getStoredDiariesPage(page = 0, size = 20)
+            .onSuccess { response ->
+                storedDiaries = response.content
+                totalStoredPages = response.page.totalPages
+                currentStoredPage = 0
+            }
+            .onFailure { e ->
+                android.util.Log.e("OuterBox", "보관 일기 조회 실패: ${e.message}")
+            }
+        isLoadingStored = false
+    }
+
+    val chunkedRowsForLoadMore = if (selectedTabIndex == 0) 0 else storedDiaries.chunked(2).size
+    LaunchedEffect(
+        selectedTabIndex,
+        gridListState.firstVisibleItemIndex,
+        gridListState.layoutInfo.visibleItemsInfo.size,
+        chunkedRowsForLoadMore,
+        currentStoredPage,
+        totalStoredPages
+    ) {
+        if (selectedTabIndex != 1 || currentStoredPage < 0) return@LaunchedEffect
+        if (currentStoredPage + 1 >= totalStoredPages) return@LaunchedEffect
+        if (isLoadingMoreStored) return@LaunchedEffect
+        val layoutInfo = gridListState.layoutInfo
+        val totalItems = layoutInfo.totalItemsCount
+        if (totalItems == 0) return@LaunchedEffect
+        val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+        if (lastVisible < totalItems - 2) return@LaunchedEffect
+        val repo = AuthRepository(context)
+        isLoadingMoreStored = true
+        val nextPage = currentStoredPage + 1
+        repo.getStoredDiariesPage(page = nextPage, size = 20)
+            .onSuccess { response ->
+                storedDiaries = storedDiaries + response.content
+                currentStoredPage = nextPage
+            }
+            .onFailure { e ->
+                android.util.Log.e("OuterBox", "보관 일기 추가 로드 실패: ${e.message}")
+            }
+        isLoadingMoreStored = false
     }
 
     Box(
@@ -71,11 +145,11 @@ fun OuterBox(
                     // 프로필 영역
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 프로필 사진과 이름
                         Row(
+                            modifier = Modifier.weight(1f, fill = false),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -110,7 +184,9 @@ fun OuterBox(
 
                             // username과 tag (클릭 가능)
                             Column(
-                                modifier = Modifier.clickable { onProfileClick() }
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { onProfileClick() }
                             ) {
                                 Text(
                                     text = when (val s = userState) {
@@ -120,9 +196,12 @@ fun OuterBox(
                                     },
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
-                                    fontSize = 16.sp,
+                                    fontSize = 14.sp,
                                     color = mainGreen,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
+                                Spacer(modifier=Modifier.height(3.dp))
                                 Text(
                                     text = when (val s = userState) {
                                         is UserUiState.Success -> "@${s.userInfo.tag}"
@@ -131,32 +210,90 @@ fun OuterBox(
                                     },
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.W400,
-                                    fontSize = 14.sp,
+                                    fontSize = 12.sp,
                                     color = mainGreen,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                 )
                             }
                         }
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                        // 다이어리 개수 표시 (오른쪽에 배치)
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                        // 통계 표시 (팬덤, PICKS, 킬링파트)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "${diaries.size}",
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.W400,
-                                fontSize = 16.sp,
-                                color = mainGreen,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Text(
-                                text = "킬링파트",
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.W400,
-                                fontSize = 10.sp,
-                                color = mainGreen,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
+                            // 킬링파트
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${userStatistics?.killingPartCount ?: diaries.size}",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "킬링파트",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                            Spacer(modifier=Modifier.width(10.dp))
+                            // 팬덤
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${userStatistics?.fanCount ?: 0}",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "팬덤",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                            Spacer(modifier=Modifier.width(12.dp))
+                            // PICKS
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "${userStatistics?.pickCount ?: 0}",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 16.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier=Modifier.height(3.dp))
+                                Text(
+                                    text = "PICKS",
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 10.sp,
+                                    color = mainGreen,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+
+
                         }
                     }
                     Row(
@@ -164,7 +301,11 @@ fun OuterBox(
                         horizontalArrangement = Arrangement.End
                     ) {
                         Button(
-                            onClick = { onProfileClick() },
+                            onClick = { 
+                                android.util.Log.d("OuterBox", "프로필 편집 버튼 클릭")
+                                onProfileClick()
+                                android.util.Log.d("OuterBox", "onProfileClick 호출 완료")
+                            },
                             modifier = Modifier
                                 .fillMaxWidth(0.8f)
                                 .height(32.dp),
@@ -193,16 +334,58 @@ fun OuterBox(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // 다이어리 그리드 (2x2가 한 화면에 보이도록 높이 계산)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        listOf("내 킬링파트", "보관한 킬링파트").forEachIndexed { index, label ->
+                            val selected = selectedTabIndex == index
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .clickable { selectedTabIndex = index },
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.W400,
+                                    fontSize = 12.sp,
+                                    color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(
+                                            color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
+                                        )
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 다이어리 그리드 (2x2)
                     val configuration = LocalConfiguration.current
                     val screenWidth = configuration.screenWidthDp.dp
-                    val horizontalContainerPadding = 20.dp // Box padding
+                    val horizontalContainerPadding = 20.dp
                     val interColumnSpacing = 12.dp
                     val rowSpacing = 20.dp
                     val itemSize =
                         (screenWidth - horizontalContainerPadding * 2 - interColumnSpacing) / 2
 
-                    val chunkedDiaries = diaries.chunked(2)
+                    // (Diary, authorTag?, authorUsername?) - 보관 탭일 때만 작성자 정보 있음
+                    val displayList: List<Triple<Diary, String?, String?>> = if (selectedTabIndex == 0) {
+                        diaries.map { Triple(it, null, null) }
+                    } else {
+                        storedDiaries.map { Triple(it.toDiary, it.tag, it.username) }
+                    }
+                    val chunkedDiaries = displayList.chunked(2)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -219,7 +402,16 @@ fun OuterBox(
                             alignment = Alignment.Center
                         )
 
+                        if (selectedTabIndex == 1 && isLoadingStored) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = mainGreen)
+                            }
+                        } else {
                         LazyColumn(
+                            state = gridListState,
                             modifier = Modifier.fillMaxSize()
                         ) {
                             items(chunkedDiaries.size) { index ->
@@ -230,27 +422,26 @@ fun OuterBox(
                                         .padding(bottom = rowSpacing),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    rowItems.forEach { diary ->
+                                    rowItems.forEach { (diary, authorTag, authorUsername) ->
                                         DiaryCard(
                                             diary = diary,
+                                            authorTag = authorTag,
                                             modifier = Modifier.weight(1f),
                                             onClick = {
-                                                // DiaryDetailScreen으로 이동
                                                 navController?.let { nav ->
                                                     val diaryIdParam =
                                                         diary.id?.let { "&diaryId=$it" } ?: ""
-                                                    android.util.Log.d(
-                                                        "OuterBox",
-                                                        "diary.totalDuration: ${diary.totalDuration}"
-                                                    )
+
                                                     val totalDurationParam =
                                                         diary.totalDuration?.let { "&totalDuration=$it" }
                                                             ?: ""
-                                                    android.util.Log.d(
-                                                        "OuterBox",
-                                                        "totalDurationParam: '$totalDurationParam'"
-                                                    )
+
                                                     val scopeParam = "&scope=${diary.scope.name}"
+
+                                                    val authorUsernameParam =
+                                                        "&authorUsername=${Uri.encode(authorUsername.orEmpty())}"
+                                                    val authorTagParam =
+                                                        "&authorTag=${Uri.encode(authorTag.orEmpty())}"
 
                                                     nav.navigate(
                                                         "diary_detail" +
@@ -266,7 +457,9 @@ fun OuterBox(
                                                                 scopeParam +
                                                                 diaryIdParam +
                                                                 totalDurationParam +
-                                                                "&fromTab=profile"
+                                                                "&fromTab=profile" +
+                                                                authorUsernameParam +
+                                                                authorTagParam
                                                     )
                                                 }
                                             }
@@ -278,6 +471,7 @@ fun OuterBox(
                                     }
                                 }
                             }
+                        }
                         }
                     }
                 }

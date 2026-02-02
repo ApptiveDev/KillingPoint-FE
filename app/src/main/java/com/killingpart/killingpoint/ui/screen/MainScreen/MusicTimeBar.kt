@@ -1,6 +1,5 @@
 package com.killingpart.killingpoint.ui.screen.MainScreen
 
-import android.view.RoundedCorner
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,12 +8,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -35,96 +37,132 @@ fun MusicTimeBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(color = Color.Black.copy(alpha = 0.8f), shape = RoundedCornerShape(16.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .background(color = Color.Black, shape = RoundedCornerShape(16.dp))
+            .padding(horizontal = 45.dp, vertical = 8.dp)
     ) {
 
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = title ?: "로딩 중...",
-                fontSize = 14.sp,
-                fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.Thin,
-                color = Color.White
-            )
-            Spacer(Modifier.weight(1f))
-        }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title ?: "킬링파트",
+                    fontSize = 14.sp,
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.Thin,
+                    color = Color.White
+                )
+                Spacer(Modifier.weight(1f))
+            }
 
-        Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { barSize = it.size },
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Canvas(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp)
+                    .onGloballyPositioned { barSize = it.size },
+                contentAlignment = Alignment.Center
             ) {
-                val h = size.height
-                val w = size.width
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp),
+                ) {
+                    val h = size.height
+                    val w = size.width
 
-                drawLine(
-                    color = Color.White.copy(alpha = 0.85f),
-                    start = Offset(0f, h / 2f),
-                    end = Offset(w, h / 2f),
-                    strokeWidth = with(density) { 2.dp.toPx() }
+                    drawLine(
+                        color = Color.White.copy(alpha = 0.85f),
+                        start = Offset(0f, h / 2f),
+                        end = Offset(w, h / 2f),
+                        strokeWidth = with(density) { 2.dp.toPx() }
+                    )
+
+                    val startX = (start.toFloat() / total) * w
+                    val endX = ((start + during).toFloat() / total) * w
+
+                    drawLine(
+                        color = mainGreen,
+                        start = Offset(startX, h / 2f),
+                        end = Offset(endX, h / 2f),
+                        strokeWidth = with(density) { 6.dp.toPx() },
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            if (barSize.width > 0) {
+                val barWidthPx = barSize.width.toFloat()
+                val barWidthDp = with(density) { barWidthPx.toDp() }.value
+
+                val xStart = (start.toFloat() / total) * barWidthDp
+                val xEnd = ((start + during).toFloat() / total) * barWidthDp
+                val xTotal = barWidthDp
+
+                val measurer = rememberTextMeasurer()
+                val style = TextStyle(
+                    fontSize = 10.sp,
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.Thin
                 )
 
-                val startX = (start.toFloat() / total) * w
-                val endX = ((start + during).toFloat() / total) * w
+                val tStart = formatTime(start)
+                val tEnd = formatTime(start + during)
 
-                drawLine(
-                    color = mainGreen,
-                    start = Offset(startX, h / 2f),
-                    end = Offset(endX, h / 2f),
-                    strokeWidth = with(density) { 6.dp.toPx() },
-                    cap = StrokeCap.Round
-                )
+                val startWidth = with(density) { measurer.measure(tStart, style).size.width.toDp().value }
+                val endWidth = with(density) { measurer.measure(tEnd, style).size.width.toDp().value }
 
+                val minSpacing = 8f
+
+                // 초기 center clamp
+                var adjustedXStart = xStart.coerceAtLeast(startWidth / 2f)
+                var adjustedXEnd = xEnd.coerceAtMost(xTotal - endWidth / 2f)
+
+                val endRightLimit = xTotal - endWidth / 2f
+                val startLeftLimit = startWidth / 2f
+
+                fun startRight() = adjustedXStart + startWidth / 2f
+                fun endLeft() = adjustedXEnd - endWidth / 2f
+
+                // 1. start → end 기본 충돌 처리
+                val gap1 = endLeft() - startRight()
+                if (gap1 < minSpacing) {
+                    val need = minSpacing - gap1
+                    val half = need / 2f
+
+                    adjustedXStart = (adjustedXStart - half).coerceAtLeast(startLeftLimit)
+                    adjustedXEnd = (adjustedXEnd + half).coerceAtMost(endRightLimit)
+                }
+
+                // 2. end 기준 total 경계로 충돌 방지
+                val endRight = adjustedXEnd + endWidth / 2f
+                if (endRight > endRightLimit) {
+                    adjustedXEnd = endRightLimit
+                }
+
+                // 3. start ↔ end 재검증
+                val gap2 = endLeft() - startRight()
+                if (gap2 < minSpacing) {
+                    val need = minSpacing - gap2
+                    adjustedXEnd = (adjustedXEnd + need).coerceAtMost(endRightLimit)
+                }
+
+                // 4. end 기준으로 start가 밀려야 하는 케이스 처리
+                val gap3 = endLeft() - startRight()
+                if (gap3 < minSpacing) {
+                    val need = minSpacing - gap3
+                    adjustedXStart = (adjustedXStart - need).coerceAtLeast(startLeftLimit)
+                }
+
+                Box(Modifier.fillMaxWidth()) {
+                    TimeLabelCentered(tStart, adjustedXStart, barWidthDp)
+                    TimeLabelCentered(tEnd, adjustedXEnd, barWidthDp)
+                }
             }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        if (barSize.width > 0) {
-            val barWidthPx = barSize.width.toFloat()
-            val barWidthDp = with(density) { barWidthPx.toDp() }.value
-
-            val x0 = 0f
-            val xStart = (start.toFloat() / total) * barWidthDp - 10f
-            val xEnd = ((start + during).toFloat() / total) * barWidthDp + 10f
-            val xTotal = barWidthDp
-
-            Box(Modifier.fillMaxWidth()) {
-                // start
-                TimeLabelCentered(formatTime(start), xStart, barWidthDp)
-
-                // start + during
-                TimeLabelCentered(formatTime(start + during), xEnd, barWidthDp)
-            }
-        }
         }
     }
-}
-
-@Composable
-private fun BoxScope.TimeLabelCentered(text: String, x: Float) {
-    Text(
-        text = text,
-        fontSize = 7.sp,
-        color = Color.White,
-        fontFamily = PaperlogyFontFamily,
-        fontWeight = FontWeight.Thin,
-        modifier = Modifier
-            .align(Alignment.BottomStart)
-            .absoluteOffset(x.dp) // X 좌표에 배치
-    )
 }
 
 private fun formatTime(seconds: Int): String {
@@ -133,9 +171,8 @@ private fun formatTime(seconds: Int): String {
     return "%d:%02d".format(m, s)
 }
 
-
 @Preview
 @Composable
 fun MusicTimeBarPreview() {
-    MusicTimeBar("사랑한단 말의 뜻을 알아가자", 8, 9, 180)
+    MusicTimeBar("테스트 곡", 200, 10, 210)
 }

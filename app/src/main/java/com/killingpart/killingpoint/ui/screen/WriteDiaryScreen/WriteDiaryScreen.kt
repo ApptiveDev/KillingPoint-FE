@@ -4,7 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -36,9 +38,11 @@ import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.screen.AddMusicScreen.korean_font_medium
-import com.killingpart.killingpoint.ui.screen.MainScreen.AlbumDiaryBox
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
+import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
@@ -60,22 +64,16 @@ fun WriteDiaryScreen(
     videoUrl: String,
     totalDuration: Int = 0 // YouTube 비디오 전체 길이 (초 단위)
 ) {
-    // 파라미터 확인 로그
-    LaunchedEffect(Unit) {
-        android.util.Log.d("WriteDiaryScreen", "WriteDiaryScreen received parameters:")
-        android.util.Log.d("WriteDiaryScreen", "  - duration: $duration")
-        android.util.Log.d("WriteDiaryScreen", "  - start: $start")
-        android.util.Log.d("WriteDiaryScreen", "  - end: $end")
-        android.util.Log.d("WriteDiaryScreen", "  - videoUrl: $videoUrl")
-        android.util.Log.d("WriteDiaryScreen", "  - totalDuration: $totalDuration")
-    }
-    
     val coroutineScope = rememberCoroutineScope()
     var content by remember { mutableStateOf("") }
     var scope by remember { mutableStateOf("PUBLIC") }
     var isDropdownExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
+
+    val startSeconds = start.toFloatOrNull() ?: 0f
+    val endSeconds = end.toFloatOrNull() ?: 0f
+    val durationSeconds = duration.toFloatOrNull() ?: (endSeconds - startSeconds).coerceAtLeast(0f)
 
     val today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))
 
@@ -85,13 +83,14 @@ fun WriteDiaryScreen(
             .background(Color(0xFF060606))
     ) {
         // 본문 영역
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .padding(horizontal = 15.dp)
-                .weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
@@ -121,7 +120,25 @@ fun WriteDiaryScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            val tempDiary = Diary(
+                artist = artist,
+                musicTitle = title,
+                albumImageUrl = imageUrl,
+                videoUrl = videoUrl,
+                content = "",
+                scope = Scope.PUBLIC,
+                duration = duration,
+                start = start,
+                end = end,
+                createDate = "",
+                updateDate = ""
+            )
+            Box(
+                modifier = Modifier.size(250.dp, 150.dp)
+            ) {
+                YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+            }
+            Spacer(modifier = Modifier.height(12.dp))
 
             AlbumDiaryBoxWithoutContent(
                 track = SimpleTrack(
@@ -135,21 +152,24 @@ fun WriteDiaryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Box(modifier = Modifier.fillMaxWidth(0.9f)) {
+            Box(modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(150.dp)) {
                 OutlinedTextField(
                     value = content,
                     onValueChange = { content = it },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight(0.65f),
+                        .fillMaxHeight(),
                     placeholder = {
                         Text(
                             text = "코멘트 추가…",
+                            fontSize = 12.sp,
                             fontFamily = korean_font_medium,
                             color = Color(0xFFA4A4A6)
                         )
                     },
-                    textStyle = TextStyle(fontSize = 16.sp, fontFamily = korean_font_medium),
+                    textStyle = TextStyle(fontSize = 12.sp, fontFamily = korean_font_medium),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color(0xFF232427),
                         unfocusedContainerColor = Color(0xFF232427),
@@ -164,7 +184,7 @@ fun WriteDiaryScreen(
                 Text(
                     text = today,
                     color = Color(0xFFA4A4A6),
-                    fontSize = 12.sp,
+                    fontSize = 10.sp,
                     fontFamily = korean_font_medium,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -184,14 +204,14 @@ fun WriteDiaryScreen(
                     imageVector = Icons.Filled.Language,
                     contentDescription = "globe",
                     tint = Color(0xFFA4A4A6),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(15.dp)
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 Text(
                     text = "공개 상태 : ",
                     fontFamily = korean_font_medium,
                     color = Color(0xFF7B7B7B),
-                    fontSize = 14.sp
+                    fontSize = 10.sp
                 )
                 Text(
                     fontFamily = korean_font_medium,
@@ -202,13 +222,13 @@ fun WriteDiaryScreen(
                         else -> "전체 공개"
                     }}",
                     color = Color(0xFFFFFFFF),
-                    fontSize = 14.sp
+                    fontSize = 10.sp
                 )
                 Icon(
                     imageVector = if (isDropdownExpanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                     contentDescription = "dropdown",
                     tint = Color(0xFF7B7B7B),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(15.dp)
                 )
                 if (isDropdownExpanded) {
                     Box(
@@ -220,15 +240,16 @@ fun WriteDiaryScreen(
                                 .background(Color.Transparent, RoundedCornerShape(8.dp))
 
                         ) {
-                            ScopeOption("전체 공개", "PUBLIC", scope) { scope = it; isDropdownExpanded = false }
-                            ScopeOption("킬링파트만 공개", "KILLING_PART", scope) { scope = it; isDropdownExpanded = false }
                             ScopeOption("전체 비공개", "PRIVATE", scope) { scope = it; isDropdownExpanded = false }
+                            ScopeOption("킬링파트만 공개", "KILLING_PART", scope) { scope = it; isDropdownExpanded = false }
+                            ScopeOption("전체 공개", "PUBLIC", scope) { scope = it; isDropdownExpanded = false }
+
                         }
                     }
                 }
             }
         }
-        
+        Spacer(modifier = Modifier.height(20.dp))
         // 저장 버튼 (중앙정렬)
         Box(
             modifier = Modifier.fillMaxWidth(),
@@ -250,11 +271,6 @@ fun WriteDiaryScreen(
                                 end = end,
                                 totalDuration = totalDuration
                             )
-                            android.util.Log.d("WriteDiaryScreen", "Creating diary with:")
-                            android.util.Log.d("WriteDiaryScreen", "  - duration: ${body.duration}")
-                            android.util.Log.d("WriteDiaryScreen", "  - start: ${body.start}")
-                            android.util.Log.d("WriteDiaryScreen", "  - end: ${body.end}")
-                            android.util.Log.d("WriteDiaryScreen", "  - totalDuration: ${body.totalDuration}")
                             repo.createDiary(body)
                         }.onSuccess {
                             android.util.Log.d("WriteDiaryScreen", "Diary created successfully")
@@ -287,12 +303,12 @@ fun WriteDiaryScreen(
                 .clickable { onSelect(value) }
                 .background( color = if (selected == value) Color(0xFF1D1E20) else Color.Transparent,
                     shape = RoundedCornerShape(8.dp) )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically )
     {
-        Text( fontFamily = korean_font_medium, text = if (selected == value) "●" else "○", color = if (selected == value) Color(0xFFFFFFFF) else Color.Gray, fontSize = 13.sp )
+        Text( fontFamily = korean_font_medium, text = if (selected == value) "●" else "○", color = if (selected == value) Color(0xFFFFFFFF) else Color.Gray, fontSize = 10.sp )
         Spacer(modifier = Modifier.width(8.dp))
-        Text( fontFamily = korean_font_medium, text = label, color = Color.White, fontSize = 14.sp )
+        Text( fontFamily = korean_font_medium, text = label, color = Color.White, fontSize = 10.sp )
     }
 }
 

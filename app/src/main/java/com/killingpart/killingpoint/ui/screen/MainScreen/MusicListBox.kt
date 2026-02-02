@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,13 +27,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,80 +57,166 @@ import androidx.compose.ui.platform.LocalConfiguration
 import com.killingpart.killingpoint.ui.theme.mainGreen
 
 
+private const val REORDER_ITEM_HEIGHT_DP = 72f
+
 @Composable
 fun MusicListBox(
     currentIndex: Int,
     expanded: Boolean,
     onToggle: (Boolean) -> Unit,
     diaries: List<Diary>,
-    showCurrentHeader: Boolean = false
-)
-{
-
+    showCurrentHeader: Boolean = false,
+    onItemClick: (Int) -> Unit = {},
+    onOrderChange: (List<Long>) -> Unit = {}
+) {
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
+    val density = LocalDensity.current
+    val itemHeightPx = with(density) { REORDER_ITEM_HEIGHT_DP.dp.toPx() }
+
+    var isEditMode by remember { mutableStateOf(false) }
+    var pendingOrderIds by remember { mutableStateOf<List<Long>?>(null) }
+    val reorderableList = remember { mutableStateListOf<Diary>() }
+    var draggedIndex by remember { mutableIntStateOf(-1) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(diaries, pendingOrderIds) {
+        if (pendingOrderIds != null && diaries.mapNotNull { it.id } == pendingOrderIds) {
+            pendingOrderIds = null
+        }
+    }
+
+    val currentDiary = diaries.getOrNull(currentIndex)
+    val nextDiary = if (diaries.isNotEmpty()) {
+        val nextIndex = (currentIndex + 1) % diaries.size
+        diaries.getOrNull(nextIndex)
+    } else null
+    val headerLabel = if (showCurrentHeader) "재생 중 : " else "다음곡 : "
+    val headerTitle = if (showCurrentHeader) currentDiary?.musicTitle else nextDiary?.musicTitle
+    val displayList = if (isEditMode || pendingOrderIds != null) reorderableList else diaries
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
             .animateContentSize()
     ) {
-            val currentDiary = diaries.getOrNull(currentIndex)
-            val nextDiary = diaries.getOrNull(currentIndex + 1)
-            val headerLabel = if (showCurrentHeader) "재생 중 : " else "다음곡 : "
-            val headerTitle = if (showCurrentHeader) currentDiary?.musicTitle else nextDiary?.musicTitle
+        NextSongList(
+            title = headerTitle,
+            label = headerLabel,
+            expanded = expanded,
+            isEditMode = isEditMode,
+            onToggle = {
+                if (expanded) {
+                    isEditMode = false
+                    pendingOrderIds = null
+                    onToggle(false)
+                } else {
+                    onToggle(true)
+                }
+            },
+            onEditClick = {
+                if (!isEditMode) {
+                    reorderableList.clear()
+                    reorderableList.addAll(diaries)
+                    isEditMode = true
+                } else {
+                    val ids = reorderableList.mapNotNull { it.id }
+                    if (ids.isNotEmpty()) {
+                        pendingOrderIds = ids
+                        onOrderChange(ids)
+                    }
+                    isEditMode = false
+                }
+            }
+        )
 
-            NextSongList(
-                title = headerTitle,
-                label = headerLabel,
-                onToggle = { onToggle(!expanded) }
-            )
-
-            AnimatedVisibility(
-                visible = expanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+        AnimatedVisibility(
+            visible = expanded,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .background(color = Color.Black, shape = RoundedCornerShape(12.dp))
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 400.dp)
-                        .background(color = Color.Black, shape = RoundedCornerShape(12.dp))
-                ) {
-                    if (diaries.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "플레이리스트를 불러오는 중...",
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.Light,
-                                fontSize = 12.sp,
-                                color = Color.White
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            itemsIndexed(diaries) { index, d ->
+                if (displayList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "",
+                            fontFamily = PaperlogyFontFamily,
+                            fontWeight = FontWeight.Light,
+                            fontSize = 12.sp,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        itemsIndexed(
+                            displayList,
+                            key = { _, d -> d.id ?: d.hashCode() }
+                        ) { index, d ->
+                            Box(modifier = Modifier.animateItem()) {
                                 MusicListOne(
                                     imageUrl = d.albumImageUrl,
                                     musicTitle = d.musicTitle,
                                     artist = d.artist,
-                                    isNow = if (index == currentIndex) Color(0xFF060606) else Color.Transparent
+                                    isNow = if (d.id == currentDiary?.id) Color(0xFF060606) else Color.Transparent,
+                                    onClick = {
+                                        if (!isEditMode) {
+                                            val idx = diaries.indexOfFirst { it.id == d.id }
+                                            if (idx >= 0) onItemClick(idx)
+                                        }
+                                    },
+                                    isPlaying = d.id == currentDiary?.id,
+                                    showDragHandle = isEditMode,
+                                    dragHandleModifier = Modifier.pointerInput(d.id) {
+                                        detectDragGesturesAfterLongPress(
+                                            onDragStart = {
+                                                draggedIndex = reorderableList.indexOfFirst { it.id == d.id }
+                                                dragOffsetY = 0f
+                                            },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                dragOffsetY += dragAmount.y
+                                                val size = reorderableList.size
+                                                if (size == 0) return@detectDragGesturesAfterLongPress
+                                                val from = draggedIndex
+                                                if (from < 0) return@detectDragGesturesAfterLongPress
+                                                val toIndex = (from + (dragOffsetY / itemHeightPx).toInt())
+                                                    .coerceIn(0, size - 1)
+                                                if (toIndex != from) {
+                                                    val item = reorderableList[from]
+                                                    reorderableList.removeAt(from)
+                                                    reorderableList.add(toIndex, item)
+                                                    draggedIndex = toIndex
+                                                    // 이동한 칸수만큼만 차감해서 남은 드래그량 유지 → 한 번에 여러 칸 이동 가능
+                                                    dragOffsetY -= (toIndex - from) * itemHeightPx
+                                                }
+                                            },
+                                            onDragEnd = {
+                                                draggedIndex = -1
+                                                dragOffsetY = 0f
+                                            }
+                                        )
+                                    }
                                 )
                             }
                         }
                     }
                 }
             }
+        }
     }
 }
