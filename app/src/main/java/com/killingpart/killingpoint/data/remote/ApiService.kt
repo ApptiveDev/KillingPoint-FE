@@ -29,6 +29,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 import com.killingpart.killingpoint.data.model.DiaryOrderRequest
+import com.killingpart.killingpoint.data.model.RandomDiariesResponse
 
 interface ApiService {
 
@@ -186,7 +187,8 @@ interface ApiService {
     @GET("diaries/randoms")
     suspend fun getRandomDiaries(
         @Header("Authorization") accessToken: String
-    ): List<FeedDiary>
+    ): RandomDiariesResponse
+
 
     @GET("diaries/stores")
     suspend fun getStoredDiaries(

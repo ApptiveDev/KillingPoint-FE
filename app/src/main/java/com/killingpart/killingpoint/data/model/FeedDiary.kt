@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.data.model
 
+import androidx.compose.foundation.pager.PageSize
 import com.google.gson.annotations.SerializedName
 
 data class FeedDiary(
@@ -57,3 +58,7 @@ data class FeedResponse(
     val page: DiaryPage
 )
 
+data class RandomDiariesResponse(
+    val content: List<FeedDiary>,
+    val pageSize: Int
+)
