@@ -33,6 +33,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
@@ -240,19 +241,21 @@ fun RunMusicBox(
                                 onVideoEnd = onVideoEnd
                             )
                             Spacer(modifier = Modifier.height(20.dp))
-                            Text(
-                                text = currentDiary.musicTitle ?: "",
-                                fontFamily = PaperlogyFontFamily,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = currentDiary.artist ?: "",
-                                fontFamily = PaperlogyFontFamily,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Light
-                            )
+//                            ScrollableText(
+//                                text = currentDiary.musicTitle ?: "",
+//                                modifier = Modifier.fillMaxWidth(),
+//                                fontFamily = PaperlogyFontFamily,
+//                                fontSize = 13.sp,
+//                                fontWeight = FontWeight.Bold
+//                            )
+//                            Spacer(modifier = Modifier.height(4.dp))
+//                            ScrollableText(
+//                                text = currentDiary.artist ?: "",
+//                                modifier = Modifier.fillMaxWidth(),
+//                                fontFamily = PaperlogyFontFamily,
+//                                fontSize = 11.sp,
+//                                fontWeight = FontWeight.Light
+//                            )
 
                             DiaryBox(currentDiary)
                         }

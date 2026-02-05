@@ -43,6 +43,7 @@ import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.FeedDiary
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
 import com.killingpart.killingpoint.ui.screen.SearchScreen.SearchYouTubePlayerBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
@@ -273,28 +274,26 @@ fun SearchRunMusicBox(
                             modifier = Modifier.weight(1f)
                         ) {
                             diary.musicTitle?.let { title ->
-                                Text(
+                                ScrollableText(
                                     text = title,
+                                    modifier = Modifier.fillMaxWidth(),
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    color = Color.White
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
 
                             diary.artist?.let { artist ->
-                                Text(
+                                ScrollableText(
                                     text = artist,
+                                    modifier = Modifier.fillMaxWidth(),
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.Light,
                                     fontSize = 14.sp,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    color = Color.White
                                 )
                             }
                         }
