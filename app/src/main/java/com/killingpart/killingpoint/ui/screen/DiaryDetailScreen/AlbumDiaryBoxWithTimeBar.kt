@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 
 @Composable
@@ -115,26 +116,42 @@ fun AlbumDiaryBoxWithTimeBar(
                 verticalArrangement = Arrangement.Center
             ) {
                 track?.title?.let { title ->
-                    Text(
+//                    Text(
+//                        text = title,
+//                        fontFamily = PaperlogyFontFamily,
+//                        fontWeight = FontWeight.Bold,
+//                        fontSize = 16.sp,
+//                        color = Color.White,
+//                        maxLines = 1,
+//                        overflow = TextOverflow.Ellipsis
+//                    )
+                    ScrollableText(
                         text = title,
+                        modifier = Modifier.fillMaxWidth(),
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 track?.artist?.let { artist ->
-                    Text(
+//                    Text(
+//                        text = artist,
+//                        fontFamily = PaperlogyFontFamily,
+//                        fontWeight = FontWeight.Medium,
+//                        fontSize = 12.sp,
+//                        color = Color.White
+//                    )
+                    ScrollableText(
                         text = artist,
+                        modifier = Modifier.fillMaxWidth(),
                         fontFamily = PaperlogyFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = Color.White
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color.White,
                     )
                 }
 

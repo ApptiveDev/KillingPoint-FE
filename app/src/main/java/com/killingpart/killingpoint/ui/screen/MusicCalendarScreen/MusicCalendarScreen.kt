@@ -61,6 +61,7 @@ import java.time.YearMonth
 import java.time.DayOfWeek
 import android.net.Uri
 import androidx.compose.foundation.border
+import com.killingpart.killingpoint.ui.component.ScrollableText
 
 /**
  * MusicCalendarScreen
@@ -769,27 +770,29 @@ fun DiaryEntryCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
+
+                ScrollableText(
                     text = diary.musicTitle,
-                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
-                    maxLines = 1
+                    color = Color.White,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(
+
+                ScrollableText(
                     text = diary.artist,
-                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth(),
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Medium,
                     fontSize = 10.sp,
-                    maxLines = 1
+                    color = Color.White,
                 )
             }
-
+            Spacer(modifier = Modifier.width(10.dp))
             // 코멘트 읽기 버튼
             Column(
                 horizontalAlignment = Alignment.End,
