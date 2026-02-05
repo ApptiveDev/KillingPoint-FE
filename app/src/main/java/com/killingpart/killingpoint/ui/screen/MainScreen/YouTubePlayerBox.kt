@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
@@ -219,24 +220,28 @@ fun YouTubePlayerBox(
             Spacer(modifier = Modifier.height(24.dp))
 
             diary.musicTitle?.let { title ->
-                Text(
+                ScrollableText(
                     text = title,
+                    modifier = Modifier.fillMaxWidth(),
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = Color.White
+                    color = Color.White,
+                    centerAlign = true
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             diary.artist?.let { artist ->
-                Text(
+                ScrollableText(
                     text = artist,
+                    modifier = Modifier.fillMaxWidth(),
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Light,
                     fontSize = 16.sp,
-                    color = Color.White
+                    color = Color.White,
+                    centerAlign = true
                 )
             }
 

@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 
@@ -45,14 +46,14 @@ fun MusicTimeBar(
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
+                ScrollableText(
                     text = title ?: "킬링파트",
+                    modifier = Modifier.weight(1f),
                     fontSize = 14.sp,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Thin,
                     color = Color.White
                 )
-                Spacer(Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(8.dp))

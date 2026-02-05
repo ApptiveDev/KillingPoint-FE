@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 
 @Composable
@@ -63,15 +64,17 @@ fun MusicListOne(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ){
-            Text(
+            ScrollableText(
                 text = musicTitle,
+                modifier = Modifier.fillMaxWidth(),
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 14.sp,
-                color = Color.White,
+                color = Color.White
             )
-            Text(
+            ScrollableText(
                 text = artist,
+                modifier = Modifier.fillMaxWidth(),
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
                 fontSize = 10.sp,
