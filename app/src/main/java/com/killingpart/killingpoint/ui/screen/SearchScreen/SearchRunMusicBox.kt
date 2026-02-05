@@ -297,7 +297,7 @@ fun SearchRunMusicBox(
                                 )
                             }
                         }
-
+                        Spacer(modifier = Modifier.width(10.dp))
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -306,7 +306,7 @@ fun SearchRunMusicBox(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
                                 modifier = Modifier.clickable {
-                                    showHeartOverlay = true
+                                    if (!isLiked) showHeartOverlay = true
                                     onLikeClick?.invoke()
                                 }
                                     .size(49.dp, 24.dp)

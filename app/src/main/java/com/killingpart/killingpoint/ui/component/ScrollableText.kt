@@ -94,12 +94,15 @@ fun ScrollableText(
     LaunchedEffect(text, viewportWidth, contentWidth) {
         val maxScroll = (contentWidth - viewportWidth).coerceAtLeast(0)
         if (maxScroll <= 0) return@LaunchedEffect
+        // 눈에 보이는 속도(px/초) 고정 → 재생 시간 = 거리 / 속도
+        val pixelsPerSecond = 100f
+        val durationMillis = (maxScroll / pixelsPerSecond * 1000).toInt().coerceIn(4000, 20000)
         while (true) {
             delay(1500)
             scrollState.animateScrollTo(
                 value = maxScroll,
                 animationSpec = tween(
-                    durationMillis = (maxScroll / 10).coerceIn(3000, 10000),
+                    durationMillis = durationMillis,
                     easing = LinearEasing
                 )
             )

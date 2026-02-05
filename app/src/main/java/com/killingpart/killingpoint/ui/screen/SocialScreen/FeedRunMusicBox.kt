@@ -318,7 +318,7 @@ fun FeedRunMusicBox(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.clickable {
-                                showHeartOverlay = true
+                                if (!isLiked) showHeartOverlay = true
                                 onLikeClick?.invoke()
                             }
                                 .size(49.dp, 24.dp)
