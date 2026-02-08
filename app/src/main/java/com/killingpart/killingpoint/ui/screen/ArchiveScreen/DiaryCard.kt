@@ -36,7 +36,8 @@ fun DiaryCard(
     diary: Diary,
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    authorTag: String? = null
+    authorTag: String? = null,
+    showDate: Boolean = true
 ) {
     // 날짜에서 시간 부분 제거하고 포맷 변경 (예: "2025-10-29T23:52:08" -> "2025.10.29")
     val dateOnly = try {
@@ -172,17 +173,17 @@ fun DiaryCard(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(5.dp))
-            
-            // 날짜
-            Text(
-                text = dateOnly,
-                color = Color.White,
-                fontSize = 7.sp,
-                fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.Center
-            )
+            if (showDate) {
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    text = dateOnly,
+                    color = Color.White,
+                    fontSize = 7.sp,
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
