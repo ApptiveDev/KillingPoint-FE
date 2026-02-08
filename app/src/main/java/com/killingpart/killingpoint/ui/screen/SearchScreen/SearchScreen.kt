@@ -12,8 +12,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
 import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
@@ -33,6 +36,7 @@ import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.SearchUiState
 import com.killingpart.killingpoint.ui.viewmodel.SearchViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -99,6 +103,27 @@ fun SearchScreen(navController: NavController) {
                         )
                     }
                 } else {
+                    // 마지막에 '다음' 슬롯 추가 -> 스와이프로 새 5개 불러오기 (비디오 끝 안 봐도 됨)
+                    val itemsWithNext = state.diaries + listOf<FeedDiary?>(null)
+                    var isLoadingNext by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(currentItemIndex.value, state.diaries.size) {
+                        if (currentItemIndex.value == state.diaries.size && !isLoadingNext) {
+                            isLoadingNext = true
+                            searchViewModel.loadNextRandomDiaries(
+                                context = context,
+                                onSuccess = {
+                                    scope.launch {
+                                        delay(150)
+                                        listState.scrollToItem(0)
+                                        isLoadingNext = false
+                                    }
+                                },
+                                onFailure = { isLoadingNext = false }
+                            )
+                        }
+                    }
+
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -110,42 +135,39 @@ fun SearchScreen(navController: NavController) {
                             flingBehavior = snapFlingBehavior
                         ) {
                             itemsIndexed(
-                                items = state.diaries,
-                                key = { _, diary -> diary.diaryId }
+                                items = itemsWithNext,
+                                key = { index, item -> if (item == null) "next_sentinel" else item.diaryId }
                             ) { index, feedDiary ->
                                 val isCurrentItem = index == currentItemIndex.value
-                                
-                                LaunchedEffect(index, isCurrentItem) {
-                                    android.util.Log.d("SearchScreen", "Item[$index]: isCurrentItem=$isCurrentItem, diaryId=${feedDiary.diaryId}, videoUrl=${feedDiary.videoUrl}")
-                                }
                                 
                                 Box(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .width(screenWidth)
                                 ) {
-                                    SearchRunMusicBox(
-                                        feedDiary = feedDiary,
-                                        navController = navController,
-                                        isActive = isCurrentItem,
-                                        onVideoEnd = {
-                                            val diaries = (searchState as? SearchUiState.Success)?.diaries ?: return@SearchRunMusicBox
-                                            val currentIndex = currentItemIndex.value
-                                            scope.launch {
-                                                if (currentIndex < diaries.size - 1) {
-                                                    listState.animateScrollToItem(
-                                                        index = currentIndex + 1,
-                                                        scrollOffset = 0
-                                                    )
-                                                } else {
-                                                    // 끝에 도달하면 처음으로 돌아가기
-                                                    listState.animateScrollToItem(
-                                                        index = 0,
-                                                        scrollOffset = 0
-                                                    )
+                                    if (feedDiary != null) {
+                                        SearchRunMusicBox(
+                                            feedDiary = feedDiary,
+                                            navController = navController,
+                                            isActive = isCurrentItem,
+                                            onVideoEnd = {
+                                                val diaries = (searchState as? SearchUiState.Success)?.diaries ?: return@SearchRunMusicBox
+                                                val currentIndex = currentItemIndex.value
+                                                scope.launch {
+                                                    if (currentIndex < diaries.size - 1) {
+                                                        listState.animateScrollToItem(
+                                                            index = currentIndex + 1,
+                                                            scrollOffset = 0
+                                                        )
+                                                    } else {
+                                                        // 마지막이면 '다음' 슬롯으로 스와이프 (거기서 새 5개 로드됨)
+                                                        listState.animateScrollToItem(
+                                                            index = diaries.size,
+                                                            scrollOffset = 0
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                        },
+                                            },
                                         onLikeClick = {
                                             feedDiary.diaryId.let { diaryId ->
                                                 val currentState = searchViewModel.state.value
@@ -259,6 +281,17 @@ fun SearchScreen(navController: NavController) {
                                             }
                                         }
                                     )
+                                    } else {
+                                        // '다음' 슬롯: 스와이프하면 새 5개 불러옴 (로딩 중이면 인디케이터)
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (isLoadingNext) {
+                                                CircularProgressIndicator(color = mainGreen)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

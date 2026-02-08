@@ -49,6 +49,8 @@ import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.FeedDiary
+import com.killingpart.killingpoint.data.model.Scope
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.ui.screen.MainScreen.DiaryBox
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
@@ -68,6 +70,7 @@ fun FeedRunMusicBox(
     navController: NavController,
     isActive: Boolean = true,
     onLikeClick: (() -> Unit)? = null,
+    onStoreClick: (() -> Unit)? = null,
     onVideoEnd: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -79,6 +82,7 @@ fun FeedRunMusicBox(
 
     var isLiked by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isLiked) }
     var likeCount by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.likeCount) }
+    var isStored by remember(feedDiary.diaryId) { mutableStateOf(feedDiary.isStored) }
     var showMenu by remember { mutableStateOf(false) }
     var showReportModal by remember { mutableStateOf(false) }
     var showReportSuccessModal by remember { mutableStateOf(false) }
@@ -91,9 +95,10 @@ fun FeedRunMusicBox(
     var playerBoundsInRoot by remember { mutableStateOf(Rect.Zero) }
     val view = LocalView.current
 
-    LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount) {
+    LaunchedEffect(feedDiary.isLiked, feedDiary.likeCount, feedDiary.isStored) {
         isLiked = feedDiary.isLiked
         likeCount = feedDiary.likeCount
+        isStored = feedDiary.isStored
     }
 
     LaunchedEffect(Unit) {
@@ -135,11 +140,12 @@ fun FeedRunMusicBox(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 8.dp),
+                    .padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 25.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f, fill = false),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -180,7 +186,7 @@ fun FeedRunMusicBox(
                     )
 
                     Column(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.weight(1f, fill = false).clickable {
                             if (currentUserId != null && feedDiary.userId == currentUserId) {
                                 navController.navigate("main?tab=profile")
                             } else {
@@ -225,41 +231,22 @@ fun FeedRunMusicBox(
                             .clickable { showMenu = true }
                     )
 
-                    Box {
-                        Icon(
-                            imageVector = Icons.Filled.MoreHoriz,
-                            contentDescription = "메뉴",
-                            tint = Color(0xFF4E4E4E),
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable { showMenu = true }
-                        )
-
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false },
-                            modifier = Modifier
-                                .width(78.dp)
-                                .background(
-                                    color = Color(0xFF101010),
-                                    shape = RoundedCornerShape(4.dp)
-                                )
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier
+                            .width(78.dp)
+                            .background(
+                                color = Color(0xFF101010),
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                    ) {
+                        FeedMenuItem(
+                            text = "신고하기",
+                            iconRes = R.drawable.ic_report
                         ) {
-//                            FeedMenuItem(
-//                                text = "차단하기",
-//                                iconRes = R.drawable.ic_block
-//                            ) {
-//                                showMenu = false
-//                                // TODO 차단하기
-//                            }
-
-                            FeedMenuItem(
-                                text = "신고하기",
-                                iconRes = R.drawable.ic_report
-                            ) {
-                                showMenu = false
-                                showReportModal = true
-                            }
+                            showMenu = false
+                            showReportModal = true
                         }
                     }
                 }
@@ -276,6 +263,87 @@ fun FeedRunMusicBox(
                     } else {
                         diary.duration.toFloatOrNull() ?: 0f
                     }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            diary.musicTitle?.let { title ->
+                                ScrollableText(
+                                    text = title,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp,
+                                    color = Color.White
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            diary.artist?.let { artist ->
+                                ScrollableText(
+                                    text = artist,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Light,
+                                    fontSize = 14.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.clickable {
+                                    if (!isLiked) showHeartOverlay = true
+                                    onLikeClick?.invoke()
+                                }
+                                    .size(49.dp, 24.dp)
+                                    .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
+                                        RoundedCornerShape(8.dp)),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = "좋아요",
+                                    tint = if (isLiked) Color.Black else mainGreen,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = likeCount.toString(),
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 12.sp,
+                                    color = if (isLiked) Color.Black else Color.White
+                                )
+                            }
+                            Image(
+                                painter = painterResource(
+                                    id = if (isStored) R.drawable.is_stored else R.drawable.is_not_stored
+                                ),
+                                contentDescription = if (isStored) "보관됨" else "보관하기",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clickable {
+                                        onStoreClick?.invoke()
+                                    }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Column(
                         modifier = Modifier
@@ -294,7 +362,6 @@ fun FeedRunMusicBox(
                                 }
                             )
                         } else {
-                            // 비활성 아이템은 플레이스홀더만 표시
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -305,49 +372,16 @@ fun FeedRunMusicBox(
                         Spacer(modifier = Modifier.height(20.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center,
-                            modifier = Modifier.clickable {
-                                if (!isLiked) showHeartOverlay = true
-                                onLikeClick?.invoke()
-                            }
-                                .size(49.dp, 24.dp)
-                                .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
-                                    RoundedCornerShape(8.dp)),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Favorite,
-                                contentDescription = "좋아요",
-                                tint = if (isLiked) Color.Black else mainGreen,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = likeCount.toString(),
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 12.sp,
-                                color = if (isLiked) Color.Black else Color.White
-                            )
-                        }
-                    }
-
                     Spacer(modifier = Modifier.height(18.dp))
 
                     Column(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        DiaryBox(diary)
+                        val displayDiary = when (feedDiary.scope) {
+                            Scope.PRIVATE, Scope.KILLING_PART -> diary.copy(content = "비공개 일기입니다.")
+                            else -> diary
+                        }
+                        DiaryBox(displayDiary)
                     }
 
                     Spacer(modifier = Modifier.height(30.dp))

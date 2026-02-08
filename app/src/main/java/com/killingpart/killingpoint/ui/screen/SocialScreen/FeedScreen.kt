@@ -1,8 +1,8 @@
 package com.killingpart.killingpoint.ui.screen.SocialScreen
 
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,7 +42,7 @@ fun FeedScreen(navController: NavController) {
     val feedState by feedViewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
@@ -56,8 +56,8 @@ fun FeedScreen(navController: NavController) {
             val scrollOffset = listState.firstVisibleItemScrollOffset
             val layoutInfo = listState.layoutInfo
             val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
-            val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
-            if (scrollOffset > itemHeightPx * 0.5f) {
+            val itemWidthPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenWidth.toPx() }
+            if (scrollOffset > itemWidthPx * 0.5f) {
                 firstVisible + 1
             } else {
                 firstVisible
@@ -65,33 +65,7 @@ fun FeedScreen(navController: NavController) {
         }
     }
 
-    var lastSnappedIndex by remember { mutableStateOf(0) }
-
-    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
-        val firstVisible = listState.firstVisibleItemIndex
-        val scrollOffset = listState.firstVisibleItemScrollOffset
-        val layoutInfo = listState.layoutInfo
-        val firstVisibleItem = layoutInfo.visibleItemsInfo.firstOrNull { it.index == firstVisible }
-        val itemHeightPx = firstVisibleItem?.size?.toFloat() ?: with(density) { screenHeight.toPx() }
-        val feeds = (feedState as? FeedUiState.Success)?.feeds ?: return@LaunchedEffect
-        val maxIndex = feeds.size - 1
-        
-        val targetIndex = if (scrollOffset > itemHeightPx * 0.5f) {
-            (firstVisible + 1).coerceAtMost(maxIndex)
-        } else {
-            firstVisible.coerceAtLeast(0)
-        }
-        
-        if (targetIndex != lastSnappedIndex && targetIndex != firstVisible) {
-            lastSnappedIndex = targetIndex
-            scope.launch {
-                listState.animateScrollToItem(
-                    index = targetIndex,
-                    scrollOffset = 0
-                )
-            }
-        }
-    }
+    val snapFlingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
     when (val state = feedState) {
         is FeedUiState.Loading -> {
@@ -118,9 +92,10 @@ fun FeedScreen(navController: NavController) {
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    LazyColumn(
+                    LazyRow(
                         state = listState,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        flingBehavior = snapFlingBehavior
                     ) {
                         itemsIndexed(
                             items = state.feeds,
@@ -134,8 +109,8 @@ fun FeedScreen(navController: NavController) {
                             
                             Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = screenHeight - 160.dp)
+                                    .fillMaxHeight()
+                                    .width(screenWidth)
                             ) {
                                 FeedRunMusicBox(
                                     feedDiary = feedDiary,
@@ -210,6 +185,55 @@ fun FeedScreen(navController: NavController) {
                                                                         isLiked = currentIsLiked,
                                                                         likeCount = currentFeed?.likeCount ?: 0
                                                                     )
+                                                                } else {
+                                                                    feed
+                                                                }
+                                                            }
+                                                            feedViewModel.updateFeeds(revertedFeeds)
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onStoreClick = {
+                                        feedDiary.diaryId.let { diaryId ->
+                                            val currentState = feedViewModel.state.value
+                                            if (currentState is FeedUiState.Success) {
+                                                val currentFeed = currentState.feeds.find { it.diaryId == diaryId }
+                                                val currentIsStored = currentFeed?.isStored ?: false
+
+                                                val updatedFeeds = currentState.feeds.map { feed ->
+                                                    if (feed.diaryId == diaryId) {
+                                                        feed.copy(isStored = !currentIsStored)
+                                                    } else {
+                                                        feed
+                                                    }
+                                                }
+                                                feedViewModel.updateFeeds(updatedFeeds)
+
+                                                feedViewModel.toggleStore(
+                                                    context = context,
+                                                    diaryId = diaryId,
+                                                    onSuccess = { isStored ->
+                                                        val apiState = feedViewModel.state.value
+                                                        if (apiState is FeedUiState.Success) {
+                                                            val finalFeeds = apiState.feeds.map { feed ->
+                                                                if (feed.diaryId == diaryId) {
+                                                                    feed.copy(isStored = isStored)
+                                                                } else {
+                                                                    feed
+                                                                }
+                                                            }
+                                                            feedViewModel.updateFeeds(finalFeeds)
+                                                        }
+                                                    },
+                                                    onFailure = {
+                                                        val apiState = feedViewModel.state.value
+                                                        if (apiState is FeedUiState.Success) {
+                                                            val revertedFeeds = apiState.feeds.map { feed ->
+                                                                if (feed.diaryId == diaryId) {
+                                                                    feed.copy(isStored = currentIsStored)
                                                                 } else {
                                                                     feed
                                                                 }
