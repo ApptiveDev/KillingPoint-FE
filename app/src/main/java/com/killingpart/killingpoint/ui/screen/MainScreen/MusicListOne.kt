@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.ui.screen.MainScreen
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,8 +15,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,13 +39,22 @@ fun MusicListOne(
     onClick: () -> Unit = {},
     isPlaying: Boolean = false,
     showDragHandle: Boolean = false,
-    dragHandleModifier: Modifier = Modifier
+    dragHandleModifier: Modifier = Modifier,
+    isDragging: Boolean = false
 ) {
+    val dragScale by animateFloatAsState(
+        targetValue = if (isDragging) 1.03f else 1f,
+        label = "dragScale"
+    )
+    val rowBackground = if (isDragging) Color(0xFF6E6E6E).copy(alpha = 0.3f) else isNow
+
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(dragScale)
             .clickable(onClick = onClick)
-            .padding(10.dp)
-            .background(color = isNow, shape = RoundedCornerShape(8.dp)),
+            .background(color = rowBackground, shape = RoundedCornerShape(8.dp))
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showDragHandle) {

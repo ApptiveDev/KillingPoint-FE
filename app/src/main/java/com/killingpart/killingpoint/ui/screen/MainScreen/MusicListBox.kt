@@ -2,62 +2,40 @@ package com.killingpart.killingpoint.ui.screen.MainScreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.materialcore.screenHeightDp
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
-import kotlinx.serialization.json.Json.Default.configuration
-import androidx.compose.ui.platform.LocalConfiguration
-import com.killingpart.killingpoint.ui.theme.mainGreen
-
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 private const val REORDER_ITEM_HEIGHT_DP = 72f
+private const val AUTO_SCROLL_AREA_DP = 72f
+private const val AUTO_SCROLL_SPEED = 128f
 
 @Composable
 fun MusicListBox(
@@ -69,31 +47,27 @@ fun MusicListBox(
     onItemClick: (Int) -> Unit = {},
     onOrderChange: (List<Long>) -> Unit = {}
 ) {
-    val configuration = LocalConfiguration.current
-    val screenHeight = configuration.screenHeightDp.dp
+
     val density = LocalDensity.current
     val itemHeightPx = with(density) { REORDER_ITEM_HEIGHT_DP.dp.toPx() }
+    val autoScrollAreaPx = with(density) { AUTO_SCROLL_AREA_DP.dp.toPx() }
 
     var isEditMode by remember { mutableStateOf(false) }
-    var pendingOrderIds by remember { mutableStateOf<List<Long>?>(null) }
     val reorderableList = remember { mutableStateListOf<Diary>() }
+
     var draggedIndex by remember { mutableIntStateOf(-1) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var currentPointerY by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(diaries, pendingOrderIds) {
-        if (pendingOrderIds != null && diaries.mapNotNull { it.id } == pendingOrderIds) {
-            pendingOrderIds = null
-        }
-    }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    var autoScrollJob by remember { mutableStateOf<Job?>(null) }
 
+    val displayList = if (isEditMode) reorderableList else diaries
     val currentDiary = diaries.getOrNull(currentIndex)
-    val nextDiary = if (diaries.isNotEmpty()) {
-        val nextIndex = (currentIndex + 1) % diaries.size
-        diaries.getOrNull(nextIndex)
-    } else null
+    val nextDiary = if (diaries.isNotEmpty()) diaries.getOrNull((currentIndex + 1) % diaries.size) else null
     val headerLabel = if (showCurrentHeader) "재생 중 : " else "다음곡 : "
     val headerTitle = if (showCurrentHeader) currentDiary?.musicTitle else nextDiary?.musicTitle
-    val displayList = if (isEditMode || pendingOrderIds != null) reorderableList else diaries
 
     Column(
         modifier = Modifier
@@ -108,7 +82,6 @@ fun MusicListBox(
             onToggle = {
                 if (expanded) {
                     isEditMode = false
-                    pendingOrderIds = null
                     onToggle(false)
                 } else {
                     onToggle(true)
@@ -121,10 +94,7 @@ fun MusicListBox(
                     isEditMode = true
                 } else {
                     val ids = reorderableList.mapNotNull { it.id }
-                    if (ids.isNotEmpty()) {
-                        pendingOrderIds = ids
-                        onOrderChange(ids)
-                    }
+                    if (ids.isNotEmpty()) onOrderChange(ids)
                     isEditMode = false
                 }
             }
@@ -135,88 +105,166 @@ fun MusicListBox(
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 400.dp)
-                    .background(color = Color.Black, shape = RoundedCornerShape(12.dp))
+                    .background(Color.Black, RoundedCornerShape(12.dp))
             ) {
-                if (displayList.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "",
-                            fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.Light,
-                            fontSize = 12.sp,
-                            color = Color.White
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        itemsIndexed(
-                            displayList,
-                            key = { _, d -> d.id ?: d.hashCode() }
-                        ) { index, d ->
-                            Box(modifier = Modifier.animateItem()) {
-                                MusicListOne(
-                                    imageUrl = d.albumImageUrl,
-                                    musicTitle = d.musicTitle,
-                                    artist = d.artist,
-                                    isNow = if (d.id == currentDiary?.id) Color(0xFF060606) else Color.Transparent,
-                                    onClick = {
-                                        if (!isEditMode) {
-                                            val idx = diaries.indexOfFirst { it.id == d.id }
-                                            if (idx >= 0) onItemClick(idx)
-                                        }
-                                    },
-                                    isPlaying = d.id == currentDiary?.id,
-                                    showDragHandle = isEditMode,
-                                    dragHandleModifier = Modifier.pointerInput(d.id) {
-                                        detectDragGesturesAfterLongPress(
-                                            onDragStart = {
-                                                draggedIndex = reorderableList.indexOfFirst { it.id == d.id }
-                                                dragOffsetY = 0f
-                                            },
-                                            onDrag = { change, dragAmount ->
-                                                change.consume()
-                                                dragOffsetY += dragAmount.y
-                                                val size = reorderableList.size
-                                                if (size == 0) return@detectDragGesturesAfterLongPress
-                                                val from = draggedIndex
-                                                if (from < 0) return@detectDragGesturesAfterLongPress
-                                                val toIndex = (from + (dragOffsetY / itemHeightPx).toInt())
-                                                    .coerceIn(0, size - 1)
-                                                if (toIndex != from) {
-                                                    val item = reorderableList[from]
-                                                    reorderableList.removeAt(from)
-                                                    reorderableList.add(toIndex, item)
-                                                    draggedIndex = toIndex
-                                                    // 이동한 칸수만큼만 차감해서 남은 드래그량 유지 → 한 번에 여러 칸 이동 가능
-                                                    dragOffsetY -= (toIndex - from) * itemHeightPx
-                                                }
-                                            },
-                                            onDragEnd = {
-                                                draggedIndex = -1
-                                                dragOffsetY = 0f
-                                            }
-                                        )
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    itemsIndexed(displayList, key = { _, d -> d.id ?: d.hashCode() }) { _, d ->
+
+                        val isDraggingItem =
+                            isEditMode && draggedIndex >= 0 &&
+                                    reorderableList.getOrNull(draggedIndex)?.id == d.id
+
+                        Box {
+
+                            MusicListOne(
+                                imageUrl = d.albumImageUrl,
+                                musicTitle = d.musicTitle,
+                                artist = d.artist,
+                                isNow = if (d.id == currentDiary?.id) Color(0xFF060606) else Color.Transparent,
+                                onClick = {
+                                    if (!isEditMode) {
+                                        val idx = diaries.indexOfFirst { it.id == d.id }
+                                        if (idx >= 0) onItemClick(idx)
                                     }
-                                )
-                            }
+                                },
+                                isPlaying = d.id == currentDiary?.id,
+                                showDragHandle = isEditMode,
+                                isDragging = isDraggingItem,
+                                dragHandleModifier = Modifier.pointerInput(d.id) {
+
+                                    detectDragGesturesAfterLongPress(
+
+                                        onDragStart = {
+                                            if (!isEditMode) {
+                                                reorderableList.clear()
+                                                reorderableList.addAll(diaries)
+                                                isEditMode = true
+                                            }
+                                            draggedIndex = reorderableList.indexOfFirst { it.id == d.id }
+                                            dragOffsetY = 0f
+                                            currentPointerY = 0f
+                                        },
+
+                                        onDragCancel = {
+                                            autoScrollJob?.cancel()
+                                            draggedIndex = -1
+                                            dragOffsetY = 0f
+                                            currentPointerY = 0f
+                                        },
+
+                                        onDragEnd = {
+                                            autoScrollJob?.cancel()
+                                            draggedIndex = -1
+                                            dragOffsetY = 0f
+                                            currentPointerY = 0f
+
+                                            // 순서 확정
+                                            val ids = reorderableList.mapNotNull { it.id }
+                                            if (ids.isNotEmpty()) {
+                                                onOrderChange(ids)
+                                            }
+                                        },
+
+                                        onDrag = { change, dragAmount ->
+
+                                            change.consumePositionChange()
+
+                                            // 뷰포트 내에서의 실제 포인터 위치 계산
+                                            val pointerY = change.position.y
+                                            currentPointerY = pointerY
+
+                                            val viewportStart = listState.layoutInfo.viewportStartOffset.toFloat()
+                                            val viewportEnd = listState.layoutInfo.viewportEndOffset.toFloat()
+                                            val viewportHeight = viewportEnd - viewportStart
+
+                                            // ----------- AUTO SCROLL -----------
+
+                                            val shouldScrollUp = pointerY < autoScrollAreaPx
+                                            val shouldScrollDown = pointerY > (viewportHeight - autoScrollAreaPx)
+
+                                            if (shouldScrollUp || shouldScrollDown) {
+
+                                                if (autoScrollJob?.isActive != true) {
+
+                                                    autoScrollJob = scope.launch {
+                                                        while (isActive) {
+
+                                                            val latestPointerY = currentPointerY
+                                                            val vStart = listState.layoutInfo.viewportStartOffset.toFloat()
+                                                            val vEnd = listState.layoutInfo.viewportEndOffset.toFloat()
+                                                            val vHeight = vEnd - vStart
+
+                                                            val up = latestPointerY < autoScrollAreaPx
+                                                            val down = latestPointerY > (vHeight - autoScrollAreaPx)
+
+                                                            if (!up && !down) break
+
+                                                            val distanceFromEdge =
+                                                                if (up) latestPointerY
+                                                                else vHeight - latestPointerY
+
+                                                            val speedMultiplier =
+                                                                ((autoScrollAreaPx - distanceFromEdge) / autoScrollAreaPx)
+                                                                    .coerceIn(0.25f, 1f)
+
+                                                            val direction =
+                                                                if (up) -AUTO_SCROLL_SPEED * speedMultiplier
+                                                                else AUTO_SCROLL_SPEED * speedMultiplier
+
+                                                            listState.scrollBy(direction)
+                                                            delay(16)
+                                                        }
+                                                    }
+                                                }
+
+                                            } else {
+                                                autoScrollJob?.cancel()
+                                            }
+
+                                            // ----------- REORDER -----------
+
+                                            dragOffsetY += dragAmount.y
+
+                                            val size = reorderableList.size
+                                            val from = draggedIndex
+                                            if (from < 0 || size == 0) return@detectDragGesturesAfterLongPress
+
+                                            val toIndex = (from + (dragOffsetY / itemHeightPx).toInt())
+                                                .coerceIn(0, size - 1)
+
+                                            if (toIndex != from) {
+                                                val item = reorderableList[from]
+                                                reorderableList.removeAt(from)
+                                                reorderableList.add(toIndex, item)
+                                                draggedIndex = toIndex
+
+                                                dragOffsetY -= (toIndex - from) * itemHeightPx
+                                            }
+                                        }
+                                    )
+                                }
+                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+private suspend fun LazyListState.scrollBy(direction: Float) {
+    animateScrollBy(direction)
 }
