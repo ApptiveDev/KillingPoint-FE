@@ -43,6 +43,28 @@ class SearchViewModel(
         }
     }
 
+    /**
+     * 마지막 일기에서 다음으로 넘어갈 때 새 무작위 5개를 불러옴 (로딩 UI 없이).
+     * 성공 시 onSuccess, 실패 시 onFailure 호출.
+     */
+    fun loadNextRandomDiaries(
+        context: Context,
+        onSuccess: () -> Unit = {},
+        onFailure: () -> Unit = {}
+    ) {
+        val repo = repoFactory(context)
+        viewModelScope.launch {
+            try {
+                val result = repo.getRandomDiaries()
+                _state.value = SearchUiState.Success(diaries = result)
+                onSuccess()
+            } catch (e: Exception) {
+                android.util.Log.e("SearchViewModel", "다음 무작위 일기 로드 실패: ${e.message}")
+                onFailure()
+            }
+        }
+    }
+
     fun toggleLike(context: Context, diaryId: Long, onSuccess: (Boolean) -> Unit, onFailure: (() -> Unit)? = null) {
         val repo = repoFactory(context)
         viewModelScope.launch {
