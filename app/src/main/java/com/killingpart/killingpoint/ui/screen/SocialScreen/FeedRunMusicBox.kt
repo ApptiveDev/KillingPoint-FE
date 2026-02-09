@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -114,6 +116,7 @@ fun FeedRunMusicBox(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .fillMaxHeight()
             .padding(horizontal = 24.dp)
             .onGloballyPositioned { boxBoundsInRoot = it.boundsInRoot() }
             .pointerInput(Unit) {
@@ -134,8 +137,11 @@ fun FeedRunMusicBox(
                 )
             }
     ) {
+        val scrollState = rememberScrollState()
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
         ) {
             Row(
                 modifier = Modifier
