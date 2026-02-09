@@ -78,5 +78,6 @@ dependencies {
     implementation("com.pierfrancescosoffritti.androidyoutubeplayer:chromecast-sender:0.32")
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
+    implementation(platform("androidx.compose:compose-bom:2024.10.00"))
 
 }

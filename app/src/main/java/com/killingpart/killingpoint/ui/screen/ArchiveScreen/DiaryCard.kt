@@ -53,7 +53,6 @@ fun DiaryCard(
     } else {
         Modifier
     }
-    
     Column(
         modifier = modifier
             .fillMaxWidth()
