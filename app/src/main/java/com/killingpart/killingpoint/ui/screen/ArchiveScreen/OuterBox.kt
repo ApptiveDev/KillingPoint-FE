@@ -426,6 +426,7 @@ fun OuterBox(
                                         DiaryCard(
                                             diary = diary,
                                             authorTag = authorTag,
+                                            showDate = selectedTabIndex == 0,
                                             modifier = Modifier.weight(1f),
                                             onClick = {
                                                 navController?.let { nav ->
