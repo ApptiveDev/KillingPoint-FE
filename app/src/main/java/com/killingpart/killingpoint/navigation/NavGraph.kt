@@ -175,7 +175,8 @@ fun NavGraph(
                     start = start,
                     end = end,
                     createDate = createDate,
-                    totalDuration = totalDuration
+                    totalDuration = totalDuration,
+                    diaryId = diaryId
                 )
             } else {
                 DiaryDetailScreen(
