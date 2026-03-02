@@ -13,6 +13,7 @@ import com.killingpart.killingpoint.ui.screen.AddMusicScreen.AddMusicScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.WriteDiaryScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.SelectDurationScreen
 import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreen
+import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreenForStored
 import com.killingpart.killingpoint.ui.screen.SocialScreen.SocialScreen
 import com.killingpart.killingpoint.ui.screen.SocialScreen.FriendProfileScreen
 import androidx.navigation.navArgument
@@ -163,25 +164,40 @@ fun NavGraph(
             val authorUsername = URLDecoder.decode(backStackEntry.arguments?.getString("authorUsername").orEmpty(), "UTF-8")
             val authorTag = URLDecoder.decode(backStackEntry.arguments?.getString("authorTag").orEmpty(), "UTF-8")
 
-            DiaryDetailScreen(
-                navController = navController,
-                artist = artist,
-                musicTitle = musicTitle,
-                albumImageUrl = albumImageUrl,
-                content = content,
-                videoUrl = videoUrl,
-                duration = duration,
-                start = start,
-                end = end,
-                createDate = createDate,
-                selectedDate = selectedDate,
-                scope = scope,
-                diaryId = diaryId,
-                totalDuration = totalDuration,
-                fromTab = fromTab,
-                authorUsername = authorUsername,
-                authorTag = authorTag
-            )
+            if (fromTab == "stored") {
+                DiaryDetailScreenForStored(
+                    navController = navController,
+                    artist = artist,
+                    musicTitle = musicTitle,
+                    albumImageUrl = albumImageUrl,
+                    videoUrl = videoUrl,
+                    duration = duration,
+                    start = start,
+                    end = end,
+                    createDate = createDate,
+                    totalDuration = totalDuration
+                )
+            } else {
+                DiaryDetailScreen(
+                    navController = navController,
+                    artist = artist,
+                    musicTitle = musicTitle,
+                    albumImageUrl = albumImageUrl,
+                    content = content,
+                    videoUrl = videoUrl,
+                    duration = duration,
+                    start = start,
+                    end = end,
+                    createDate = createDate,
+                    selectedDate = selectedDate,
+                    scope = scope,
+                    diaryId = diaryId,
+                    totalDuration = totalDuration,
+                    fromTab = fromTab,
+                    authorUsername = authorUsername,
+                    authorTag = authorTag
+                )
+            }
         }
 
         composable(

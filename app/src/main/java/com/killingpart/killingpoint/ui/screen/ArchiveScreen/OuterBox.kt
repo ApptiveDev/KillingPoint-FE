@@ -36,7 +36,7 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
-import com.killingpart.killingpoint.data.model.FeedDiary
+import com.killingpart.killingpoint.data.model.StoredDiary
 import com.killingpart.killingpoint.ui.screen.ArchiveScreen.DiaryCard
 import android.net.Uri
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -64,7 +64,7 @@ fun OuterBox(
 
     // 탭: 0 = 내 킬링파트, 1 = 보관한 킬링파트
     var selectedTabIndex by remember { mutableStateOf(0) }
-    var storedDiaries by remember { mutableStateOf<List<FeedDiary>>(emptyList()) }
+    var storedDiaries by remember { mutableStateOf<List<StoredDiary>>(emptyList()) }
     var totalStoredPages by remember { mutableStateOf(0) }
     var currentStoredPage by remember { mutableStateOf(-1) }
     var isLoadingStored by remember { mutableStateOf(false) }
@@ -379,11 +379,12 @@ fun OuterBox(
                     val itemSize =
                         (screenWidth - horizontalContainerPadding * 2 - interColumnSpacing) / 2
 
-                    // (Diary, authorTag?, authorUsername?) - 보관 탭일 때만 작성자 정보 있음
+                    // (Diary, authorTag?, authorUsername?)
+                    // 보관 탭: originalAuthorTag만 내려오므로 authorTag에만 매핑
                     val displayList: List<Triple<Diary, String?, String?>> = if (selectedTabIndex == 0) {
                         diaries.map { Triple(it, null, null) }
                     } else {
-                        storedDiaries.map { Triple(it.toDiary, it.tag, it.username) }
+                        storedDiaries.map { Triple(it.toDiary, it.originalAuthorTag, null) }
                     }
                     val chunkedDiaries = displayList.chunked(2)
                     Box(
@@ -444,6 +445,9 @@ fun OuterBox(
                                                     val authorTagParam =
                                                         "&authorTag=${Uri.encode(authorTag.orEmpty())}"
 
+                                                    val fromTabParam =
+                                                        if (selectedTabIndex == 1) "&fromTab=stored" else "&fromTab=profile"
+
                                                     nav.navigate(
                                                         "diary_detail" +
                                                                 "?artist=${Uri.encode(diary.artist)}" +
@@ -458,7 +462,7 @@ fun OuterBox(
                                                                 scopeParam +
                                                                 diaryIdParam +
                                                                 totalDurationParam +
-                                                                "&fromTab=profile" +
+                                                                fromTabParam +
                                                                 authorUsernameParam +
                                                                 authorTagParam
                                                     )

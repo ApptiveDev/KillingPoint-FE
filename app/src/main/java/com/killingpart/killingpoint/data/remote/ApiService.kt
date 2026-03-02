@@ -30,6 +30,7 @@ import retrofit2.http.Query
 import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 import com.killingpart.killingpoint.data.model.DiaryOrderRequest
 import com.killingpart.killingpoint.data.model.RandomDiariesResponse
+import com.killingpart.killingpoint.data.model.StoredDiariesResponse
 
 interface ApiService {
 
@@ -195,7 +196,7 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
-    ): FeedResponse
+    ): StoredDiariesResponse
 
     @PATCH("diaries/order")
     suspend fun reorderDiaries(

@@ -34,6 +34,7 @@ import retrofit2.Retrofit
 import java.io.File
 import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 import com.killingpart.killingpoint.data.model.DiaryOrderRequest
+import com.killingpart.killingpoint.data.model.StoredDiariesResponse
 
 class AuthRepository(
     private val context: Context,
@@ -286,7 +287,7 @@ class AuthRepository(
         }
     }
 
-    suspend fun getStoredDiariesPage(page: Int = 0, size: Int = 20): Result<FeedResponse> = withContext(Dispatchers.IO) {
+    suspend fun getStoredDiariesPage(page: Int = 0, size: Int = 20): Result<StoredDiariesResponse> = withContext(Dispatchers.IO) {
         runCatching {
             val accessToken = getAccessToken()
                 ?: throw IllegalStateException("액세스 토큰이 없습니다")
