@@ -375,169 +375,169 @@ fun DiaryDetailScreen(
 
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (fromTab != "stored") {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .padding(horizontal = 24.dp)
-            ) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .background(
-                            color = Color(0xFF1D1E20),
-                            shape = RoundedCornerShape(16.dp)
-                        )
-                        .padding(16.dp)
+                        .padding(horizontal = 24.dp)
                 ) {
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = editedContent,
-                            onValueChange = { editedContent = it },
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(bottom = 50.dp),
-                            textStyle = TextStyle(
-                                fontSize = 13.sp,
-                                fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                lineHeight = 20.sp,
-                                color = Color.White
-                            ),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent,
-                                focusedBorderColor = mainGreen.copy(alpha = 0.5f),
-                                cursorColor = mainGreen,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                    } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .background(
+                                color = Color(0xFF1D1E20),
+                                shape = RoundedCornerShape(16.dp)
+                            )
+                            .padding(16.dp)
+                    ) {
+                        if (isEditing) {
+                            OutlinedTextField(
+                                value = editedContent,
+                                onValueChange = { editedContent = it },
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(bottom = 50.dp),
+                                textStyle = TextStyle(
+                                    fontSize = 13.sp,
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    lineHeight = 20.sp,
+                                    color = Color.White
+                                ),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    unfocusedBorderColor = Color.Transparent,
+                                    focusedBorderColor = mainGreen.copy(alpha = 0.5f),
+                                    cursorColor = mainGreen,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(bottom = 60.dp)
+                            ) {
+                                Text(
+                                    text = currentContent,
+                                    color = Color.White,
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp,
+                                    lineHeight = 20.sp
+                                )
+                            }
+                        }
                         Column(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
-                                .padding(bottom = 60.dp)
+                                .align(Alignment.BottomEnd)
+                                .padding(bottom = 5.dp),
+                            horizontalAlignment = Alignment.End
                         ) {
                             Text(
-                                text = currentContent,
+                                text = formattedDate,
                                 color = Color.White,
                                 fontFamily = PaperlogyFontFamily,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 13.sp,
-                                lineHeight = 20.sp
+                                fontWeight = FontWeight.W400,
+                                fontSize = 10.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = if (authorUsername.isNotEmpty() && authorTag.isNotEmpty()) {
+                                    "@$authorTag"
+                                } else {
+                                    when (val state = userState) {
+                                        is UserUiState.Success -> "@${state.userInfo.tag}"
+                                        is UserUiState.Loading -> "@KILLINGPART"
+                                        is UserUiState.Error -> "@KILLINGPART"
+                                    }
+                                },
+                                color = Color.White,
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.W400,
+                                fontSize = 10.sp
                             )
                         }
                     }
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(bottom = 5.dp),
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Text(
-                            text = formattedDate,
-                            color = Color.White,
-                            fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.W400,
-                            fontSize = 10.sp
-                        )
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = if (authorUsername.isNotEmpty() && authorTag.isNotEmpty()) {
-                                // 친구 프로필에서 온 경우 친구 이름 표시
-                                "@$authorTag"
-                            } else {
-                                // 내 일기인 경우 내 이름 표시
-                                when (val state = userState) {
-                                    is UserUiState.Success -> "@${state.userInfo.tag}"
-                                    is UserUiState.Loading -> "@KILLINGPART"
-                                    is UserUiState.Error -> "@KILLINGPART"
-                                }
-                            },
-                            color = Color.White,
-                            fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.W400,
-                            fontSize = 10.sp
-                        )
-                    }
-                }
-
-                if (isEditing) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "취소",
-                            color = Color(0xFFAAAAAA),
-                            fontFamily = PaperlogyFontFamily,
-                            fontSize = 11.sp,
+                    if (isEditing) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
                             modifier = Modifier
-                                .clickable {
-                                    editedContent = currentContent
-                                    isEditing = false
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "취소",
+                                color = Color(0xFFAAAAAA),
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 11.sp,
+                                modifier = Modifier
+                                    .clickable {
+                                        editedContent = currentContent
+                                        isEditing = false
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
 
-                        Text(
-                            text = "저장",
-                            color = mainGreen,
-                            fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            modifier = Modifier
-                                .clickable {
-                                    if (diaryId == null || isLoading) return@clickable
+                            Text(
+                                text = "저장",
+                                color = mainGreen,
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp,
+                                modifier = Modifier
+                                    .clickable {
+                                        if (diaryId == null || isLoading) return@clickable
 
-                                    isLoading = true
-                                    coroutineScope.launch {
-                                        try {
-                                            val scopeEnum = try {
-                                                Scope.valueOf(scope.ifEmpty { "PRIVATE" })
+                                        isLoading = true
+                                        coroutineScope.launch {
+                                            try {
+                                                val scopeEnum = try {
+                                                    Scope.valueOf(scope.ifEmpty { "PRIVATE" })
+                                                } catch (e: Exception) {
+                                                    Scope.PRIVATE
+                                                }
+
+                                                val updateRequest = CreateDiaryRequest(
+                                                    artist = artist,
+                                                    musicTitle = musicTitle,
+                                                    albumImageUrl = albumImageUrl,
+                                                    videoUrl = videoUrl,
+                                                    scope = scopeEnum.name,
+                                                    content = editedContent,
+                                                    duration = duration,
+                                                    start = start,
+                                                    end = end,
+                                                    totalDuration = totalDuration ?: 0
+                                                )
+
+                                                repo.updateDiary(diaryId, updateRequest)
+                                                currentContent = editedContent
+                                                isEditing = false
                                             } catch (e: Exception) {
-                                                Scope.PRIVATE
+                                                e.printStackTrace()
+                                            } finally {
+                                                isLoading = false
                                             }
-
-                                            val updateRequest = CreateDiaryRequest(
-                                                artist = artist,
-                                                musicTitle = musicTitle,
-                                                albumImageUrl = albumImageUrl,
-                                                videoUrl = videoUrl,
-                                                scope = scopeEnum.name,
-                                                content = editedContent,
-                                                duration = duration,
-                                                start = start,
-                                                end = end,
-                                                totalDuration = totalDuration ?: 0
-                                            )
-
-                                            repo.updateDiary(diaryId, updateRequest)
-                                            currentContent = editedContent
-                                            isEditing = false
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-                                        } finally {
-                                            isLoading = false
                                         }
                                     }
-                                }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        )
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
+                        }
                     }
                 }
             }
