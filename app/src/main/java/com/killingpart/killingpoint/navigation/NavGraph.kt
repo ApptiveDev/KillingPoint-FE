@@ -16,6 +16,7 @@ import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScree
 import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreenForStored
 import com.killingpart.killingpoint.ui.screen.SocialScreen.SocialScreen
 import com.killingpart.killingpoint.ui.screen.SocialScreen.FriendProfileScreen
+import com.killingpart.killingpoint.ui.screen.SocialScreen.PickFandomListScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.killingpart.killingpoint.ui.screen.SearchScreen.SearchScreen
@@ -217,13 +218,15 @@ fun NavGraph(
                     "&username={username}" +
                     "&tag={tag}" +
                     "&profileImageUrl={profileImageUrl}" +
-                    "&isMyPick={isMyPick}",
+                    "&isMyPick={isMyPick}" +
+                    "&fromPickFandomList={fromPickFandomList}",
             arguments = listOf(
                 navArgument("userId") { type = NavType.LongType },
                 navArgument("username") { type = NavType.StringType; defaultValue = "" },
                 navArgument("tag") { type = NavType.StringType; defaultValue = "" },
                 navArgument("profileImageUrl") { type = NavType.StringType; defaultValue = "" },
-                navArgument("isMyPick") { type = NavType.BoolType; defaultValue = false }
+                navArgument("isMyPick") { type = NavType.BoolType; defaultValue = false },
+                navArgument("fromPickFandomList") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
@@ -231,6 +234,7 @@ fun NavGraph(
             val tag = URLDecoder.decode(backStackEntry.arguments?.getString("tag").orEmpty(), "UTF-8")
             val profileImageUrl = URLDecoder.decode(backStackEntry.arguments?.getString("profileImageUrl").orEmpty(), "UTF-8")
             val isMyPick = backStackEntry.arguments?.getBoolean("isMyPick") ?: false
+            val fromPickFandomList = backStackEntry.arguments?.getBoolean("fromPickFandomList") ?: false
 
             FriendProfileScreen(
                 navController = navController,
@@ -238,11 +242,37 @@ fun NavGraph(
                 username = username,
                 tag = tag,
                 profileImageUrl = profileImageUrl,
-                isMyPick = isMyPick
+                isMyPick = isMyPick,
+                fromPickFandomList = fromPickFandomList
             )
         }
         composable("search") {
             SearchScreen(navController)
+        }
+
+        composable(
+            route = "pick_fandom_list" +
+                    "?userId={userId}" +
+                    "&tag={tag}" +
+                    "&initialTab={initialTab}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.LongType },
+                navArgument("tag") { type = NavType.StringType; defaultValue = "" },
+                navArgument("initialTab") { type = NavType.StringType; defaultValue = "picks" }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            val tag = URLDecoder.decode(backStackEntry.arguments?.getString("tag").orEmpty(), "UTF-8")
+            val initialTab = URLDecoder.decode(
+                backStackEntry.arguments?.getString("initialTab").orEmpty(),
+                "UTF-8"
+            )
+            PickFandomListScreen(
+                navController = navController,
+                userId = userId,
+                tag = tag,
+                initialTab = initialTab
+            )
         }
     }
 }

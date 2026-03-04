@@ -366,7 +366,8 @@ fun FriendItemCard(
     navController: NavController,
     currentUserId: Long? = null,
     isPickTab: Boolean = false,
-    onSubscribeClick: (() -> Unit)? = null
+    onSubscribeClick: (() -> Unit)? = null,
+    fromPickFandomList: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -378,8 +379,22 @@ fun FriendItemCard(
             .padding(10.dp)
             .padding(end=12.dp)
             .clickable {
-                // 내 프로필인 경우 main?tab=profile로 이동
-                if (currentUserId != null && user.userId == currentUserId) {
+                // 픽/팬덤 리스트에서 진입한 경우: 내 프로필이든 친구 프로필이든 friend_profile + 뒤로가기만 표시
+                if (fromPickFandomList) {
+                    val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                    val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                    val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                    navController.navigate(
+                        "friend_profile" +
+                                "?userId=${user.userId}" +
+                                "&username=$encodedUsername" +
+                                "&tag=$encodedTag" +
+                                "&profileImageUrl=$encodedProfileImageUrl" +
+                                "&isMyPick=${user.isMyPick}" +
+                                "&fromPickFandomList=true"
+                    )
+                } else if (currentUserId != null && user.userId == currentUserId) {
+                    // (리스트 아님) 내 프로필인 경우 main?tab=profile로 이동
                     navController.navigate("main?tab=profile")
                 } else {
                     // 다른 사용자 프로필인 경우 friend_profile로 이동

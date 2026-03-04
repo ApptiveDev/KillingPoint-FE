@@ -70,11 +70,13 @@ fun OuterBox(
     var isLoadingStored by remember { mutableStateOf(false) }
     var isLoadingMoreStored by remember { mutableStateOf(false) }
     val gridListState = rememberLazyListState()
+    var currentUserId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
         val repo = AuthRepository(context)
         val userId = repo.getUserIdFromToken()
+        currentUserId = userId
         if (userId != null) {
             isLoadingStatistics = true
             repo.getUserStatistics(userId)
@@ -249,6 +251,15 @@ fun OuterBox(
                             Spacer(modifier=Modifier.width(10.dp))
                             // 팬덤
                             Column(
+                                modifier = Modifier.clickable {
+                                    val uid = currentUserId
+                                    val userTag = (userState as? UserUiState.Success)?.userInfo?.tag ?: ""
+                                    if (navController != null && uid != null && userTag.isNotEmpty()) {
+                                        navController.navigate(
+                                            "pick_fandom_list?userId=$uid&tag=${Uri.encode(userTag)}&initialTab=fandom"
+                                        )
+                                    }
+                                },
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
@@ -272,6 +283,15 @@ fun OuterBox(
                             Spacer(modifier=Modifier.width(12.dp))
                             // PICKS
                             Column(
+                                modifier = Modifier.clickable {
+                                    val uid = currentUserId
+                                    val userTag = (userState as? UserUiState.Success)?.userInfo?.tag ?: ""
+                                    if (navController != null && uid != null && userTag.isNotEmpty()) {
+                                        navController.navigate(
+                                            "pick_fandom_list?userId=$uid&tag=${Uri.encode(userTag)}&initialTab=picks"
+                                        )
+                                    }
+                                },
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(

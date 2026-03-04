@@ -33,6 +33,8 @@ import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.Scope
+import com.killingpart.killingpoint.data.model.UserStatistics
+import com.killingpart.killingpoint.data.model.SubscribeUser
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
 import com.killingpart.killingpoint.ui.screen.ArchiveScreen.DiaryCard
@@ -61,9 +63,10 @@ fun FriendProfileScreen(
     username: String = "",
     tag: String = "",
     profileImageUrl: String = "",
-    isMyPick: Boolean = false
+    isMyPick: Boolean = false,
+    fromPickFandomList: Boolean = false
 ) {
-    var selectedTab by remember { mutableStateOf(FriendProfileTab.FRIEND) }
+    var selectedTab by remember { mutableStateOf(if (fromPickFandomList) FriendProfileTab.FRIEND else FriendProfileTab.FRIEND) }
     var currentUserId by remember { mutableStateOf(0L) }
     
     val context = LocalContext.current
@@ -79,7 +82,7 @@ fun FriendProfileScreen(
     val currentIsMyPick = remember(friendState, userId) {
         when (val state = friendState) {
             is com.killingpart.killingpoint.ui.viewmodel.FriendUiState.Success -> {
-                state.picks?.content?.any { it.userId == userId } ?: isMyPick
+                state.picks?.content?.any { user: SubscribeUser -> user.userId == userId } ?: isMyPick
             }
             else -> isMyPick
         }
@@ -96,16 +99,16 @@ fun FriendProfileScreen(
             currentUserId = userIdFromToken
             // 통계를 가져와서 전체 picks 목록 로드
             repo.getUserStatistics(userIdFromToken)
-                .onSuccess { statistics ->
+                .onSuccess { statistics: UserStatistics ->
                     // picks 목록 로드하여 isMyPick 상태 확인 (전체 목록을 가져오기 위해 pickCount 전달)
                     friendViewModel.loadFriends(
-                        context, 
-                        userIdFromToken, 
-                        statistics.pickCount, 
+                        context,
+                        userIdFromToken,
+                        statistics.pickCount,
                         statistics.fanCount
                     )
                 }
-                .onFailure { e ->
+                .onFailure { e: Throwable ->
                     android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
                     // 통계 조회 실패해도 충분히 큰 값으로 picks 목록 로드
                     friendViewModel.loadFriends(context, userIdFromToken, 100, 100)
@@ -126,24 +129,41 @@ fun FriendProfileScreen(
             ) {
                 Spacer(modifier = Modifier.height(35.dp))
 
-                TopPillTabs(
-                    options = listOf("피드", "친구"),
-                    selectedIndex = when (selectedTab) {
-                        FriendProfileTab.FEED -> 0
-                        FriendProfileTab.FRIEND -> 1
-                    },
-                    onSelected = { idx ->
-                        selectedTab = when (idx) {
-                            0 -> FriendProfileTab.FEED
-                            else -> FriendProfileTab.FRIEND
+                if (fromPickFandomList) {
+                    // 픽/팬덤 리스트에서 진입: 왼쪽 상단 뒤로가기만
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "뒤로가기",
+                                tint = Color.White
+                            )
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 30.dp)
-                )
-
-                Spacer(modifier = Modifier.height(7.dp))
+                    }
+                    Spacer(modifier = Modifier.height(7.dp))
+                } else {
+                    TopPillTabs(
+                        options = listOf("피드", "친구"),
+                        selectedIndex = when (selectedTab) {
+                            FriendProfileTab.FEED -> 0
+                            FriendProfileTab.FRIEND -> 1
+                        },
+                        onSelected = { idx: Int ->
+                            selectedTab = when (idx) {
+                                0 -> FriendProfileTab.FEED
+                                else -> FriendProfileTab.FRIEND
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 30.dp)
+                    )
+                    Spacer(modifier = Modifier.height(7.dp))
+                }
 
                 Box(
                     modifier = Modifier
@@ -259,6 +279,11 @@ fun FriendProfileScreen(
                                                     Spacer(modifier=Modifier.width(10.dp))
                                                     // 팬덤
                                                     Column(
+                                                        modifier = Modifier.clickable {
+                                                            navController.navigate(
+                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}&initialTab=fandom"
+                                                            )
+                                                        },
                                                         horizontalAlignment = Alignment.CenterHorizontally
                                                     ) {
                                                         Text(
@@ -282,6 +307,11 @@ fun FriendProfileScreen(
                                                     Spacer(modifier=Modifier.width(12.dp))
                                                     // PICKS
                                                     Column(
+                                                        modifier = Modifier.clickable {
+                                                            navController.navigate(
+                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}&initialTab=picks"
+                                                            )
+                                                        },
                                                         horizontalAlignment = Alignment.CenterHorizontally
                                                     ) {
                                                         Text(
@@ -336,7 +366,7 @@ fun FriendProfileScreen(
                                                                     // 구독 취소 후 통계를 다시 가져와서 전체 목록 로드
                                                                     scope.launch {
                                                                         repo.getUserStatistics(currentUserId)
-                                                                            .onSuccess { statistics ->
+                                                                            .onSuccess { statistics: UserStatistics ->
                                                                                 friendViewModel.loadFriends(
                                                                                     context,
                                                                                     currentUserId,
@@ -348,7 +378,7 @@ fun FriendProfileScreen(
                                                                                     userId
                                                                                 )
                                                                             }
-                                                                            .onFailure { e ->
+                                                                            .onFailure { e: Throwable ->
                                                                                 android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
                                                                                 friendViewModel.loadFriends(context, currentUserId, 100, 100)
                                                                                 profileViewModel.loadFriendProfile(context, userId)
@@ -365,7 +395,7 @@ fun FriendProfileScreen(
                                                                     // 구독 추가 후 통계를 다시 가져와서 전체 목록 로드
                                                                     scope.launch {
                                                                         repo.getUserStatistics(currentUserId)
-                                                                            .onSuccess { statistics ->
+                                                                            .onSuccess { statistics: UserStatistics ->
                                                                                 friendViewModel.loadFriends(
                                                                                     context,
                                                                                     currentUserId,
@@ -377,7 +407,7 @@ fun FriendProfileScreen(
                                                                                     userId
                                                                                 )
                                                                             }
-                                                                            .onFailure { e ->
+                                                                            .onFailure { e: Throwable ->
                                                                                 android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
                                                                                 friendViewModel.loadFriends(context, currentUserId, 100, 100)
                                                                                 profileViewModel.loadFriendProfile(context, userId)
@@ -456,7 +486,7 @@ fun FriendProfileScreen(
                                                     LazyColumn(
                                                         modifier = Modifier.fillMaxSize()
                                                     ) {
-                                                        items(chunkedDiaries.size) { index ->
+                                                        items(chunkedDiaries.size) { index: Int ->
                                                             val rowItems = chunkedDiaries[index]
                                                             Row(
                                                                 modifier = Modifier
@@ -466,7 +496,7 @@ fun FriendProfileScreen(
                                                                     12.dp
                                                                 )
                                                             ) {
-                                                                rowItems.forEach { diary ->
+                                                                rowItems.forEach { diary: Diary ->
                                                                     DiaryCard(
                                                                         diary = diary,
                                                                         modifier = Modifier.weight(
