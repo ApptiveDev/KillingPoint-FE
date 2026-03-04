@@ -253,18 +253,25 @@ fun NavGraph(
         composable(
             route = "pick_fandom_list" +
                     "?userId={userId}" +
-                    "&tag={tag}",
+                    "&tag={tag}" +
+                    "&initialTab={initialTab}",
             arguments = listOf(
                 navArgument("userId") { type = NavType.LongType },
-                navArgument("tag") { type = NavType.StringType; defaultValue = "" }
+                navArgument("tag") { type = NavType.StringType; defaultValue = "" },
+                navArgument("initialTab") { type = NavType.StringType; defaultValue = "picks" }
             )
         ) { backStackEntry ->
             val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
             val tag = URLDecoder.decode(backStackEntry.arguments?.getString("tag").orEmpty(), "UTF-8")
+            val initialTab = URLDecoder.decode(
+                backStackEntry.arguments?.getString("initialTab").orEmpty(),
+                "UTF-8"
+            )
             PickFandomListScreen(
                 navController = navController,
                 userId = userId,
-                tag = tag
+                tag = tag,
+                initialTab = initialTab
             )
         }
     }

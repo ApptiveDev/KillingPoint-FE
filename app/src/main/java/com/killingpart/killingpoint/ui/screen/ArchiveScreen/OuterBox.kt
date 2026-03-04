@@ -256,7 +256,7 @@ fun OuterBox(
                                     val userTag = (userState as? UserUiState.Success)?.userInfo?.tag ?: ""
                                     if (navController != null && uid != null && userTag.isNotEmpty()) {
                                         navController.navigate(
-                                            "pick_fandom_list?userId=$uid&tag=${Uri.encode(userTag)}"
+                                            "pick_fandom_list?userId=$uid&tag=${Uri.encode(userTag)}&initialTab=fandom"
                                         )
                                     }
                                 },
@@ -288,7 +288,7 @@ fun OuterBox(
                                     val userTag = (userState as? UserUiState.Success)?.userInfo?.tag ?: ""
                                     if (navController != null && uid != null && userTag.isNotEmpty()) {
                                         navController.navigate(
-                                            "pick_fandom_list?userId=$uid&tag=${Uri.encode(userTag)}"
+                                            "pick_fandom_list?userId=$uid&tag=${Uri.encode(userTag)}&initialTab=picks"
                                         )
                                     }
                                 },

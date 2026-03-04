@@ -119,10 +119,19 @@ private fun PickFandomListContent(
 fun PickFandomListScreen(
     navController: NavController,
     userId: Long,
-    tag: String
+    tag: String,
+    initialTab: String = "picks"
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableStateOf(PickFandomTab.Picks) }
+    var selectedTab by remember(initialTab) {
+        mutableStateOf(
+            if (initialTab.equals("fandom", ignoreCase = true)) {
+                PickFandomTab.Fandom
+            } else {
+                PickFandomTab.Picks
+            }
+        )
+    }
     var picksResponse by remember { mutableStateOf<SubscribeResponse?>(null) }
     var fansResponse by remember { mutableStateOf<SubscribeResponse?>(null) }
     var isLoadingPicks by remember { mutableStateOf(false) }
@@ -135,38 +144,23 @@ fun PickFandomListScreen(
         currentUserId = AuthRepository(context).getUserIdFromToken()
     }
 
-    LaunchedEffect(userId, selectedTab) {
-        val repo = AuthRepository(context)
-        when (selectedTab) {
-            PickFandomTab.Picks -> {
-                isLoadingPicks = true
-                repo.getSubscribes(userId, 50)
-                    .onSuccess { response: SubscribeResponse -> picksResponse = response }
-                    .onFailure { _: Throwable ->
-                        picksResponse = SubscribeResponse(emptyList(), SubscribePage(0, 0, 0, 0))
-                    }
-                isLoadingPicks = false
-            }
-
-            PickFandomTab.Fandom -> {
-                isLoadingFans = true
-                repo.getFans(userId, 50)
-                    .onSuccess { response: SubscribeResponse -> fansResponse = response }
-                    .onFailure { _: Throwable ->
-                        fansResponse = SubscribeResponse(emptyList(), SubscribePage(0, 0, 0, 0))
-                    }
-                isLoadingFans = false
-            }
-        }
-    }
-
+    // 진입 시 픽/팬덤 둘 다 로드해서 picksTotal, fansTotal 모두 표시
     LaunchedEffect(userId) {
         val repo = AuthRepository(context)
-        if (fansResponse == null) {
-            repo.getFans(userId, 20, 0)
-                .onSuccess { response: SubscribeResponse -> fansResponse = response }
-                .onFailure { _: Throwable -> }
-        }
+        isLoadingPicks = true
+        isLoadingFans = true
+        repo.getSubscribes(userId, 50)
+            .onSuccess { response: SubscribeResponse -> picksResponse = response }
+            .onFailure { _: Throwable ->
+                picksResponse = SubscribeResponse(emptyList(), SubscribePage(0, 0, 0, 0))
+            }
+        isLoadingPicks = false
+        repo.getFans(userId, 50)
+            .onSuccess { response: SubscribeResponse -> fansResponse = response }
+            .onFailure { _: Throwable ->
+                fansResponse = SubscribeResponse(emptyList(), SubscribePage(0, 0, 0, 0))
+            }
+        isLoadingFans = false
     }
 
     val currentList = when (selectedTab) {
@@ -221,7 +215,7 @@ fun PickFandomListScreen(
                                     )
                                 }
                                 Text(
-                                    text = "@$tag",
+                                    text =   "@$tag",
                                     fontFamily = PaperlogyFontFamily,
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 14.sp,
@@ -299,9 +293,9 @@ fun PickFandomListScreen(
                                     }
                                 }
                                 Box(
-                                    modifier = Modifier.clickable {
-                                        selectedTab = PickFandomTab.Fandom
-                                    }
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { selectedTab = PickFandomTab.Fandom }
                                 ) {
                                     val alpha =
                                         if (selectedTab == PickFandomTab.Fandom) 1f else 0.5f
@@ -313,14 +307,14 @@ fun PickFandomListScreen(
                                             text = "나의 팬덤",
                                             fontFamily = PaperlogyFontFamily,
                                             fontWeight = if (selectedTab == PickFandomTab.Fandom) FontWeight.Medium else FontWeight.Light,
-                                            fontSize = 16.sp,
+                                            fontSize = 14.sp,
                                             color = Color.White.copy(alpha = alpha)
                                         )
                                         Text(
                                             text = "$fansTotal",
                                             fontFamily = PaperlogyFontFamily,
                                             fontWeight = if (selectedTab == PickFandomTab.Fandom) FontWeight.Medium else FontWeight.Light,
-                                            fontSize = 16.sp,
+                                            fontSize = 14.sp,
                                             color = mainGreen.copy(alpha = alpha)
                                         )
                                     }

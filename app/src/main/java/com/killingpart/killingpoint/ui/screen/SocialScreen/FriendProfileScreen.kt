@@ -281,7 +281,7 @@ fun FriendProfileScreen(
                                                     Column(
                                                         modifier = Modifier.clickable {
                                                             navController.navigate(
-                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}"
+                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}&initialTab=fandom"
                                                             )
                                                         },
                                                         horizontalAlignment = Alignment.CenterHorizontally
@@ -309,7 +309,7 @@ fun FriendProfileScreen(
                                                     Column(
                                                         modifier = Modifier.clickable {
                                                             navController.navigate(
-                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}"
+                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}&initialTab=picks"
                                                             )
                                                         },
                                                         horizontalAlignment = Alignment.CenterHorizontally
