@@ -48,6 +48,7 @@ fun PickFandomListScreen(
     var isLoadingFans by remember { mutableStateOf(false) }
     var currentUserId by remember { mutableStateOf<Long?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
         currentUserId = AuthRepository(context).getUserIdFromToken()
@@ -88,6 +89,13 @@ fun PickFandomListScreen(
     }
     val picksTotal = picksResponse?.page?.totalElements ?: 0
     val fansTotal = fansResponse?.page?.totalElements ?: 0
+    val filteredList = remember(currentList, searchQuery) {
+        val q = searchQuery.trim()
+        if (q.isEmpty()) currentList
+        else currentList.filter { user ->
+            user.username.contains(q, ignoreCase = true) || user.tag.contains(q, ignoreCase = true)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -121,6 +129,7 @@ fun PickFandomListScreen(
             value = searchQuery,
             onValueChange = { searchQuery = it },
             modifier = Modifier
+                .focusRequester(searchFocusRequester)
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             placeholder = {
@@ -132,11 +141,13 @@ fun PickFandomListScreen(
                 )
             },
             trailingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Search,
-                    contentDescription = "검색",
-                    tint = mainGreen
-                )
+                IconButton(onClick = { searchFocusRequester.requestFocus() }) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = "검색",
+                        tint = mainGreen
+                    )
+                }
             },
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Color(0xFF232427),
@@ -210,6 +221,15 @@ fun PickFandomListScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+                filteredList.isEmpty() -> {
+                    Text(
+                        text = "검색 결과가 없습니다",
+                        fontFamily = PaperlogyFontFamily,
+                        fontSize = 14.sp,
+                        color = Color(0xFFA4A4A6),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
                 else -> {
                     LazyColumn(
                         modifier = Modifier
@@ -217,7 +237,7 @@ fun PickFandomListScreen(
                             .padding(horizontal = 20.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        items(currentList) { user ->
+                        items(filteredList) { user ->
                             FriendItemCard(
                                 user = user,
                                 navController = navController,
