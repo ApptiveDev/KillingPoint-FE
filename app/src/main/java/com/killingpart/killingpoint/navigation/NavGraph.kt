@@ -16,6 +16,7 @@ import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScree
 import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreenForStored
 import com.killingpart.killingpoint.ui.screen.SocialScreen.SocialScreen
 import com.killingpart.killingpoint.ui.screen.SocialScreen.FriendProfileScreen
+import com.killingpart.killingpoint.ui.screen.SocialScreen.PickFandomListScreen
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.killingpart.killingpoint.ui.screen.SearchScreen.SearchScreen
@@ -243,6 +244,24 @@ fun NavGraph(
         }
         composable("search") {
             SearchScreen(navController)
+        }
+
+        composable(
+            route = "pick_fandom_list" +
+                    "?userId={userId}" +
+                    "&tag={tag}",
+            arguments = listOf(
+                navArgument("userId") { type = NavType.LongType },
+                navArgument("tag") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getLong("userId") ?: 0L
+            val tag = URLDecoder.decode(backStackEntry.arguments?.getString("tag").orEmpty(), "UTF-8")
+            PickFandomListScreen(
+                navController = navController,
+                userId = userId,
+                tag = tag
+            )
         }
     }
 }

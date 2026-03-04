@@ -259,6 +259,11 @@ fun FriendProfileScreen(
                                                     Spacer(modifier=Modifier.width(10.dp))
                                                     // 팬덤
                                                     Column(
+                                                        modifier = Modifier.clickable {
+                                                            navController.navigate(
+                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}"
+                                                            )
+                                                        },
                                                         horizontalAlignment = Alignment.CenterHorizontally
                                                     ) {
                                                         Text(
@@ -282,6 +287,11 @@ fun FriendProfileScreen(
                                                     Spacer(modifier=Modifier.width(12.dp))
                                                     // PICKS
                                                     Column(
+                                                        modifier = Modifier.clickable {
+                                                            navController.navigate(
+                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}"
+                                                            )
+                                                        },
                                                         horizontalAlignment = Alignment.CenterHorizontally
                                                     ) {
                                                         Text(
