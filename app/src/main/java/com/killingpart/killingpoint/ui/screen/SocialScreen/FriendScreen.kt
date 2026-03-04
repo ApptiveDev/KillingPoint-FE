@@ -366,7 +366,8 @@ fun FriendItemCard(
     navController: NavController,
     currentUserId: Long? = null,
     isPickTab: Boolean = false,
-    onSubscribeClick: (() -> Unit)? = null
+    onSubscribeClick: (() -> Unit)? = null,
+    fromPickFandomList: Boolean = false
 ) {
     Row(
         modifier = Modifier
@@ -386,13 +387,14 @@ fun FriendItemCard(
                     val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
                     val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
                     val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                    val fromParam = if (fromPickFandomList) "&fromPickFandomList=true" else ""
                     navController.navigate(
                         "friend_profile" +
                                 "?userId=${user.userId}" +
                                 "&username=$encodedUsername" +
                                 "&tag=$encodedTag" +
                                 "&profileImageUrl=$encodedProfileImageUrl" +
-                                "&isMyPick=${user.isMyPick}"
+                                "&isMyPick=${user.isMyPick}$fromParam"
                     )
                 }
             },
