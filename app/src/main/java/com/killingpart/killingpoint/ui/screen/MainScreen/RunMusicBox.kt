@@ -87,6 +87,7 @@ fun RunMusicBox(
     authorTag: String? = null,
     authorProfileImageUrl: String? = null,
     navController: NavController,
+    isReordering: Boolean = false,
     onVideoEnd: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -223,7 +224,7 @@ fun RunMusicBox(
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(scrollState),
+                            .verticalScroll(scrollState, enabled = !isReordering),
                     ) {
                         val startSeconds = currentDiary.start?.toFloatOrNull() ?: 0f
                         val durationSeconds = currentDiary.duration?.toFloatOrNull() ?: 0f

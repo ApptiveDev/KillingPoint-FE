@@ -45,7 +45,8 @@ fun MusicListBox(
     diaries: List<Diary>,
     showCurrentHeader: Boolean = false,
     onItemClick: (Int) -> Unit = {},
-    onOrderChange: (List<Long>) -> Unit = {}
+    onOrderChange: (List<Long>) -> Unit = {},
+    onDraggingChange: (Boolean) -> Unit = {}
 ) {
 
     val density = LocalDensity.current
@@ -156,6 +157,7 @@ fun MusicListBox(
                                             draggedIndex = reorderableList.indexOfFirst { it.id == d.id }
                                             dragOffsetY = 0f
                                             currentPointerY = 0f
+                                            onDraggingChange(true)
                                         },
 
                                         onDragCancel = {
@@ -163,6 +165,7 @@ fun MusicListBox(
                                             draggedIndex = -1
                                             dragOffsetY = 0f
                                             currentPointerY = 0f
+                                            onDraggingChange(false)
                                         },
 
                                         onDragEnd = {
@@ -176,6 +179,7 @@ fun MusicListBox(
                                             if (ids.isNotEmpty()) {
                                                 onOrderChange(ids)
                                             }
+                                            onDraggingChange(false)
                                         },
 
                                         onDrag = { change, dragAmount ->

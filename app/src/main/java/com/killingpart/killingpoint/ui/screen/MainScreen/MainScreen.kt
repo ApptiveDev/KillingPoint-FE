@@ -112,6 +112,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
     val MusicCueBtnGap = 12.dp
 
     var listExpanded by remember { mutableStateOf(false ) }
+    var isReordering by remember { mutableStateOf(false) }
 
     val density = LocalDensity.current
     val innerTopPadding = 20.dp
@@ -314,6 +315,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                 currentDiary = diaries.getOrNull(currentIndex),
                                 isPlaying = isPlaying,
                                 navController = navController,
+                                isReordering = isReordering,
                                 onVideoEnd = {
                                     if (diaries.isNotEmpty()) {
                                         val nextIndex = (currentIndex + 1) % diaries.size
@@ -378,6 +380,9 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                             },
                             onOrderChange = { ids ->
                                 diaryViewModel.reorderDiaries(context, ids)
+                            },
+                            onDraggingChange = { dragging ->
+                                isReordering = dragging
                             }
                         )
                     }

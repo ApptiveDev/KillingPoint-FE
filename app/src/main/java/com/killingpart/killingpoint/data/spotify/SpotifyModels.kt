@@ -1,40 +1,30 @@
 package com.killingpart.killingpoint.data.spotify
 
-data class SpotifySearchResponse(
-    val tracks: Tracks
+/**
+ * iTunes Search API 응답 모델
+ * https://itunes.apple.com/search
+ */
+data class ItunesSearchResponse(
+    val resultCount: Int,
+    val results: List<ItunesTrack>
 )
 
-data class Tracks(
-    val items: List<TrackItem>
+data class ItunesTrack(
+    val trackId: Long,
+    val trackName: String,
+    val artistName: String,
+    val artworkUrl100: String?,
+    val collectionId: Long?
 )
 
-data class TrackItem(
-    val id: String,
-    val name: String, // 제목
-    val artists: List<Artist>,
-    val album: Album
-)
-
-data class Artist(
-    val name: String
-)
-
-data class Album(
-    val id: String, // Spotify 앨범 ID
-    val images: List<Image>
-)
-
-data class Image(
-    val url: String,
-    val width: Int?,
-    val height: Int?
-)
-
+/**
+ * UI에서 공통으로 쓰는 단순화된 트랙 모델
+ */
 data class SimpleTrack(
     val id: String,
     val title: String,
     val artist: String,
     val albumImageUrl: String?,
-    val albumId: String // Spotify 앨범 ID
+    val albumId: String
 )
 
