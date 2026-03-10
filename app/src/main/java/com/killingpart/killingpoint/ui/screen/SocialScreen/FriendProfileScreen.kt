@@ -651,6 +651,23 @@ fun FriendProfileScreen(
                         likesDiaryId = null
                         likesUsers = emptyList()
                         likesError = null
+                    },
+                    onUserClick = { user ->
+                        // 모달 상태 정리 후, 좋아요 목록에서 사용자 프로필로 이동
+                        likesDiaryId = null
+                        likesUsers = emptyList()
+                        likesError = null
+                        val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                        val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                        val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                        navController.navigate(
+                            "friend_profile" +
+                                    "?userId=${user.userId}" +
+                                    "&username=$encodedUsername" +
+                                    "&tag=$encodedTag" +
+                                    "&profileImageUrl=$encodedProfileImageUrl" +
+                                    "&isMyPick=false"
+                        )
                     }
                 )
             }

@@ -541,7 +541,26 @@ fun OuterBox(
             isLoading = isLoadingLikes,
             error = likesError,
             users = likesUsers,
-            onDismiss = { likesDiaryId = null }
+            onDismiss = { likesDiaryId = null },
+            onUserClick = { user ->
+                // 모달 상태 정리 후, 내 컬렉션에서 좋아요 누른 사용자 프로필로 이동
+                likesDiaryId = null
+                likesUsers = emptyList()
+                likesError = null
+                if (navController != null) {
+                    val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                    val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                    val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                    navController.navigate(
+                        "friend_profile" +
+                                "?userId=${user.userId}" +
+                                "&username=$encodedUsername" +
+                                "&tag=$encodedTag" +
+                                "&profileImageUrl=$encodedProfileImageUrl" +
+                                "&isMyPick=false"
+                    )
+                }
+            }
         )
     }}
 }

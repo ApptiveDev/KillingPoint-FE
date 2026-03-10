@@ -37,7 +37,8 @@ fun LikesModal(
     isLoading: Boolean,
     error: String?,
     users: List<DiaryLikeUser>,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onUserClick: (DiaryLikeUser) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -188,6 +189,7 @@ fun LikesModal(
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(Color(0xFF090909))
+                                    .clickable { onUserClick(user) }
                                     .padding(horizontal = 14.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
