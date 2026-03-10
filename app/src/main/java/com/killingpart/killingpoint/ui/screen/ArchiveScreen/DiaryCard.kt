@@ -37,7 +37,8 @@ fun DiaryCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     authorTag: String? = null,
-    showDate: Boolean = true
+    showDate: Boolean = true,
+    onLikeClick: (() -> Unit)? = null
 ) {
     // 날짜에서 시간 부분 제거하고 포맷 변경 (예: "2025-10-29T23:52:08" -> "2025.10.29")
     val dateOnly = try {
@@ -80,7 +81,8 @@ fun DiaryCard(
             } else {
                 // 좋아요 수
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onLikeClick?.invoke() }
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Favorite,

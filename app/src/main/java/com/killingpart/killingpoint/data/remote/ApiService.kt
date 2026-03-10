@@ -31,6 +31,7 @@ import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 import com.killingpart.killingpoint.data.model.DiaryOrderRequest
 import com.killingpart.killingpoint.data.model.RandomDiariesResponse
 import com.killingpart.killingpoint.data.model.StoredDiariesResponse
+import com.killingpart.killingpoint.data.model.DiaryLikesResponse
 
 interface ApiService {
 
@@ -171,6 +172,15 @@ interface ApiService {
         @Header("Authorization") accessToken: String,
         @Path("diaryId") diaryId: Long
     ): LikeResponse
+
+    @GET("diaries/{diaryId}/like")
+    suspend fun getDiaryLikes(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int,
+        @Query("searchCond") searchCond: String? = null
+    ): DiaryLikesResponse
 
     @POST("diaries/{diaryId}/stores")
     suspend fun toggleStore(

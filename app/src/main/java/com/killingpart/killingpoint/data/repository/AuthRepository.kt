@@ -35,6 +35,7 @@ import java.io.File
 import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 import com.killingpart.killingpoint.data.model.DiaryOrderRequest
 import com.killingpart.killingpoint.data.model.StoredDiariesResponse
+import com.killingpart.killingpoint.data.model.DiaryLikesResponse
 
 class AuthRepository(
     private val context: Context,
@@ -281,6 +282,30 @@ class AuthRepository(
                 val code = e.code()
                 val msg = e.response()?.errorBody()?.string().orEmpty()
                 throw IllegalStateException("보관 토글 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    /**
+     * 일기 좋아요 누른 사용자 목록 조회
+     */
+    suspend fun getDiaryLikes(
+        diaryId: Long,
+        page: Int = 0,
+        size: Int,
+        searchCond: String? = null
+    ): Result<DiaryLikesResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.getDiaryLikes("Bearer $accessToken", diaryId, page, size, searchCond)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("좋아요 목록 조회 실패 ($code): $msg")
             } else {
                 throw e
             }
