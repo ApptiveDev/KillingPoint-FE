@@ -65,6 +65,7 @@ fun SearchRunMusicBox(
     navController: NavController,
     isActive: Boolean = true,
     onLikeClick: (() -> Unit)? = null,
+    onLongLikeClick: ((Long) -> Unit)? = null,
     onStoreClick: (() -> Unit)? = null,
     onVideoEnd: (() -> Unit)? = null
 ) {
@@ -311,13 +312,25 @@ fun SearchRunMusicBox(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.clickable {
-                                    if (!isLiked) showHeartOverlay = true
-                                    onLikeClick?.invoke()
-                                }
+                                modifier = Modifier
                                     .size(49.dp, 24.dp)
-                                    .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
-                                        RoundedCornerShape(8.dp)),
+                                    .background(
+                                        color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                if (!isLiked) showHeartOverlay = true
+                                                onLikeClick?.invoke()
+                                            },
+                                            onLongPress = {
+                                                feedDiary.diaryId?.let { id ->
+                                                    onLongLikeClick?.invoke(id)
+                                                }
+                                            }
+                                        )
+                                    },
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Favorite,
