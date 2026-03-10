@@ -2,6 +2,7 @@ package com.killingpart.killingpoint.ui.screen.SocialScreen
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,13 +66,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.layout.boundsInRoot
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.combinedClickable
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 fun FeedRunMusicBox(
     feedDiary: FeedDiary,
     navController: NavController,
     isActive: Boolean = true,
     onLikeClick: (() -> Unit)? = null,
+    onLongLikeClick: ((Long) -> Unit)? = null,
     onStoreClick: (() -> Unit)? = null,
     onVideoEnd: (() -> Unit)? = null
 ) {
@@ -312,13 +316,23 @@ fun FeedRunMusicBox(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
-                                modifier = Modifier.clickable {
-                                    if (!isLiked) showHeartOverlay = true
-                                    onLikeClick?.invoke()
-                                }
+                                modifier = Modifier
                                     .size(49.dp, 24.dp)
-                                    .background(color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
-                                        RoundedCornerShape(8.dp)),
+                                    .background(
+                                        color = if (isLiked) mainGreen else Color(0xFF2C2C2C),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                if (!isLiked) showHeartOverlay = true
+                                                onLikeClick?.invoke()
+                                            },
+                                            onLongPress = {
+                                                feedDiary.diaryId?.let { id -> onLongLikeClick?.invoke(id) }
+                                            }
+                                        )
+                                    }
                             ) {
                                 Icon(
                                     imageVector = Icons.Filled.Favorite,

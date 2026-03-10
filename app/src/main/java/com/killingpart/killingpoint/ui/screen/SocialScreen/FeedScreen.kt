@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.killingpart.killingpoint.ui.component.LikesModal
 import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
@@ -45,6 +46,11 @@ fun FeedScreen(navController: NavController) {
     val screenWidth = configuration.screenWidthDp.dp
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
+    // 좋아요 모달 상태 추가
+    var likesDiaryId by remember { mutableStateOf<Long?>(null) }
+    var likesUsers by remember { mutableStateOf<List<com.killingpart.killingpoint.data.model.DiaryLikeUser>>(emptyList()) }
+    var isLoadingLikes by remember { mutableStateOf(false) }
+    var likesError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         feedViewModel.loadFeeds(context)
@@ -67,6 +73,20 @@ fun FeedScreen(navController: NavController) {
 
     val snapFlingBehavior = rememberSnapFlingBehavior(lazyListState = listState)
 
+    LaunchedEffect(likesDiaryId) {
+        val targetId = likesDiaryId ?: return@LaunchedEffect
+        isLoadingLikes = true
+        likesError = null
+        val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
+        repo.getDiaryLikes(diaryId = targetId, page = 0, size = 50, searchCond = null)
+            .onSuccess { response ->
+                likesUsers = response.content
+            }
+            .onFailure { e ->
+                likesError = e.message
+            }
+        isLoadingLikes = false
+    }
     when (val state = feedState) {
         is FeedUiState.Loading -> {
             Box(
@@ -196,6 +216,9 @@ fun FeedScreen(navController: NavController) {
                                             }
                                         }
                                     },
+                                    onLongLikeClick = { diaryId ->
+                                        likesDiaryId = diaryId
+                                    },
                                     onStoreClick = {
                                         feedDiary.diaryId.let { diaryId ->
                                             val currentState = feedViewModel.state.value
@@ -256,7 +279,7 @@ fun FeedScreen(navController: NavController) {
                         val videoTotalDuration = diary.totalDuration ?: 180
                         val startTime = diary.start.toFloatOrNull()?.toInt() ?: 0
                         val durationTime = diary.duration.toFloatOrNull()?.toInt() ?: 0
-                        
+
                         Box(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
@@ -272,6 +295,22 @@ fun FeedScreen(navController: NavController) {
                             )
                         }
                     }
+
+                    if (likesDiaryId != null) {
+                        Box(modifier = Modifier.fillMaxSize().zIndex(10f)) {  // zIndex 추가
+                            LikesModal(
+                                isLoading = isLoadingLikes,
+                                error = likesError,
+                                users = likesUsers,
+                                onDismiss = {
+                                    likesDiaryId = null
+                                    likesUsers = emptyList()
+                                    likesError = null
+                                }
+                            )
+                        }
+                    }
+
                 }
             }
         }
