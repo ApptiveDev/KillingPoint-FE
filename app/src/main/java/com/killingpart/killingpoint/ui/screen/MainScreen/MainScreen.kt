@@ -263,16 +263,15 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                         .weight(1f)
                                         .padding(horizontal = 16.dp)
                                 ) {
-                                    val musicListHeight = if (listExpanded) 260.dp else 50.dp
                                     LazyColumn(
                                         modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(bottom = musicListHeight)
+                                        contentPadding = PaddingValues(bottom = 0.dp)
                                     ) {
                                         item {
                                             OuterBox(
                                                 navController = navController,
                                                 diaries = state.diaries,
-                                                onProfileClick = { 
+                                                onProfileClick = {
                                                     android.util.Log.d("MainScreen", "프로필 편집 버튼 클릭됨")
                                                     showProfileSettings = true
                                                     android.util.Log.d("MainScreen", "showProfileSettings: $showProfileSettings")
@@ -280,25 +279,6 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                                                 modifier = Modifier.fillParentMaxHeight() // 가능한 최대 높이 사용
                                             )
                                         }
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .fillMaxWidth()
-                                    ) {
-                                        MusicListBox(
-                                            currentIndex = currentIndex,
-                                            expanded = listExpanded,
-                                            onToggle = { willOpen -> listExpanded = willOpen },
-                                            diaries = state.diaries,
-                                            showCurrentHeader = true,
-                                            onItemClick = { index ->
-                                                currentDiaryId = diaries.getOrNull(index)?.id
-                                            },
-                                            onOrderChange = { ids ->
-                                                diaryViewModel.reorderDiaries(context, ids)
-                                            }
-                                        )
                                     }
                                 }
                             }

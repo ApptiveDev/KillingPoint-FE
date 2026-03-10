@@ -35,8 +35,10 @@ import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.data.model.UserStatistics
 import com.killingpart.killingpoint.data.model.SubscribeUser
+import com.killingpart.killingpoint.data.model.DiaryLikeUser
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.ui.component.LikesModal
 import com.killingpart.killingpoint.ui.screen.ArchiveScreen.DiaryCard
 import com.killingpart.killingpoint.ui.screen.MainScreen.TopPillTabs
 import com.killingpart.killingpoint.ui.screen.SocialScreen.FeedScreen
@@ -68,6 +70,11 @@ fun FriendProfileScreen(
 ) {
     var selectedTab by remember { mutableStateOf(if (fromPickFandomList) FriendProfileTab.FRIEND else FriendProfileTab.FRIEND) }
     var currentUserId by remember { mutableStateOf(0L) }
+    // 친구 컬렉션 좋아요 모달 상태
+    var likesDiaryId by remember { mutableStateOf<Long?>(null) }
+    var likesUsers by remember { mutableStateOf<List<DiaryLikeUser>>(emptyList()) }
+    var isLoadingLikes by remember { mutableStateOf(false) }
+    var likesError by remember { mutableStateOf<String?>(null) }
     
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -91,7 +98,7 @@ fun FriendProfileScreen(
     LaunchedEffect(userId) {
         profileViewModel.loadFriendProfile(context, userId)
         userViewModel.loadUserInfo(context)
-        
+
         // 현재 사용자 ID 가져오기 (구독 추가/취소용)
         val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
         val userIdFromToken = repo.getUserIdFromToken()
@@ -114,6 +121,22 @@ fun FriendProfileScreen(
                     friendViewModel.loadFriends(context, userIdFromToken, 100, 100)
                 }
         }
+    }
+
+    // 친구 컬렉션 좋아요 목록 데이터 로드
+    LaunchedEffect(likesDiaryId) {
+        val targetDiaryId = likesDiaryId ?: return@LaunchedEffect
+        isLoadingLikes = true
+        likesError = null
+        val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
+        repo.getDiaryLikes(diaryId = targetDiaryId, page = 0, size = 50, searchCond = null)
+            .onSuccess { response ->
+                likesUsers = response.content
+            }
+            .onFailure { e ->
+                likesError = e.message
+            }
+        isLoadingLikes = false
     }
 
     // 시스템 뒤로가기 처리 - 네비게이션 스택에서 자동으로 이전 화면으로 이동
@@ -574,6 +597,11 @@ fun FriendProfileScreen(
                                                                                         authorUsernameParam +
                                                                                         authorTagParam
                                                                             )
+                                                                        },
+                                                                        onLikeClick = {
+                                                                            diary.id?.let { id ->
+                                                                                likesDiaryId = id
+                                                                            }
                                                                         }
                                                                     )
                                                                 }
@@ -610,12 +638,43 @@ fun FriendProfileScreen(
                                 }
                             }
                         }
-                    }
                 }
-                
-                BottomBar(navController = navController)
             }
+
+            // 친구 컬렉션 좋아요 모달
+            if (likesDiaryId != null) {
+                LikesModal(
+                    isLoading = isLoadingLikes,
+                    error = likesError,
+                    users = likesUsers,
+                    onDismiss = {
+                        likesDiaryId = null
+                        likesUsers = emptyList()
+                        likesError = null
+                    },
+                    onUserClick = { user ->
+                        // 모달 상태 정리 후, 좋아요 목록에서 사용자 프로필로 이동
+                        likesDiaryId = null
+                        likesUsers = emptyList()
+                        likesError = null
+                        val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                        val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                        val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                        navController.navigate(
+                            "friend_profile" +
+                                    "?userId=${user.userId}" +
+                                    "&username=$encodedUsername" +
+                                    "&tag=$encodedTag" +
+                                    "&profileImageUrl=$encodedProfileImageUrl" +
+                                    "&isMyPick=false"
+                        )
+                    }
+                )
+            }
+
+            BottomBar(navController = navController)
         }
+    }
     }
 }
 

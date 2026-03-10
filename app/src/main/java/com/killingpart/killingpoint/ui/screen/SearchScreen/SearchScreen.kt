@@ -29,8 +29,10 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.killingpart.killingpoint.data.model.FeedDiary
+import com.killingpart.killingpoint.data.model.DiaryLikeUser
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.ui.component.LikesModal
 import com.killingpart.killingpoint.ui.screen.MainScreen.MusicTimeBar
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
@@ -38,6 +40,7 @@ import com.killingpart.killingpoint.ui.viewmodel.SearchUiState
 import com.killingpart.killingpoint.ui.viewmodel.SearchViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
 
 @Composable
 fun SearchScreen(navController: NavController) {
@@ -49,9 +52,30 @@ fun SearchScreen(navController: NavController) {
     val screenWidth = configuration.screenWidthDp.dp
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
+    // 좋아요 모달 상태
+    var likesDiaryId by remember { mutableStateOf<Long?>(null) }
+    var likesUsers by remember { mutableStateOf<List<DiaryLikeUser>>(emptyList()) }
+    var isLoadingLikes by remember { mutableStateOf(false) }
+    var likesError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         searchViewModel.loadRandomDiaries(context)
+    }
+
+    // 탐색 탭 좋아요 목록 데이터 로드
+    LaunchedEffect(likesDiaryId) {
+        val targetId = likesDiaryId ?: return@LaunchedEffect
+        isLoadingLikes = true
+        likesError = null
+        val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
+        repo.getDiaryLikes(diaryId = targetId, page = 0, size = 50, searchCond = null)
+            .onSuccess { response ->
+                likesUsers = response.content
+            }
+            .onFailure { e ->
+                likesError = e.message
+            }
+        isLoadingLikes = false
     }
 
     val currentItemIndex = remember {
@@ -231,6 +255,9 @@ fun SearchScreen(navController: NavController) {
                                                 }
                                             }
                                         },
+                                        onLongLikeClick = { diaryId ->
+                                            likesDiaryId = diaryId
+                                        },
                                         onStoreClick = {
                                             feedDiary.diaryId.let { diaryId ->
                                                 val currentState = searchViewModel.state.value
@@ -315,6 +342,44 @@ fun SearchScreen(navController: NavController) {
                                     start = startTime,
                                     during = durationTime,
                                     total = videoTotalDuration
+                                )
+                            }
+                        }
+
+                        // 좋아요 모달 오버레이
+                        if (likesDiaryId != null) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .zIndex(10f)
+                            ) {
+                                LikesModal(
+                                    isLoading = isLoadingLikes,
+                                    error = likesError,
+                                    users = likesUsers,
+                                    onDismiss = {
+                                        likesDiaryId = null
+                                        likesUsers = emptyList()
+                                        likesError = null
+                                    },
+                                    onUserClick = { user ->
+                                        // 모달 상태 정리 후, 프로필로 이동
+                                        likesDiaryId = null
+                                        likesUsers = emptyList()
+                                        likesError = null
+
+                                        val encodedUsername = URLEncoder.encode(user.username, "UTF-8")
+                                        val encodedTag = URLEncoder.encode(user.tag, "UTF-8")
+                                        val encodedProfileImageUrl = URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                                        navController.navigate(
+                                            "friend_profile" +
+                                                    "?userId=${user.userId}" +
+                                                    "&username=$encodedUsername" +
+                                                    "&tag=$encodedTag" +
+                                                    "&profileImageUrl=$encodedProfileImageUrl" +
+                                                    "&isMyPick=false"
+                                        )
+                                    }
                                 )
                             }
                         }
