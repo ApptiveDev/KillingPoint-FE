@@ -244,6 +244,19 @@ fun MusicListBox(
                                         autoScrollJob?.cancel()
                                         autoScrollJob = null
 
+                                        // 드래그가 끝난 시점에, 드래그하던 아이템이 맨 아래라면
+                                        // 리스트 맨 아래 아이템이 완전히 보이도록 한 번 더 정렬
+                                        draggedItemId?.let { id ->
+                                            val lastIndex = reorderableList.lastIndex
+                                            val currentIdx = reorderableList.indexOfFirst { it.id == id }
+                                            if (currentIdx == lastIndex && lastIndex >= 0) {
+                                                scope.launch {
+                                                    // 마지막 아이템을 화면에 완전히 보이도록 위로 조금 더 당겨줌
+                                                    listState.animateScrollToItem(lastIndex, scrollOffset = 0)
+                                                }
+                                            }
+                                        }
+
                                         isDragging = false
                                         draggedItemId = null
                                         pointerYInViewport = 0f
