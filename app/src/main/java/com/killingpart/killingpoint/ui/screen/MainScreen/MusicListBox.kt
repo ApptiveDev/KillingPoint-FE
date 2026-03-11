@@ -25,9 +25,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
-private const val AUTO_SCROLL_AREA_DP = 72f
-private const val AUTO_SCROLL_SPEED = 20f
+private const val AUTO_SCROLL_AREA_DP = 80f
+private const val AUTO_SCROLL_SPEED = 18f
 
 @Composable
 fun MusicListBox(
@@ -43,50 +44,44 @@ fun MusicListBox(
     val autoScrollAreaPx = with(density) { AUTO_SCROLL_AREA_DP.dp.toPx() }
 
     var isEditMode by remember { mutableStateOf(false) }
+
+    // reorderableList는 editMode 진입 시 한 번만 복사, 이후 diaries prop 변화에 영향받지 않음
     val reorderableList = remember { mutableStateListOf<Diary>() }
 
-    var draggedIndex by remember { mutableIntStateOf(-1) }
-    var dragAccumulatedY by remember { mutableFloatStateOf(0f) }
+    // 드래그 중인지 여부 (드래그 중엔 diaries prop 변화를 reorderableList에 반영하지 않음)
+    var isDragging by remember { mutableStateOf(false) }
+
+    var draggedItemId by remember { mutableStateOf<Long?>(null) }
+
+    // 손가락의 뷰포트 기준 Y 좌표
     var pointerYInViewport by remember { mutableFloatStateOf(0f) }
+
+    // swap 쿨다운
+    var lastSwapTimeMs by remember { mutableLongStateOf(0L) }
+    val swapCooldownMs = 120L
+
+    // 오토스크롤용: 스크롤된 거리 누적 → visibleItemsInfo 갱신 타이밍 무관하게 swap 판단
+    var scrollAccumulatedPx by remember { mutableFloatStateOf(0f) }
     var measuredItemStepPx by remember { mutableFloatStateOf(0f) }
 
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var autoScrollJob by remember { mutableStateOf<Job?>(null) }
 
-    // reorder 전담 함수 - 딱 한 곳에서만 호출
-    fun tryReorder() {
-        val from = draggedIndex
-        val stepPx = measuredItemStepPx
-        if (from < 0 || reorderableList.isEmpty() || stepPx <= 0f) return
-
-        val steps = (dragAccumulatedY / stepPx).toInt()
-        if (steps == 0) return
-
-        val toIndex = (from + steps).coerceIn(0, reorderableList.size - 1)
-        if (toIndex != from) {
-            val item = reorderableList.removeAt(from)
-            reorderableList.add(toIndex, item)
-            draggedIndex = toIndex
+    // editMode이고 드래그 중이 아닐 때만 외부 diaries 변화를 reorderableList에 반영
+    // → onOrderChange로 DB 저장 후 diaries가 업데이트돼도 드래그가 끊기지 않음
+    LaunchedEffect(diaries) {
+        if (isEditMode && !isDragging) {
+            reorderableList.clear()
+            reorderableList.addAll(diaries)
         }
-        // 교체 여부 관계없이 항상 차감
-        dragAccumulatedY -= steps * stepPx
-
-        // ★ 경계(맨 위/아래)에서 같은 방향으로 계속 누적되면
-        //   손가락을 반대로 돌릴 때 팍 튀는 현상 방지
-        //   → 경계에 닿은 방향의 누적값은 0으로 클램프
-        val atTop = draggedIndex == 0
-        val atBottom = draggedIndex == reorderableList.size - 1
-        if (atTop && dragAccumulatedY < 0f) dragAccumulatedY = 0f
-        if (atBottom && dragAccumulatedY > 0f) dragAccumulatedY = 0f
     }
 
+    // 실제 아이템 step 측정
     LaunchedEffect(listState.layoutInfo) {
         val items = listState.layoutInfo.visibleItemsInfo
         if (items.size >= 2) {
             measuredItemStepPx = (items[1].offset - items[0].offset).toFloat()
-        } else if (items.size == 1) {
-            measuredItemStepPx = items[0].size.toFloat()
         }
     }
 
@@ -95,6 +90,54 @@ fun MusicListBox(
     val nextDiary = if (diaries.isNotEmpty()) diaries.getOrNull((currentIndex + 1) % diaries.size) else null
     val headerLabel = if (showCurrentHeader) "재생 중 : " else "다음곡 : "
     val headerTitle = if (showCurrentHeader) currentDiary?.musicTitle else nextDiary?.musicTitle
+
+    // ★ 유튜브 뮤직 방식: 이웃 아이템 중간선을 넘을 때만 교체
+    fun trySwap(dragDirection: Float) {
+        val now = System.currentTimeMillis()
+        if (now - lastSwapTimeMs < swapCooldownMs) return  // 쿨다운 중엔 무시
+
+        val currentIdx = reorderableList.indexOfFirst { it.id == draggedItemId }
+        if (currentIdx < 0) return
+
+        val visibleItems = listState.layoutInfo.visibleItemsInfo
+        if (visibleItems.isEmpty()) return
+
+        if (dragDirection < 0) {
+            val prevListIdx = currentIdx - 1
+            if (prevListIdx < 0) return
+
+            // 2번째(인덱스 1) 아이템을 위로 끌어올릴 때,
+            // 손가락이 상단 오토 스크롤 영역에 들어오면 바로 맨 위(인덱스 0)로 스냅
+            if (currentIdx == 1 && pointerYInViewport < autoScrollAreaPx) {
+                val item = reorderableList.removeAt(currentIdx)
+                reorderableList.add(0, item)
+                lastSwapTimeMs = now
+                // 맨 위로 스냅되는 순간, 사용자에게 바로 보이도록 스크롤
+                scope.launch {
+                    listState.scrollToItem(0)
+                }
+                return
+            }
+
+            val prevItem = visibleItems.firstOrNull { it.index == prevListIdx } ?: return
+            val prevMid = prevItem.offset + prevItem.size / 2f
+            if (pointerYInViewport < prevMid) {
+                val item = reorderableList.removeAt(currentIdx)
+                reorderableList.add(prevListIdx, item)
+                lastSwapTimeMs = now
+            }
+        } else if (dragDirection > 0) {
+            val nextListIdx = currentIdx + 1
+            if (nextListIdx >= reorderableList.size) return
+            val nextItem = visibleItems.firstOrNull { it.index == nextListIdx } ?: return
+            val nextMid = nextItem.offset + nextItem.size / 2f
+            if (pointerYInViewport > nextMid) {
+                val item = reorderableList.removeAt(currentIdx)
+                reorderableList.add(nextListIdx, item)
+                lastSwapTimeMs = now
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -150,9 +193,7 @@ fun MusicListBox(
                         key = { _, d -> d.id ?: d.hashCode() }
                     ) { _, d ->
 
-                        val isDraggingItem =
-                            isEditMode && draggedIndex >= 0 &&
-                                    reorderableList.getOrNull(draggedIndex)?.id == d.id
+                        val isDraggingItem = isEditMode && d.id == draggedItemId && isDragging
 
                         MusicListOne(
                             imageUrl = d.albumImageUrl,
@@ -168,62 +209,97 @@ fun MusicListBox(
                             isPlaying = d.id == currentDiary?.id,
                             showDragHandle = isEditMode,
                             isDragging = isDraggingItem,
-                            dragHandleModifier = Modifier.pointerInput(d.id) {
+                            dragHandleModifier = Modifier.pointerInput(Unit) {
                                 detectDragGesturesAfterLongPress(
 
                                     onDragStart = { offset ->
                                         if (!isEditMode) {
                                             reorderableList.clear()
                                             reorderableList.addAll(diaries)
+                                            isEditMode = true
                                         }
-                                        draggedIndex = reorderableList.indexOfFirst { it.id == d.id }
-                                        dragAccumulatedY = 0f
 
-                                        val items = listState.layoutInfo.visibleItemsInfo
-                                        if (items.size >= 2) {
-                                            measuredItemStepPx = (items[1].offset - items[0].offset).toFloat()
-                                        }
-                                        val itemInfo = items.firstOrNull { it.key == (d.id ?: d.hashCode()) }
-                                        pointerYInViewport = itemInfo?.let { it.offset + offset.y } ?: 0f
+                                        isDragging = true
+                                        draggedItemId = d.id
+                                        lastSwapTimeMs = 0L
+                                        scrollAccumulatedPx = 0f
+
+                                        // 드래그 시작 시 손가락 뷰포트 Y 초기화
+                                        val itemInfo = listState.layoutInfo.visibleItemsInfo
+                                            .firstOrNull { it.key == (d.id ?: d.hashCode()) }
+                                        pointerYInViewport = itemInfo?.let {
+                                            it.offset + offset.y
+                                        } ?: 0f
                                     },
 
                                     onDragCancel = {
                                         autoScrollJob?.cancel()
                                         autoScrollJob = null
-                                        draggedIndex = -1
-                                        dragAccumulatedY = 0f
+                                        isDragging = false
+                                        draggedItemId = null
                                         pointerYInViewport = 0f
                                     },
 
                                     onDragEnd = {
                                         autoScrollJob?.cancel()
                                         autoScrollJob = null
-                                        draggedIndex = -1
-                                        dragAccumulatedY = 0f
+
+                                        isDragging = false
+                                        draggedItemId = null
                                         pointerYInViewport = 0f
 
+                                        // 드래그 끝날 때만 DB 저장
                                         val ids = reorderableList.mapNotNull { it.id }
                                         if (ids.isNotEmpty()) onOrderChange(ids)
                                     },
 
                                     onDrag = { change, dragAmount ->
                                         change.consume()
-
-                                        dragAccumulatedY += dragAmount.y
+                                        val dragDirection = dragAmount.y
                                         pointerYInViewport += dragAmount.y
 
-                                        val viewportHeight =
-                                            (listState.layoutInfo.viewportEndOffset - listState.layoutInfo.viewportStartOffset).toFloat()
+                                        val viewportHeight = (listState.layoutInfo.viewportEndOffset
+                                                - listState.layoutInfo.viewportStartOffset).toFloat()
+
+                                        // 현재 드래그 중인 아이템 인덱스
+                                        val dragIdx = reorderableList.indexOfFirst { it.id == draggedItemId }
+
+                                        // 맨 위(인덱스 0) 아이템을 아래로 끌기 시작할 때,
+                                        // 먼저 0↔1 스왑이 일어나서 "위에 다른 항목이 생긴 뒤"에 보이도록 한 번 강제 스왑
+                                        if (dragDirection > 0 && dragIdx == 0 && reorderableList.size > 1) {
+                                            val topItem = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }
+                                            val topMid = topItem?.let { it.offset + it.size / 2f } ?: 0f
+                                            // 손가락이 첫 번째 아이템의 중간선을 넘으면 바로 0↔1 교체
+                                            if (pointerYInViewport > topMid) {
+                                                val item = reorderableList.removeAt(0)
+                                                reorderableList.add(1, item)
+                                            }
+                                        }
 
                                         // ─── AUTO SCROLL ──────────────────────────────
                                         val inTopZone = pointerYInViewport < autoScrollAreaPx
                                         val inBottomZone = pointerYInViewport > viewportHeight - autoScrollAreaPx
 
-                                        if (inTopZone || inBottomZone) {
+                                        // 현재 리스트가 실제로 위/아래로 더 스크롤될 수 있는지 체크
+                                        val canScrollUp =
+                                            listState.firstVisibleItemIndex > 0 ||
+                                                    listState.firstVisibleItemScrollOffset > 0
+                                        val totalItems = listState.layoutInfo.totalItemsCount
+                                        val lastVisibleIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                                        val canScrollDown = lastVisibleIndex < totalItems - 1
+
+                                        val shouldAutoScrollTop = inTopZone && canScrollUp
+                                        // 맨 위(인덱스 0) 아이템을 아래로 끌기 시작할 때는
+                                        // 먼저 0↔1 스왑이 일어나서 "위에 다른 항목이 생긴 뒤"에만 오토 스크롤 시작
+                                        val isTopItemDraggingDown = dragDirection > 0 && dragIdx == 0
+                                        val shouldAutoScrollBottom = inBottomZone && canScrollDown && !isTopItemDraggingDown
+
+                                        if (shouldAutoScrollTop || shouldAutoScrollBottom) {
                                             if (autoScrollJob?.isActive != true) {
                                                 autoScrollJob = scope.launch {
                                                     while (isActive) {
-                                                        val vH = (listState.layoutInfo.viewportEndOffset - listState.layoutInfo.viewportStartOffset).toFloat()
+                                                        val vH = (listState.layoutInfo.viewportEndOffset
+                                                                - listState.layoutInfo.viewportStartOffset).toFloat()
                                                         val inTop = pointerYInViewport < autoScrollAreaPx
                                                         val inBottom = pointerYInViewport > vH - autoScrollAreaPx
                                                         if (!inTop && !inBottom) break
@@ -233,9 +309,27 @@ fun MusicListBox(
                                                         val delta = if (inTop) -AUTO_SCROLL_SPEED * multiplier else AUTO_SCROLL_SPEED * multiplier
 
                                                         val scrolled = listState.scrollBy(delta)
-                                                        dragAccumulatedY += scrolled
+                                                        scrollAccumulatedPx += scrolled  // 실제 스크롤된 양 누적
 
-                                                        tryReorder()
+                                                        // 더 이상 스크롤되지 않으면 오토스크롤 종료 (이후 trySwap이 정상동작)
+                                                        if (scrolled == 0f) break
+
+                                                        // ★ 오토스크롤 reorder: visibleItemsInfo 갱신 타이밍과 무관하게
+                                                        //    스크롤 누적 거리가 아이템 한 칸을 넘으면 swap
+                                                        val stepPx = measuredItemStepPx.takeIf { it > 0f } ?: continue
+                                                        val steps = (scrollAccumulatedPx / stepPx).toInt()
+                                                        if (steps != 0) {
+                                                            val from = reorderableList.indexOfFirst { it.id == draggedItemId }
+                                                            if (from >= 0) {
+                                                                val to = (from + steps).coerceIn(0, reorderableList.size - 1)
+                                                                if (to != from) {
+                                                                    val item = reorderableList.removeAt(from)
+                                                                    reorderableList.add(to, item)
+                                                                }
+                                                                scrollAccumulatedPx -= steps * stepPx
+                                                            }
+                                                        }
+
                                                         delay(16L)
                                                     }
                                                 }
@@ -245,9 +339,9 @@ fun MusicListBox(
                                             autoScrollJob = null
                                         }
 
-                                        // 오토스크롤 중이 아닐 때만 onDrag에서 reorder
+                                        // ─── REORDER ──────────────────────────────────
                                         if (autoScrollJob?.isActive != true) {
-                                            tryReorder()
+                                            trySwap(dragDirection)
                                         }
                                     }
                                 )
