@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.filled.Search
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.launch
 
 enum class FriendProfileTab {
@@ -75,7 +76,7 @@ fun FriendProfileScreen(
     var likesUsers by remember { mutableStateOf<List<DiaryLikeUser>>(emptyList()) }
     var isLoadingLikes by remember { mutableStateOf(false) }
     var likesError by remember { mutableStateOf<String?>(null) }
-    
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val profileViewModel: FriendProfileViewModel = viewModel()
@@ -89,8 +90,10 @@ fun FriendProfileScreen(
     val currentIsMyPick = remember(friendState, userId) {
         when (val state = friendState) {
             is com.killingpart.killingpoint.ui.viewmodel.FriendUiState.Success -> {
-                state.picks?.content?.any { user: SubscribeUser -> user.userId == userId } ?: isMyPick
+                state.picks?.content?.any { user: SubscribeUser -> user.userId == userId }
+                    ?: isMyPick
             }
+
             else -> isMyPick
         }
     }
@@ -256,7 +259,7 @@ fun FriendProfileScreen(
                                                             maxLines = 1,
                                                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                         )
-                                                        Spacer(modifier=Modifier.height(6.dp))
+                                                        Spacer(modifier = Modifier.height(6.dp))
 
                                                         Text(
                                                             text = "@${tag.ifEmpty { "unknown" }}",
@@ -269,7 +272,7 @@ fun FriendProfileScreen(
                                                         )
                                                     }
                                                 }
-                                                
+
                                                 Spacer(modifier = Modifier.width(8.dp))
 
                                                 // 통계 표시 (팬덤, PICKS, 킬링파트)
@@ -289,7 +292,7 @@ fun FriendProfileScreen(
                                                             color = mainGreen,
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
-                                                        Spacer(modifier=Modifier.height(3.dp))
+                                                        Spacer(modifier = Modifier.height(3.dp))
                                                         Text(
                                                             text = "킬링파트",
                                                             fontFamily = PaperlogyFontFamily,
@@ -299,12 +302,16 @@ fun FriendProfileScreen(
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
                                                     }
-                                                    Spacer(modifier=Modifier.width(10.dp))
+                                                    Spacer(modifier = Modifier.width(10.dp))
                                                     // 팬덤
                                                     Column(
                                                         modifier = Modifier.clickable {
                                                             navController.navigate(
-                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}&initialTab=fandom"
+                                                                "pick_fandom_list?userId=$userId&tag=${
+                                                                    Uri.encode(
+                                                                        tag
+                                                                    )
+                                                                }&initialTab=fandom"
                                                             )
                                                         },
                                                         horizontalAlignment = Alignment.CenterHorizontally
@@ -317,7 +324,7 @@ fun FriendProfileScreen(
                                                             color = mainGreen,
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
-                                                        Spacer(modifier=Modifier.height(3.dp))
+                                                        Spacer(modifier = Modifier.height(3.dp))
                                                         Text(
                                                             text = "팬덤",
                                                             fontFamily = PaperlogyFontFamily,
@@ -327,12 +334,16 @@ fun FriendProfileScreen(
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
                                                     }
-                                                    Spacer(modifier=Modifier.width(12.dp))
+                                                    Spacer(modifier = Modifier.width(12.dp))
                                                     // PICKS
                                                     Column(
                                                         modifier = Modifier.clickable {
                                                             navController.navigate(
-                                                                "pick_fandom_list?userId=$userId&tag=${Uri.encode(tag)}&initialTab=picks"
+                                                                "pick_fandom_list?userId=$userId&tag=${
+                                                                    Uri.encode(
+                                                                        tag
+                                                                    )
+                                                                }&initialTab=picks"
                                                             )
                                                         },
                                                         horizontalAlignment = Alignment.CenterHorizontally
@@ -345,7 +356,7 @@ fun FriendProfileScreen(
                                                             color = mainGreen,
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
-                                                        Spacer(modifier=Modifier.height(3.dp))
+                                                        Spacer(modifier = Modifier.height(3.dp))
 
                                                         Text(
                                                             text = "PICKS",
@@ -356,7 +367,6 @@ fun FriendProfileScreen(
                                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                                         )
                                                     }
-
 
 
                                                 }
@@ -372,13 +382,18 @@ fun FriendProfileScreen(
                                                         .fillMaxWidth(0.8f)
                                                         .height(32.dp)
                                                         .background(
-                                                            color = if (currentIsMyPick) Color(0xFFCEFF43) else Color(
+                                                            color = if (currentIsMyPick) Color(
+                                                                0xFFCEFF43
+                                                            ) else Color(
                                                                 0xFF262626
                                                             ),
                                                             shape = RoundedCornerShape(10.dp)
                                                         )
                                                         .clickable {
-                                                            val repo = com.killingpart.killingpoint.data.repository.AuthRepository(context)
+                                                            val repo =
+                                                                com.killingpart.killingpoint.data.repository.AuthRepository(
+                                                                    context
+                                                                )
                                                             if (currentIsMyPick) {
                                                                 // 구독 취소
                                                                 friendViewModel.removeSubscribe(
@@ -388,7 +403,9 @@ fun FriendProfileScreen(
                                                                 ) {
                                                                     // 구독 취소 후 통계를 다시 가져와서 전체 목록 로드
                                                                     scope.launch {
-                                                                        repo.getUserStatistics(currentUserId)
+                                                                        repo.getUserStatistics(
+                                                                            currentUserId
+                                                                        )
                                                                             .onSuccess { statistics: UserStatistics ->
                                                                                 friendViewModel.loadFriends(
                                                                                     context,
@@ -402,9 +419,20 @@ fun FriendProfileScreen(
                                                                                 )
                                                                             }
                                                                             .onFailure { e: Throwable ->
-                                                                                android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
-                                                                                friendViewModel.loadFriends(context, currentUserId, 100, 100)
-                                                                                profileViewModel.loadFriendProfile(context, userId)
+                                                                                android.util.Log.e(
+                                                                                    "FriendProfileScreen",
+                                                                                    "통계 조회 실패: ${e.message}"
+                                                                                )
+                                                                                friendViewModel.loadFriends(
+                                                                                    context,
+                                                                                    currentUserId,
+                                                                                    100,
+                                                                                    100
+                                                                                )
+                                                                                profileViewModel.loadFriendProfile(
+                                                                                    context,
+                                                                                    userId
+                                                                                )
                                                                             }
                                                                     }
                                                                 }
@@ -417,7 +445,9 @@ fun FriendProfileScreen(
                                                                 ) {
                                                                     // 구독 추가 후 통계를 다시 가져와서 전체 목록 로드
                                                                     scope.launch {
-                                                                        repo.getUserStatistics(currentUserId)
+                                                                        repo.getUserStatistics(
+                                                                            currentUserId
+                                                                        )
                                                                             .onSuccess { statistics: UserStatistics ->
                                                                                 friendViewModel.loadFriends(
                                                                                     context,
@@ -431,9 +461,20 @@ fun FriendProfileScreen(
                                                                                 )
                                                                             }
                                                                             .onFailure { e: Throwable ->
-                                                                                android.util.Log.e("FriendProfileScreen", "통계 조회 실패: ${e.message}")
-                                                                                friendViewModel.loadFriends(context, currentUserId, 100, 100)
-                                                                                profileViewModel.loadFriendProfile(context, userId)
+                                                                                android.util.Log.e(
+                                                                                    "FriendProfileScreen",
+                                                                                    "통계 조회 실패: ${e.message}"
+                                                                                )
+                                                                                friendViewModel.loadFriends(
+                                                                                    context,
+                                                                                    currentUserId,
+                                                                                    100,
+                                                                                    100
+                                                                                )
+                                                                                profileViewModel.loadFriendProfile(
+                                                                                    context,
+                                                                                    userId
+                                                                                )
                                                                             }
                                                                     }
                                                                 }
@@ -454,7 +495,9 @@ fun FriendProfileScreen(
                                                 ) {
                                                     Text(
                                                         text = if (currentIsMyPick) "나의 PICK!" else "나의 픽으로 추가",
-                                                        color = if (currentIsMyPick) Color(0xFF000000) else Color(0xFFCEFF43),
+                                                        color = if (currentIsMyPick) Color(
+                                                            0xFF000000
+                                                        ) else Color(0xFFCEFF43),
                                                         fontFamily = PaperlogyFontFamily,
                                                         fontSize = 10.sp,
                                                         fontWeight = FontWeight.W400
@@ -537,11 +580,19 @@ fun FriendProfileScreen(
 
                                                                             val scopeParam =
                                                                                 "&scope=${diary.scope.name}"
-                                                                            
+
                                                                             val authorUsernameParam =
-                                                                                "&authorUsername=${Uri.encode(username)}"
+                                                                                "&authorUsername=${
+                                                                                    Uri.encode(
+                                                                                        username
+                                                                                    )
+                                                                                }"
                                                                             val authorTagParam =
-                                                                                "&authorTag=${Uri.encode(tag)}"
+                                                                                "&authorTag=${
+                                                                                    Uri.encode(
+                                                                                        tag
+                                                                                    )
+                                                                                }"
 
                                                                             navController.navigate(
                                                                                 "diary_detail" +
@@ -638,43 +689,50 @@ fun FriendProfileScreen(
                                 }
                             }
                         }
+                    }
+                }
+
+                BottomBar(navController = navController)
+            }
+
+            // 친구 컬렉션 좋아요 모달 - 전체 FriendProfileScreen 위에 오버레이로 표시
+            if (likesDiaryId != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(10f)
+                ) {
+                    LikesModal(
+                        isLoading = isLoadingLikes,
+                        error = likesError,
+                        users = likesUsers,
+                        onDismiss = {
+                            likesDiaryId = null
+                            likesUsers = emptyList()
+                            likesError = null
+                        },
+                        onUserClick = { user ->
+                            // 모달 상태 정리 후, 좋아요 목록에서 사용자 프로필로 이동
+                            likesDiaryId = null
+                            likesUsers = emptyList()
+                            likesError = null
+                            val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
+                            val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
+                            val encodedProfileImageUrl =
+                                java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
+                            navController.navigate(
+                                "friend_profile" +
+                                        "?userId=${user.userId}" +
+                                        "&username=$encodedUsername" +
+                                        "&tag=$encodedTag" +
+                                        "&profileImageUrl=$encodedProfileImageUrl" +
+                                        "&isMyPick=false"
+                            )
+                        }
+                    )
                 }
             }
-
-            // 친구 컬렉션 좋아요 모달
-            if (likesDiaryId != null) {
-                LikesModal(
-                    isLoading = isLoadingLikes,
-                    error = likesError,
-                    users = likesUsers,
-                    onDismiss = {
-                        likesDiaryId = null
-                        likesUsers = emptyList()
-                        likesError = null
-                    },
-                    onUserClick = { user ->
-                        // 모달 상태 정리 후, 좋아요 목록에서 사용자 프로필로 이동
-                        likesDiaryId = null
-                        likesUsers = emptyList()
-                        likesError = null
-                        val encodedUsername = java.net.URLEncoder.encode(user.username, "UTF-8")
-                        val encodedTag = java.net.URLEncoder.encode(user.tag, "UTF-8")
-                        val encodedProfileImageUrl = java.net.URLEncoder.encode(user.profileImageUrl, "UTF-8")
-                        navController.navigate(
-                            "friend_profile" +
-                                    "?userId=${user.userId}" +
-                                    "&username=$encodedUsername" +
-                                    "&tag=$encodedTag" +
-                                    "&profileImageUrl=$encodedProfileImageUrl" +
-                                    "&isMyPick=false"
-                        )
-                    }
-                )
-            }
-
-            BottomBar(navController = navController)
         }
-    }
     }
 }
 
