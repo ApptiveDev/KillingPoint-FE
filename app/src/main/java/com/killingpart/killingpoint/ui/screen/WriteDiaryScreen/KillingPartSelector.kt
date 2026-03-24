@@ -354,6 +354,11 @@ fun KillingPartSelector(
                 (durationSec / safeTotalDuration).coerceIn(0f, 1f - selectionLeftRatio)
             val selectionLeftPx = miniMapWidthPx * selectionLeftRatio
             val selectionWidthPx = miniMapWidthPx * selectionWidthRatio
+            val latestSelectionLeftPx by rememberUpdatedState(selectionLeftPx)
+            val latestDurationSec by rememberUpdatedState(durationSec)
+            val latestSafeTotalDuration by rememberUpdatedState(safeTotalDuration)
+            var latestMiniMapTargetStartSec by remember { mutableStateOf(startTime) }
+            var latestMiniMapTargetDurationSec by remember { mutableStateOf(durationSec) }
 
             Box(
                 modifier = Modifier
@@ -377,12 +382,24 @@ fun KillingPartSelector(
                         var dragDurationSec = 0f
                         detectDragGestures(
                             onDragStart = {
-                                dragStartSelectionLeftPx = selectionLeftPx
+                                dragStartSelectionLeftPx = latestSelectionLeftPx
                                 dragAccumulatedPx = 0f
-                                dragDurationSec = durationSec.coerceAtLeast(minDurationSec)
+                                dragDurationSec = latestDurationSec.coerceAtLeast(minDurationSec)
                                     .coerceAtMost(maxDurationSec)
                             },
-                            onDragEnd = { commitSelectionIfNeeded() },
+                            onDragEnd = {
+                                onStartChange(
+                                    latestMiniMapTargetStartSec,
+                                    (latestMiniMapTargetStartSec + latestMiniMapTargetDurationSec)
+                                        .coerceAtMost(totalDuration.toFloat()),
+                                    latestMiniMapTargetDurationSec
+                                )
+                                lastCommittedStart = latestMiniMapTargetStartSec
+                                lastCommittedEnd =
+                                    (latestMiniMapTargetStartSec + latestMiniMapTargetDurationSec)
+                                        .coerceAtMost(totalDuration.toFloat())
+                                lastCommittedDuration = latestMiniMapTargetDurationSec
+                            },
                             onDragCancel = { commitSelectionIfNeeded() }
                         ) { change, drag ->
                             change.consume()
@@ -391,12 +408,14 @@ fun KillingPartSelector(
                             val maxStartSec =
                                 (totalDuration.toFloat() - dragDurationSec).coerceAtLeast(0f)
                             val draggableRangePx =
-                                (miniMapWidthPx - (miniMapWidthPx * (dragDurationSec / safeTotalDuration))).coerceAtLeast(1f)
+                                (miniMapWidthPx - (miniMapWidthPx * (dragDurationSec / latestSafeTotalDuration))).coerceAtLeast(1f)
                             val targetSelectionLeftPx =
                                 (dragStartSelectionLeftPx + dragAccumulatedPx)
                                     .coerceIn(0f, draggableRangePx)
                             val targetStartSec =
                                 (targetSelectionLeftPx / draggableRangePx) * maxStartSec
+                            latestMiniMapTargetStartSec = targetStartSec
+                            latestMiniMapTargetDurationSec = dragDurationSec
 
                             val targetScrollPx =
                                 ((targetStartSec * pxPerSecond) - leftHandleX)
