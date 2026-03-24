@@ -19,9 +19,11 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -122,7 +124,7 @@ fun SelectDurationScreen(
     var currentTotalDuration by remember { mutableStateOf(if (totalDuration > 0) totalDuration else 10) }
     var candidateVideos by remember { mutableStateOf<List<YouTubeVideo>>(emptyList()) }
     var isLoadingVideo by remember { mutableStateOf(false) }
-    var isCandidateExpanded by remember { mutableStateOf(false) }
+    var isCandidateExpanded by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
@@ -140,7 +142,7 @@ fun SelectDurationScreen(
                 val newVideoId = firstVideo?.id
                 currentVideoUrl = newVideoId
                 currentTotalDuration = firstVideo?.duration ?: 10
-                isCandidateExpanded = videos.isNotEmpty()
+                isCandidateExpanded = false
             } catch (e: Exception) {
                 candidateVideos = emptyList()
                 currentVideoUrl = null
@@ -276,9 +278,10 @@ fun SelectDurationScreen(
                     Spacer(Modifier.height(24.dp))
 
                     if (candidateVideos.isNotEmpty()) {
+                        val toggleColor = if (isCandidateExpanded) Color(0xFFD9D9D9) else Color(0xFF878787)
                         Row(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillMaxWidth().padding(horizontal = 10.dp)
                                 .clickable { isCandidateExpanded = !isCandidateExpanded },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -286,33 +289,33 @@ fun SelectDurationScreen(
                                 text = "다른 영상 검색 결과",
                                 fontFamily = korean_font_medium,
                                 fontSize = 15.sp,
-                                color = Color(0xFFD9D9D9),
+                                color = toggleColor,
                                 textDecoration = TextDecoration.Underline
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = ">",
-                                color = Color(0xFFE7E7E7),
-                                fontSize = 20.sp,
-                                fontFamily = korean_font_medium,
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "toggle candidate videos",
+                                tint = toggleColor,
                                 modifier = Modifier.rotate(if (isCandidateExpanded) 90f else 0f)
                             )
                         }
 
                         if (isCandidateExpanded) {
-                            Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .fillMaxWidth().padding(horizontal = 10.dp)
                                     .horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
                                 candidateVideos.forEach { video ->
                                     val isSelected = currentVideoUrl == video.id
+                                    val thumbnailShape = RoundedCornerShape(6.dp)
                                     Column(
                                         modifier = Modifier
-                                            .width(240.dp)
+                                            .width(146.dp)
                                             .clickable {
                                                 currentVideoUrl = video.id
                                                 currentTotalDuration = video.duration
@@ -327,25 +330,26 @@ fun SelectDurationScreen(
                                                 .crossfade(true)
                                                 .build(),
                                             contentDescription = "video thumbnail",
-                                            contentScale = ContentScale.Crop,
+                                            contentScale = ContentScale.FillWidth,
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(135.dp)
-                                                .background(Color(0xFF1A1A1A), RoundedCornerShape(6.dp))
+                                                .height(85.dp)
+                                                .clip(thumbnailShape)
+                                                .background(Color(0xFF1A1A1A), thumbnailShape)
                                                 .then(
                                                     if (isSelected) {
                                                         Modifier
                                                             .border(
                                                                 width = 1.dp,
                                                                 color = mainGreen,
-                                                                shape = RoundedCornerShape(5.dp)
+                                                                shape = thumbnailShape
                                                             )
                                                     } else {
                                                         Modifier
                                                             .border(
                                                                 width = 1.dp,
                                                                 color = Color(0xFFD9D9D9),
-                                                                shape = RoundedCornerShape(5.dp)
+                                                                shape = thumbnailShape
                                                             )
                                                     }
                                                 )
