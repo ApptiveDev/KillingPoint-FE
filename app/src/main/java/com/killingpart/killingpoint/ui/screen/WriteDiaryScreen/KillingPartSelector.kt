@@ -313,14 +313,14 @@ fun KillingPartSelector(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .background(Color(0xFF1D1E20), RoundedCornerShape(24.dp))
-                .border(1.dp, Color(0xFF5A5A5A), RoundedCornerShape(24.dp))
+                .background(Color(0xFF1F1F1F), RoundedCornerShape(24.dp))
+                .border(1.dp, Color(0xFF666666), RoundedCornerShape(24.dp))
                 .padding(horizontal = 12.dp, vertical = 10.dp)
                 .onSizeChanged { miniMapWidthPx = it.width.toFloat() }
         ) {
@@ -368,13 +368,13 @@ fun KillingPartSelector(
                         translationX = selectionLeftPx
                     }
                     .background(
-                        Color(0x8CCCFF33),
-                        RoundedCornerShape(14.dp)
+                        mainGreen.copy(alpha = 0.4f),
+                        RoundedCornerShape(8.dp)
                     )
                     .border(
-                        2.dp,
+                        1.dp,
                         mainGreen,
-                        RoundedCornerShape(14.dp)
+                        RoundedCornerShape(8.dp)
                     )
                     .pointerInput(miniMapWidthPx, totalDuration, leftHandleX, pxPerSecond) {
                         var dragStartSelectionLeftPx = 0f
@@ -425,6 +425,30 @@ fun KillingPartSelector(
                             scrollState.dispatchRawDelta(delta)
                         }
                     },
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "선택 구간: ${formatTime(startTime)} ~ ${formatTime(endTime)}",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.W500,
+                fontSize = 10.sp,
+                color = mainGreen
+            )
+
+            Text(
+                text = "최대 30초",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.W500,
+                fontSize = 10.sp,
+                color = mainGreen
             )
         }
     }
