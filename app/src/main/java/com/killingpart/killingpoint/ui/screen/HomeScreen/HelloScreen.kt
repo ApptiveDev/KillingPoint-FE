@@ -21,9 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,27 +51,11 @@ import com.killingpart.killingpoint.ui.theme.textGray1
 import com.killingpart.killingpoint.ui.theme.UnboundedFontFamily
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.viewmodel.LoginViewModel
-import com.killingpart.killingpoint.ui.viewmodel.LoginUiState
 
 @Composable
 fun HelloScreen(navController: NavController) {
     val context = LocalContext.current
     val loginViewModel: LoginViewModel = viewModel()
-    val loginState by loginViewModel.state.collectAsState()
-
-    LaunchedEffect(loginState) {
-        when (val state = loginState) {
-            is LoginUiState.AutoLoginSuccess -> {
-                navController.navigate("main") {
-                    popUpTo("home") { inclusive = true }
-                }
-            }
-
-            else -> {
-                // 다른 상태는 처리x
-            }
-        }
-    }
 
     Box(
         modifier = Modifier.fillMaxSize()

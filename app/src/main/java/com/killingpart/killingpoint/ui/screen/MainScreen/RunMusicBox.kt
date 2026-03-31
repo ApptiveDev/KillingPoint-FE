@@ -212,7 +212,7 @@ fun RunMusicBox(
                         painter = painterResource(id = R.drawable.navi_add),
                         contentDescription = "킬링파트 추가 아이콘",
                         modifier = Modifier.size(60.dp)
-                            .clickable { navController.navigate("add_music") }
+                            .clickable { navController.navigate("add_music?tutorial=false") }
                     )
                     Spacer(modifier = Modifier.height(50.dp))
                 }

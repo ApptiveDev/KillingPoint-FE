@@ -32,6 +32,8 @@ import com.killingpart.killingpoint.data.model.DiaryOrderRequest
 import com.killingpart.killingpoint.data.model.RandomDiariesResponse
 import com.killingpart.killingpoint.data.model.StoredDiariesResponse
 import com.killingpart.killingpoint.data.model.DiaryLikesResponse
+import com.killingpart.killingpoint.data.model.PolicyAgreementRequest
+import com.killingpart.killingpoint.data.model.UserInitSettingsResponse
 
 interface ApiService {
 
@@ -52,6 +54,19 @@ interface ApiService {
     suspend fun getUserInfo(
         @Header("Authorization") accessToken: String
     ): UserInfo
+
+    @GET("users/init-settings")
+    suspend fun getUserInitSettings(
+        @Header("Authorization") accessToken: String,
+        @Query("clientType") clientType: String,
+        @Query("clientVersion") clientVersion: String
+    ): UserInitSettingsResponse
+
+    @POST("users/policy-agreement")
+    suspend fun agreePolicies(
+        @Header("Authorization") accessToken: String,
+        @Body body: PolicyAgreementRequest
+    ): retrofit2.Response<Unit>
 
     @POST("jwt/exchange")
     suspend fun refreshAccessToken(

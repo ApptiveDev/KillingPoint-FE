@@ -36,6 +36,9 @@ import com.killingpart.killingpoint.data.model.ReportDiaryRequest
 import com.killingpart.killingpoint.data.model.DiaryOrderRequest
 import com.killingpart.killingpoint.data.model.StoredDiariesResponse
 import com.killingpart.killingpoint.data.model.DiaryLikesResponse
+import com.killingpart.killingpoint.data.model.PolicyAgreementItem
+import com.killingpart.killingpoint.data.model.PolicyAgreementRequest
+import com.killingpart.killingpoint.data.model.UserInitSettingsResponse
 
 class AuthRepository(
     private val context: Context,
@@ -143,6 +146,51 @@ class AuthRepository(
                 }
             }
         }
+
+    suspend fun getUserInitSettings(
+        clientType: String = "ANDROID",
+        clientVersion: String = "1.0.0"
+    ): Result<UserInitSettingsResponse> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            api.getUserInitSettings("Bearer $accessToken", clientType, clientVersion)
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("초기 설정 상태 조회 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    suspend fun agreeRequiredPolicies(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val body = PolicyAgreementRequest(
+                agreements = listOf(
+                    PolicyAgreementItem(policyType = "SERVICE_TERMS", agreed = true),
+                    PolicyAgreementItem(policyType = "PRIVACY", agreed = true)
+                )
+            )
+            val response = api.agreePolicies("Bearer $accessToken", body)
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string().orEmpty()
+                throw IllegalStateException("약관 동의 처리 실패 (${response.code()}): $errorBody")
+            }
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("약관 동의 처리 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
 
     suspend fun refreshAccessToken(): Result<Boolean> = // isNew 반환
         withContext(Dispatchers.IO) {

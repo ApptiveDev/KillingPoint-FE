@@ -8,8 +8,14 @@ import androidx.navigation.compose.NavHost
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.screen.HomeScreen.HelloScreen
 import com.killingpart.killingpoint.ui.screen.MainScreen.MainScreen
-import com.killingpart.killingpoint.ui.screen.TutorialScreen.TutorialScreen
 import com.killingpart.killingpoint.ui.screen.AddMusicScreen.AddMusicScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingNameScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingTagScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingKpIntroScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingHomePreviewScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingFeedDemoScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingFinishScreen
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.PolicyAgreementScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.WriteDiaryScreen
 import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.SelectDurationScreen
 import com.killingpart.killingpoint.ui.screen.DiaryDetailScreen.DiaryDetailScreen
@@ -21,6 +27,7 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.killingpart.killingpoint.ui.screen.SearchScreen.SearchScreen
 import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun NavGraph(
@@ -32,6 +39,29 @@ fun NavGraph(
         startDestination = startDestination
     ) {
         composable("home") { HelloScreen(navController) }
+        composable("onboarding_policy") { PolicyAgreementScreen(navController) }
+        composable("onboarding_name") { OnboardingNameScreen(navController) }
+        composable(
+            route = "onboarding_tag?name={name}&continueTutorial={continueTutorial}",
+            arguments = listOf(
+                navArgument("name") { type = NavType.StringType; defaultValue = "" },
+                navArgument("continueTutorial") { type = NavType.BoolType; defaultValue = false }
+            )
+        ) { backStackEntry ->
+            val encoded = backStackEntry.arguments?.getString("name").orEmpty()
+            val name = try {
+                URLDecoder.decode(encoded, StandardCharsets.UTF_8.toString())
+            } catch (_: Exception) {
+                encoded
+            }
+            val continueTutorial = backStackEntry.arguments?.getBoolean("continueTutorial") ?: false
+            OnboardingTagScreen(navController, displayName = name, continueTutorial = continueTutorial)
+        }
+
+        composable("onboarding_kp_intro") { OnboardingKpIntroScreen(navController) }
+        composable("onboarding_home_preview") { OnboardingHomePreviewScreen(navController) }
+        composable("onboarding_feed_demo") { OnboardingFeedDemoScreen(navController) }
+        composable("onboarding_finish") { OnboardingFinishScreen(navController) }
 
         composable(
             route = "main?tab={tab}&selectedDate={selectedDate}",
@@ -45,8 +75,14 @@ fun NavGraph(
             MainScreen(navController, tab, selectedDate)
         }
 
-        composable("add_music") {
-            AddMusicScreen(navController)
+        composable(
+            route = "add_music?tutorial={tutorial}",
+            arguments = listOf(
+                navArgument("tutorial") { type = NavType.BoolType; defaultValue = false }
+            )
+        ) { backStackEntry ->
+            val tutorial = backStackEntry.arguments?.getBoolean("tutorial") ?: false
+            AddMusicScreen(navController, tutorialMode = tutorial)
         }
 
         composable(
@@ -55,13 +91,15 @@ fun NavGraph(
                     "&artist={artist}" +
                     "&image={image}" +
                     "&videoUrl={videoUrl}" +
-                    "&totalDuration={totalDuration}",
+                    "&totalDuration={totalDuration}" +
+                    "&tutorial={tutorial}",
             arguments = listOf(
                 navArgument("title") { type = NavType.StringType; defaultValue = "" },
                 navArgument("artist") { type = NavType.StringType; defaultValue = "" },
                 navArgument("image") { type = NavType.StringType; defaultValue = "" },
                 navArgument("videoUrl") { type = NavType.StringType; defaultValue = "" },
-                navArgument("totalDuration") { type = NavType.StringType; defaultValue = "" }
+                navArgument("totalDuration") { type = NavType.StringType; defaultValue = "" },
+                navArgument("tutorial") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val title = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("title").orEmpty(), "UTF-8")
@@ -70,8 +108,9 @@ fun NavGraph(
             val videoUrl = URLDecoder.decode(backStackEntry.arguments?.getString("videoUrl").orEmpty(), "UTF-8")
             val totalDurationStr = backStackEntry.arguments?.getString("totalDuration") ?: ""
             val totalDuration = totalDurationStr.toIntOrNull() ?: 0
+            val tutorial = backStackEntry.arguments?.getBoolean("tutorial") ?: false
 
-            SelectDurationScreen(navController, title, artist, image, videoUrl, totalDuration)
+            SelectDurationScreen(navController, title, artist, image, videoUrl, totalDuration, tutorialMode = tutorial)
         }
 
         composable(
@@ -83,7 +122,8 @@ fun NavGraph(
                     "&start={start}" +
                     "&end={end}" +
                     "&videoUrl={videoUrl}" +
-                    "&totalDuration={totalDuration}",
+                    "&totalDuration={totalDuration}" +
+                    "&tutorial={tutorial}",
             arguments = listOf(
                 navArgument("title") { type = NavType.StringType; defaultValue = "" },
                 navArgument("artist") { type = NavType.StringType; defaultValue = "" },
@@ -92,7 +132,8 @@ fun NavGraph(
                 navArgument("start") { type = NavType.StringType; defaultValue = "" },
                 navArgument("end") { type = NavType.StringType; defaultValue = "" },
                 navArgument("videoUrl") { type = NavType.StringType; defaultValue = "" },
-                navArgument("totalDuration") { type = NavType.StringType; defaultValue = "" }
+                navArgument("totalDuration") { type = NavType.StringType; defaultValue = "" },
+                navArgument("tutorial") { type = NavType.BoolType; defaultValue = false }
             )
         ) { backStackEntry ->
             val title = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("title").orEmpty(), "UTF-8")
@@ -104,8 +145,20 @@ fun NavGraph(
             val videoUrl = URLDecoder.decode(backStackEntry.arguments?.getString("videoUrl").orEmpty(), "UTF-8")
             val totalDurationStr = backStackEntry.arguments?.getString("totalDuration") ?: ""
             val totalDuration = totalDurationStr.toIntOrNull() ?: 0
+            val tutorial = backStackEntry.arguments?.getBoolean("tutorial") ?: false
 
-            WriteDiaryScreen(navController, title, artist, image, duration, start, end, videoUrl, totalDuration)
+            WriteDiaryScreen(
+                navController,
+                title,
+                artist,
+                image,
+                duration,
+                start,
+                end,
+                videoUrl,
+                totalDuration,
+                tutorialMode = tutorial
+            )
         }
 
         composable(

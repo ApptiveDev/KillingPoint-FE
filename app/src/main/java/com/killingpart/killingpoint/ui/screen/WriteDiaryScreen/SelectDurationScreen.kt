@@ -52,6 +52,8 @@ import com.killingpart.killingpoint.ui.screen.WriteDiaryScreen.AlbumDiaryBoxWith
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.navigation.navigateToMainClearingStack
+import androidx.compose.material3.TextButton
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import java.time.LocalDate
@@ -100,7 +102,8 @@ fun SelectDurationScreen(
     artist: String,
     imageUrl: String,
     videoUrl: String = "",
-    totalDuration: Int
+    totalDuration: Int,
+    tutorialMode: Boolean = false
 ) {
     var duration by remember { mutableStateOf(10f) }
     var start by remember { mutableStateOf(0f) }
@@ -188,12 +191,32 @@ fun SelectDurationScreen(
                     )
                 }
                 Text(
-                    text = "Killing Part",
-                    fontSize = 33.sp,
-                    fontFamily = eng_font_extrabold,
-                    color = Color(0xFF1D1E20),
-                    modifier = Modifier.align(Alignment.Center)
+                    text = if (tutorialMode) {
+                        "킬링파트로 사용할 구간을 정해보세요!"
+                    } else {
+                        "Killing Part"
+                    },
+                    fontSize = if (tutorialMode) 14.sp else 33.sp,
+                    fontFamily = if (tutorialMode) PaperlogyFontFamily else eng_font_extrabold,
+                    color = if (tutorialMode) Color.White else Color(0xFF1D1E20),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(horizontal = 48.dp),
+                    maxLines = 2
                 )
+                if (tutorialMode) {
+                    TextButton(
+                        onClick = { navController.navigateToMainClearingStack() },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Text(
+                            "건너뛰기",
+                            color = Color.White,
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -383,6 +406,7 @@ fun SelectDurationScreen(
             onClick = {
 
                 val encodedVideoUrl = Uri.encode(currentVideoUrl ?: "")
+                val tutorialArg = if (tutorialMode) "true" else "false"
 
                 navController.navigate(
                     "write_diary" +
@@ -393,7 +417,8 @@ fun SelectDurationScreen(
                             "&start=${start.toInt()}" +
                             "&end=${end.toInt()}" +
                             "&videoUrl=$encodedVideoUrl" +
-                            "&totalDuration=${currentTotalDuration}"
+                            "&totalDuration=${currentTotalDuration}" +
+                            "&tutorial=$tutorialArg"
                 )
             },
             modifier = Modifier
@@ -412,8 +437,9 @@ fun SelectDurationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-
-        BottomBar(navController = navController)
+        if (!tutorialMode) {
+            BottomBar(navController = navController)
+        }
     }
 }
 @Preview
@@ -425,7 +451,8 @@ fun SelectDurationPreview() {
         artist = "Davinci Leo",
         imageUrl = "https://i.scdn.co/image/ab67616d00001e02c6b31f5f1ce2958380fdb9b0",
         videoUrl = "",
-        totalDuration = 0
+        totalDuration = 0,
+        tutorialMode = false
     )
 }
 

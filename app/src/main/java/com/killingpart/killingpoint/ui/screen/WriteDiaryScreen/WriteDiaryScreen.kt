@@ -41,6 +41,9 @@ import com.killingpart.killingpoint.ui.screen.AddMusicScreen.korean_font_medium
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.navigation.navigateToMainClearingStack
+import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import androidx.compose.material3.TextButton
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import java.time.LocalDate
@@ -62,7 +65,8 @@ fun WriteDiaryScreen(
     start: String,
     end: String,
     videoUrl: String,
-    totalDuration: Int = 0 // YouTube 비디오 전체 길이 (초 단위)
+    totalDuration: Int = 0, // YouTube 비디오 전체 길이 (초 단위)
+    tutorialMode: Boolean = false
 ) {
     val coroutineScope = rememberCoroutineScope()
     var content by remember { mutableStateOf("") }
@@ -92,7 +96,7 @@ fun WriteDiaryScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(if (tutorialMode) 24.dp else 60.dp))
 
             // Top bar
             Box(
@@ -118,6 +122,30 @@ fun WriteDiaryScreen(
                     color = Color(0xFF1D1E20),
                     modifier = Modifier.align(Alignment.Center)
                 )
+                if (tutorialMode) {
+                    TextButton(
+                        onClick = { navController.navigateToMainClearingStack() },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Text(
+                            "건너뛰기",
+                            color = Color.White,
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+
+            if (tutorialMode) {
+                Text(
+                    text = "선택한 구간에서 느낀 감정과 생각을 적어보세요.",
+                    color = Color.White,
+                    fontFamily = PaperlogyFontFamily,
+                    fontSize = 15.sp,
+                    lineHeight = 22.sp,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
+                )
             }
 
             val tempDiary = Diary(
@@ -133,12 +161,14 @@ fun WriteDiaryScreen(
                 createDate = "",
                 updateDate = ""
             )
-            Box(
-                modifier = Modifier.size(250.dp, 150.dp)
-            ) {
-                YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+            if (!tutorialMode) {
+                Box(
+                    modifier = Modifier.size(250.dp, 150.dp)
+                ) {
+                    YouTubePlayerBox(tempDiary, startSeconds, durationSeconds)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
-            Spacer(modifier = Modifier.height(12.dp))
 
             AlbumDiaryBoxWithoutContent(
                 track = SimpleTrack(
@@ -274,26 +304,39 @@ fun WriteDiaryScreen(
                             repo.createDiary(body)
                         }.onSuccess {
                             android.util.Log.d("WriteDiaryScreen", "Diary created successfully")
-                            navController.navigate("main")
+                            if (tutorialMode) {
+                                navController.navigate("onboarding_home_preview") {
+                                    popUpTo("onboarding_kp_intro") { inclusive = false }
+                                }
+                            } else {
+                                navController.navigate("main")
+                            }
                         }.onFailure { e ->
                             android.util.Log.e("WriteDiaryScreen", "Failed to create diary: ${e.message}")
                         }
                     }
                 },
+                enabled = !tutorialMode || content.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(0.8f),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFCCFF33), contentColor = Color.Black)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (tutorialMode && content.isBlank()) Color(0xFF3D4A2E) else Color(0xFFCCFF33),
+                    contentColor = Color.Black,
+                    disabledContainerColor = Color(0xFF3D4A2E),
+                    disabledContentColor = Color(0xFF5C5C5C)
+                )
             ) {
                 Text(
                     fontFamily = korean_font_medium,
-                    text = "저장하기 →"
+                    text = if (tutorialMode) "다음으로 →" else "저장하기 →"
                 )
             }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // BottomBar
-        BottomBar(navController = navController)
+        if (!tutorialMode) {
+            BottomBar(navController = navController)
+        }
     }
 }
 
