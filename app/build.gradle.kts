@@ -12,8 +12,8 @@ android {
         applicationId = "com.killingpart.killingpoint"
         minSdk = 29
         targetSdk = 36
-        versionCode = 25
-        versionName = "2.1.6"
+        versionCode = 26
+        versionName = "2.1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

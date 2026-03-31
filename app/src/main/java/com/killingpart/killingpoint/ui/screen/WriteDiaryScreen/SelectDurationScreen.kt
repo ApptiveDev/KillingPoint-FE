@@ -5,7 +5,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -17,18 +19,20 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,7 @@ import coil.request.ImageRequest
 import com.killingpart.killingpoint.data.model.CreateDiaryRequest
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
+import com.killingpart.killingpoint.data.model.YouTubeVideo
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.screen.AddMusicScreen.korean_font_medium
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
@@ -48,6 +53,7 @@ import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import com.killingpart.killingpoint.ui.theme.mainGreen
 import java.time.LocalDate
 import java.util.regex.Pattern
 
@@ -116,7 +122,9 @@ fun SelectDurationScreen(
 
     var currentVideoUrl by remember { mutableStateOf<String?>(if (videoUrl.isNotEmpty()) videoUrl else null) }
     var currentTotalDuration by remember { mutableStateOf(if (totalDuration > 0) totalDuration else 10) }
+    var candidateVideos by remember { mutableStateOf<List<YouTubeVideo>>(emptyList()) }
     var isLoadingVideo by remember { mutableStateOf(false) }
+    var isCandidateExpanded by remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
@@ -129,11 +137,14 @@ fun SelectDurationScreen(
                 videos.forEachIndexed { index, video ->
                     android.util.Log.d("SelectDurationScreen", "  비디오[$index]: url=${video.id}")
                 }
+                candidateVideos = videos
                 val firstVideo = videos.firstOrNull()
                 val newVideoId = firstVideo?.id
                 currentVideoUrl = newVideoId
                 currentTotalDuration = firstVideo?.duration ?: 10
+                isCandidateExpanded = false
             } catch (e: Exception) {
+                candidateVideos = emptyList()
                 currentVideoUrl = null
                 currentTotalDuration = 10
             }
@@ -143,9 +154,6 @@ fun SelectDurationScreen(
 
 
     val scrollState = rememberScrollState()
-    val density = LocalDensity.current
-
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -267,9 +275,103 @@ fun SelectDurationScreen(
                         }
 
                     )
+                    Spacer(Modifier.height(24.dp))
+
+                    if (candidateVideos.isNotEmpty()) {
+                        val toggleColor = if (isCandidateExpanded) Color(0xFFD9D9D9) else Color(0xFF878787)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth().padding(horizontal = 10.dp)
+                                .clickable { isCandidateExpanded = !isCandidateExpanded },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "다른 영상 검색 결과",
+                                fontFamily = korean_font_medium,
+                                fontSize = 15.sp,
+                                color = toggleColor,
+                                textDecoration = TextDecoration.Underline
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Filled.PlayArrow,
+                                contentDescription = "toggle candidate videos",
+                                tint = toggleColor,
+                                modifier = Modifier.rotate(if (isCandidateExpanded) 90f else 0f)
+                            )
+                        }
+
+                        if (isCandidateExpanded) {
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth().padding(horizontal = 10.dp)
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)
+                            ) {
+                                candidateVideos.forEach { video ->
+                                    val isSelected = currentVideoUrl == video.id
+                                    val thumbnailShape = RoundedCornerShape(6.dp)
+                                    Column(
+                                        modifier = Modifier
+                                            .width(146.dp)
+                                            .clickable {
+                                                currentVideoUrl = video.id
+                                                currentTotalDuration = video.duration
+                                                start = 0f
+                                                duration = 10f.coerceAtMost(video.duration.toFloat())
+                                                end = (start + duration).coerceAtMost(video.duration.toFloat())
+                                            }
+                                    ) {
+                                        AsyncImage(
+                                            model = ImageRequest.Builder(LocalContext.current)
+                                                .data("https://img.youtube.com/vi/${video.id}/hqdefault.jpg")
+                                                .crossfade(true)
+                                                .build(),
+                                            contentDescription = "video thumbnail",
+                                            contentScale = ContentScale.FillWidth,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(85.dp)
+                                                .clip(thumbnailShape)
+                                                .background(Color(0xFF1A1A1A), thumbnailShape)
+                                                .then(
+                                                    if (isSelected) {
+                                                        Modifier
+                                                            .border(
+                                                                width = 1.dp,
+                                                                color = mainGreen,
+                                                                shape = thumbnailShape
+                                                            )
+                                                    } else {
+                                                        Modifier
+                                                            .border(
+                                                                width = 1.dp,
+                                                                color = Color(0xFFD9D9D9),
+                                                                shape = thumbnailShape
+                                                            )
+                                                    }
+                                                )
+                                        )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        Text(
+                                            text = video.title,
+                                            fontFamily = korean_font_medium,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFFEBEBEB),
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     Spacer(Modifier.height(38.dp))
-
                 }
 
                 Spacer(modifier = Modifier.height(80.dp))
