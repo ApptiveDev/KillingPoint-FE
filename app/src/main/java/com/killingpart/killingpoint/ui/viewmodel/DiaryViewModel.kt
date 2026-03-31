@@ -29,15 +29,35 @@ class DiaryViewModel(
         val repo = repoFactory(context)
         viewModelScope.launch {
             try {
-                val diaries = repo.getMyDiaries(page = 0, size = 10)
-                if (diaries.content.isNotEmpty()) {
-                    _state.value = DiaryUiState.Success(diaries.content)
+                val firstPage = repo.getMyDiaries(page = 0, size = 1)
+                val totalElements = firstPage.page.totalElements
+                
+                val result = if (totalElements > 0) {
+                    repo.getMyDiaries(page = 0, size = totalElements)
                 } else {
-                    _state.value = DiaryUiState.Error("다이어리가 없습니다")
+                    firstPage
                 }
+                
+                _state.value = DiaryUiState.Success(result.content)
             } catch (e: Exception) {
                 _state.value = DiaryUiState.Error(e.message ?: "다이어리 로드 실패")
             }
+        }
+    }
+
+    fun reorderDiaries(context: Context, orderedIds: List<Long>) {
+        val repo = repoFactory(context)
+        val current = (_state.value as? DiaryUiState.Success)?.diaries ?: return
+        viewModelScope.launch {
+            repo.reorderDiaryOrder(orderedIds)
+                .onSuccess {
+                    val reordered = orderedIds.mapNotNull { id -> current.find { it.id == id } }
+                    val rest = current.filter { it.id !in orderedIds.toSet() }
+                    _state.value = DiaryUiState.Success(reordered + rest)
+                }
+                .onFailure { e ->
+                    _state.value = DiaryUiState.Error(e.message ?: "순서 변경 실패")
+                }
         }
     }
 }

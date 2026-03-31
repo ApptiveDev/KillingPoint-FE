@@ -18,8 +18,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +33,8 @@ import androidx.compose.ui.zIndex
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlin.math.roundToInt
 
 fun formatTime(seconds: Float): String {
@@ -52,20 +56,6 @@ fun formatTime(seconds: Float): String {
  * barCenterSec, startSec, endSec 모두 절대 시간 통일
  */
 
-/** 주요 통일 공식
- * 절대 시간(초) = (스크롤된 px + 핸들의 화면 px) / pxPerSecond
- * 절대 바의 시간 = 바의 절대 위치 px / pxPerSecond
- * Visible X 좌표 = absoluteX - scrollX           // 실제 그리는 위치
- */
-
-/** 중요 변수 정리
- * pxPerSecond : 1초가 몇 px인지 정의하는 핵심 값 (바 1개 = 1초)
- * barAbsX : 타임라인 전체에서 이 바가 가지는 절대 px 좌표 (스크롤하기 전)
- * barVisibleX : 현재 화면에서 보여야 하는 픽셀 좌표
- * handleX : 화면 px (스크롤해도 핸들이 고정되어야 하기 때문에 핸들을 위한 변수)
- * startSec, endSec : 현재 화면의 핸들이 가리키는 절대 시간
- */
-
 @Composable
 fun KillingPartSelector(
     totalDuration: Int,
@@ -74,13 +64,15 @@ fun KillingPartSelector(
     val scrollState = rememberScrollState()
     val density = LocalDensity.current
 
-    val barWidth = 6.dp
+    val barWidth = 8.dp
     val gap = 8.dp
     val barWidthPx = with(density) { barWidth.toPx() }
     val gapPx = with(density) { gap.toPx() }
-    val pxPerSecond = barWidthPx + gapPx          // 1초당 px
 
-    val timelineWidthPx = totalDuration * pxPerSecond
+    val basePxPerSecond = barWidthPx + gapPx
+    var pxPerSecond by remember { mutableStateOf(basePxPerSecond) }
+
+    val timelineWidthPx = (totalDuration + 5f) * pxPerSecond
     val timelineWidthDp = with(density) { timelineWidthPx.toDp() }
 
     val minDurationSec = 10f
@@ -98,6 +90,11 @@ fun KillingPartSelector(
 
     LaunchedEffect(parentWidthPx) {
         if (parentWidthPx > 0f && !handlesInitialized) {
+            val maxDurationSecForScaling =
+                39f + ((totalDuration - 200).coerceAtLeast(0) / 50f) * 2f
+            val maxAllowedPxPerSecond = parentWidthPx / maxDurationSecForScaling
+
+            pxPerSecond = maxAllowedPxPerSecond
             val initialDurationSec = minDurationSec.coerceAtMost(maxDurationSec)
             val durationPx = initialDurationSec * pxPerSecond
             val center = parentWidthPx / 2f
@@ -116,181 +113,359 @@ fun KillingPartSelector(
     val endTime =
         ((scrollX + rightHandleX) / pxPerSecond).coerceIn(0f, totalDuration.toFloat())
     val durationSec = (endTime - startTime).coerceAtLeast(0f)
+    var miniMapWidthPx by remember { mutableStateOf(0f) }
+    var wasScrolling by remember { mutableStateOf(false) }
+    var lastCommittedStart by remember { mutableStateOf(Float.NaN) }
+    var lastCommittedEnd by remember { mutableStateOf(Float.NaN) }
+    var lastCommittedDuration by remember { mutableStateOf(Float.NaN) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .onGloballyPositioned {
-                parentWidthPx = it.size.width.toFloat()
-            }
+    fun commitSelectionIfNeeded() {
+        val changed =
+            startTime != lastCommittedStart ||
+                endTime != lastCommittedEnd ||
+                durationSec != lastCommittedDuration
+
+        if (changed) {
+            onStartChange(startTime, endTime, durationSec)
+            lastCommittedStart = startTime
+            lastCommittedEnd = endTime
+            lastCommittedDuration = durationSec
+        }
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .width(timelineWidthDp)
-                .fillMaxHeight()
-                .horizontalScroll(scrollState)
+                .fillMaxWidth()
+                .height(120.dp)
+                .onGloballyPositioned {
+                    parentWidthPx = it.size.width.toFloat()
+                }
         ) {
-            Canvas(
+            Row(
                 modifier = Modifier
                     .width(timelineWidthDp)
                     .fillMaxHeight()
+                    .horizontalScroll(scrollState)
             ) {
+                Canvas(
+                    modifier = Modifier
+                        .width(timelineWidthDp)
+                        .fillMaxHeight()
+                ) {
+                    val absScrollX = scrollState.value.toFloat()
 
-                val absScrollX = scrollState.value.toFloat()
+                    val currentStartSec = (absScrollX + leftHandleX) / pxPerSecond
+                    val currentEndSec = (absScrollX + rightHandleX) / pxPerSecond
 
-                val currentStartSec = (absScrollX + leftHandleX) / pxPerSecond
-                val currentEndSec   = (absScrollX + rightHandleX) / pxPerSecond
+                    for (i in 0 until totalDuration) {
+                        val barAbsX = i * (pxPerSecond + gapPx)
+                        val barVisibleX = barAbsX - absScrollX
+
+                        if (barVisibleX + barWidthPx < 0 || barVisibleX > size.width) continue
+
+                        val barHeightPx = barHeights[i].toPx()
+                        val top = (size.height - barHeightPx) / 2f
+
+                        val barCenterSec =
+                            ((barAbsX - absScrollX) + barWidthPx / 2f) / pxPerSecond
+
+                        val inSelection = barCenterSec - 1f in currentStartSec + 1..currentEndSec
+
+                        val color = if (inSelection) Color.White else Color(0xFF454545)
+
+                        drawRoundRect(
+                            color = color,
+                            topLeft = Offset(barVisibleX, top),
+                            size = Size(barWidthPx, barHeightPx),
+                            cornerRadius = CornerRadius(12f, 12f)
+                        )
+                    }
+                }
+            }
+
+            val handleYOffsetPx = with(density) { 20.dp.toPx().roundToInt() }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .offset { IntOffset(leftHandleX.roundToInt(), handleYOffsetPx) }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragEnd = { commitSelectionIfNeeded() },
+                            onDragCancel = { commitSelectionIfNeeded() }
+                        ) { change, drag ->
+                            change.consume()
+
+                            val parent = parentWidthPx
+                            if (parent <= 0f) return@detectDragGestures
+
+                            val candidateX = (leftHandleX + drag.x)
+                                .coerceIn(0f, rightHandleX)
+
+                            val candidateDurationSec =
+                                (rightHandleX - candidateX) / pxPerSecond
+
+                            if (candidateDurationSec in minDurationSec..maxDurationSec) {
+                                leftHandleX = candidateX
+                            }
+                        }
+                    }
+                    .zIndex(10f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(20.dp)
+                        .height(70.dp)
+                        .background(
+                            mainGreen,
+                            RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp)
+                        )
+                        .border(
+                            2.dp,
+                            mainGreen,
+                            RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.move),
+                        contentDescription = "left",
+                        modifier = Modifier
+                            .size(7.dp, 13.dp)
+                            .rotate(180f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = formatTime(startTime),
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.W400,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .offset { IntOffset(rightHandleX.roundToInt(), handleYOffsetPx) }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragEnd = { commitSelectionIfNeeded() },
+                            onDragCancel = { commitSelectionIfNeeded() }
+                        ) { change, drag ->
+                            change.consume()
+
+                            val parent = parentWidthPx
+                            if (parent <= 0f) return@detectDragGestures
+
+                            val handleWidthPx = with(density) { 40.dp.toPx() }
+
+                            val candidateX = (rightHandleX + drag.x)
+                                .coerceIn(leftHandleX, parent - handleWidthPx)
+
+                            val candidateDurationSec =
+                                (candidateX - leftHandleX) / pxPerSecond
+
+                            if (candidateDurationSec in minDurationSec..maxDurationSec) {
+                                rightHandleX = candidateX
+                            }
+                        }
+                    }
+                    .zIndex(10f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(20.dp)
+                        .height(70.dp)
+                        .background(
+                            mainGreen,
+                            RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp)
+                        )
+                        .border(
+                            2.dp,
+                            mainGreen,
+                            RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.move),
+                        contentDescription = "right",
+                        modifier = Modifier.size(7.dp, 13.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = formatTime(endTime),
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.W400,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .background(Color(0xFF1F1F1F), RoundedCornerShape(24.dp))
+                .border(1.dp, Color(0xFF666666), RoundedCornerShape(24.dp))
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .onSizeChanged { miniMapWidthPx = it.width.toFloat() }
+        ) {
+            Canvas(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (totalDuration <= 0) return@Canvas
+                val unitWidth = size.width / totalDuration.toFloat()
+                val barSpace = unitWidth * 0.35f
+                val miniBarWidth = (unitWidth - barSpace).coerceAtLeast(1f)
 
                 for (i in 0 until totalDuration) {
-
-                    val barAbsX = i * pxPerSecond
-                    val barVisibleX = barAbsX - absScrollX
-
-                    if (barVisibleX + barWidthPx < 0 || barVisibleX > size.width) continue
-
-                    val barHeightPx = barHeights[i].toPx()
-                    val top = (size.height - barHeightPx) / 2f
-
-                    val barCenterSec = ((barAbsX - absScrollX) + barWidthPx/2f) / pxPerSecond
-
-                    val inSelection = barCenterSec - 1f in currentStartSec..currentEndSec
-
-                    val color = if (inSelection) Color.White else Color(0xFF454545)
-
+                    val x = i * unitWidth
+                    // 화살표처럼 보이지 않게 사인파 기반으로 높이를 부드럽게 변화
+                    val phase = (i.toFloat() / totalDuration.toFloat()) * (PI.toFloat() * 10f)
+                    val wave = ((sin(phase.toDouble()).toFloat() + 1f) / 2f)
+                    val h = size.height * (0.32f + wave * 0.60f)
+                    val top = (size.height - h) / 2f
                     drawRoundRect(
-                        color = color,
-                        topLeft = Offset(barVisibleX, top),
-                        size = Size(barWidthPx, barHeightPx),
+                        color = Color(0xFFEDEDED),
+                        topLeft = Offset(x, top),
+                        size = Size(miniBarWidth, h),
                         cornerRadius = CornerRadius(6f, 6f)
                     )
                 }
             }
 
-        }
+            val safeTotalDuration = totalDuration.coerceAtLeast(1).toFloat()
+            val selectionLeftRatio = (startTime / safeTotalDuration).coerceIn(0f, 1f)
+            val selectionWidthRatio =
+                (durationSec / safeTotalDuration).coerceIn(0f, 1f - selectionLeftRatio)
+            val selectionLeftPx = miniMapWidthPx * selectionLeftRatio
+            val selectionWidthPx = miniMapWidthPx * selectionWidthRatio
+            val latestSelectionLeftPx by rememberUpdatedState(selectionLeftPx)
+            val latestDurationSec by rememberUpdatedState(durationSec)
+            val latestSafeTotalDuration by rememberUpdatedState(safeTotalDuration)
+            var latestMiniMapTargetStartSec by remember { mutableStateOf(startTime) }
+            var latestMiniMapTargetDurationSec by remember { mutableStateOf(durationSec) }
 
-        val handleYOffsetPx = with(density) { 20.dp.toPx().roundToInt() }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .offset { IntOffset(leftHandleX.roundToInt(), handleYOffsetPx) }
-                .pointerInput(Unit) {
-                    detectDragGestures { change, drag ->
-                        change.consume()
-
-                        val parent = parentWidthPx
-                        if (parent <= 0f) return@detectDragGestures
-
-                        val candidateX = (leftHandleX + drag.x)
-                            .coerceIn(0f, rightHandleX)  // 오른쪽 핸들 넘어가지 않게
-
-                        val candidateDurationSec =
-                            (rightHandleX - candidateX) / pxPerSecond
-
-                        // 최소/최대 duration 조건 만족할 때만 업데이트
-                        if (candidateDurationSec in minDurationSec..maxDurationSec) {
-                            leftHandleX = candidateX
-                        }
-                    }
-                }
-                .zIndex(10f)
-        ) {
             Box(
                 modifier = Modifier
-                    .width(20.dp)
-                    .height(70.dp)
+                    .fillMaxHeight()
+                    .width(with(density) { selectionWidthPx.toDp() })
+                    .graphicsLayer {
+                        translationX = selectionLeftPx
+                    }
                     .background(
-                        mainGreen,
-                        RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp)
+                        mainGreen.copy(alpha = 0.4f),
+                        RoundedCornerShape(8.dp)
                     )
                     .border(
-                        2.dp,
+                        1.dp,
                         mainGreen,
-                        RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.move),
-                    contentDescription = "left",
-                    modifier = Modifier
-                        .size(7.dp, 13.dp)
-                        .rotate(180f)
-                )
-            }
+                        RoundedCornerShape(8.dp)
+                    )
+                    .pointerInput(miniMapWidthPx, totalDuration, leftHandleX, pxPerSecond) {
+                        var dragStartSelectionLeftPx = 0f
+                        var dragAccumulatedPx = 0f
+                        var dragDurationSec = 0f
+                        detectDragGestures(
+                            onDragStart = {
+                                dragStartSelectionLeftPx = latestSelectionLeftPx
+                                dragAccumulatedPx = 0f
+                                dragDurationSec = latestDurationSec.coerceAtLeast(minDurationSec)
+                                    .coerceAtMost(maxDurationSec)
+                            },
+                            onDragEnd = {
+                                onStartChange(
+                                    latestMiniMapTargetStartSec,
+                                    (latestMiniMapTargetStartSec + latestMiniMapTargetDurationSec)
+                                        .coerceAtMost(totalDuration.toFloat()),
+                                    latestMiniMapTargetDurationSec
+                                )
+                                lastCommittedStart = latestMiniMapTargetStartSec
+                                lastCommittedEnd =
+                                    (latestMiniMapTargetStartSec + latestMiniMapTargetDurationSec)
+                                        .coerceAtMost(totalDuration.toFloat())
+                                lastCommittedDuration = latestMiniMapTargetDurationSec
+                            },
+                            onDragCancel = { commitSelectionIfNeeded() }
+                        ) { change, drag ->
+                            change.consume()
+                            dragAccumulatedPx += drag.x
 
-            Spacer(modifier = Modifier.height(18.dp))
+                            val maxStartSec =
+                                (totalDuration.toFloat() - dragDurationSec).coerceAtLeast(0f)
+                            val draggableRangePx =
+                                (miniMapWidthPx - (miniMapWidthPx * (dragDurationSec / latestSafeTotalDuration))).coerceAtLeast(1f)
+                            val targetSelectionLeftPx =
+                                (dragStartSelectionLeftPx + dragAccumulatedPx)
+                                    .coerceIn(0f, draggableRangePx)
+                            val targetStartSec =
+                                (targetSelectionLeftPx / draggableRangePx) * maxStartSec
+                            latestMiniMapTargetStartSec = targetStartSec
+                            latestMiniMapTargetDurationSec = dragDurationSec
 
-            Text(
-                text = formatTime(startTime),
-                fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.W400,
-                fontSize = 14.sp,
-                color = Color.White
+                            val targetScrollPx =
+                                ((targetStartSec * pxPerSecond) - leftHandleX)
+                                    .coerceIn(0f, scrollState.maxValue.toFloat())
+                            val delta = targetScrollPx - scrollState.value.toFloat()
+
+                            scrollState.dispatchRawDelta(delta)
+                        }
+                    },
             )
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .offset { IntOffset(rightHandleX.roundToInt(), handleYOffsetPx) }
-                .pointerInput(Unit) {
-                    detectDragGestures { change, drag ->
-                        change.consume()
+        Spacer(modifier = Modifier.height(10.dp))
 
-                        val parent = parentWidthPx
-                        if (parent <= 0f) return@detectDragGestures
-
-                        val candidateX = (rightHandleX + drag.x)
-                            .coerceIn(leftHandleX, parent)
-
-                        val candidateDurationSec =
-                            (candidateX - leftHandleX) / pxPerSecond
-
-                        if (candidateDurationSec in minDurationSec..maxDurationSec) {
-                            rightHandleX = candidateX
-                        }
-                    }
-                }
-                .zIndex(10f)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .width(20.dp)
-                    .height(70.dp)
-                    .background(
-                        mainGreen,
-                        RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp)
-                    )
-                    .border(
-                        2.dp,
-                        mainGreen,
-                        RoundedCornerShape(topEnd = 4.dp, bottomEnd = 4.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.move),
-                    contentDescription = "right",
-                    modifier = Modifier.size(7.dp, 13.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
+            Text(
+                text = "선택 구간: ${formatTime(startTime)} ~ ${formatTime(endTime)}",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.W500,
+                fontSize = 10.sp,
+                color = mainGreen
+            )
 
             Text(
-                text = formatTime(endTime),
+                text = "최대 30초",
                 fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.W400,
-                fontSize = 14.sp,
-                color = Color.White
+                fontWeight = FontWeight.W500,
+                fontSize = 10.sp,
+                color = mainGreen
             )
         }
     }
 
-    LaunchedEffect(startTime, endTime, durationSec) {
-        onStartChange(startTime, endTime, durationSec)
+    LaunchedEffect(scrollState.isScrollInProgress) {
+        if (scrollState.isScrollInProgress) {
+            wasScrolling = true
+        } else if (wasScrolling) {
+            wasScrolling = false
+            commitSelectionIfNeeded()
+        }
+    }
+
+    LaunchedEffect(handlesInitialized) {
+        if (handlesInitialized) {
+            commitSelectionIfNeeded()
+        }
     }
 }
 
@@ -298,7 +473,7 @@ fun KillingPartSelector(
 @Composable
 fun KillingPartSelectorPreview() {
     KillingPartSelector(
-        totalDuration = 185,
+        totalDuration = 150,
         onStartChange = { _, _, _ -> }
     )
 }

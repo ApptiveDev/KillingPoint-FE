@@ -13,13 +13,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.key
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import android.graphics.Shader
-import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.CompositingStrategy
@@ -30,11 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.ui.component.ScrollableText
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
@@ -83,33 +82,20 @@ fun parseDurationToSeconds(duration: String): Int {
 fun RunMusicBox(
     currentIndex: Int,
     currentDiary: Diary?,
-    isPlaying: Boolean? = null
+    isPlaying: Boolean? = null,
+    authorUsername: String? = null,
+    authorTag: String? = null,
+    authorProfileImageUrl: String? = null,
+    navController: NavController,
+    onVideoEnd: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
     val userState by userViewModel.state.collectAsState()
-    
-
-    val videoTotalDuration = currentDiary?.totalDuration
-
-    val repo = remember { AuthRepository(context) }
 
     LaunchedEffect(Unit) {
-        userViewModel.loadUserInfo(context)
-    }
-
-    LaunchedEffect(currentDiary?.musicTitle, currentDiary?.artist) {
-        if (currentDiary != null && currentDiary.musicTitle.isNotEmpty() && currentDiary.artist.isNotEmpty()) {
-            try {
-                val videos = repo.searchVideos("", currentDiary.artist, currentDiary.musicTitle) // albumId는 DB에 없으므로 빈 문자열
-                val firstVideo = videos.firstOrNull()
-                firstVideo?.duration?.let { durationStr ->
-                    val totalSeconds = parseDurationToSeconds(durationStr)
-                    android.util.Log.d("RunMusicBox", "YouTube video duration: $durationStr -> $totalSeconds seconds")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RunMusicBox", "Failed to fetch video duration: ${e.message}")
-            }
+        if (authorUsername == null) {
+            userViewModel.loadUserInfo(context)
         }
     }
 
@@ -124,60 +110,74 @@ fun RunMusicBox(
                 .fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.padding(start = 15.dp, end = 17.dp, top = 20.dp, bottom = 8.dp),
+                modifier = Modifier.padding(start = 15.dp, end = 17.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                when (val s = userState) {
-                    is UserUiState.Success -> {
-                        AsyncImage(
-                            model = s.userInfo.profileImageUrl,
-                            contentDescription = "프로필 사진",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(50))
-                                .border(3.dp, mainGreen, RoundedCornerShape(50)),
-                            placeholder = painterResource(id = R.drawable.default_profile),
-                            error = painterResource(id = R.drawable.default_profile)
-                        )
-                    }
-                    else -> {
-                        Image(
-                            painter = painterResource(id = R.drawable.default_profile),
-                            contentDescription = "프로필 사진",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(50))
-                                .border(3.dp, mainGreen, RoundedCornerShape(50))
-                        )
+                if (authorProfileImageUrl != null) {
+                    AsyncImage(
+                        model = authorProfileImageUrl,
+                        contentDescription = "프로필 사진",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(100))
+                            .border(3.dp, mainGreen, RoundedCornerShape(50)),
+                        placeholder = painterResource(id = R.drawable.default_profile),
+                        error = painterResource(id = R.drawable.default_profile)
+                    )
+                } else {
+                    when (val s = userState) {
+                        is UserUiState.Success -> {
+                            AsyncImage(
+                                model = s.userInfo.profileImageUrl,
+                                contentDescription = "프로필 사진",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(RoundedCornerShape(100))
+                                    .border(3.dp, mainGreen, RoundedCornerShape(50)),
+                                placeholder = painterResource(id = R.drawable.default_profile),
+                                error = painterResource(id = R.drawable.default_profile)
+                            )
+                        }
+                        else -> {
+                            Image(
+                                painter = painterResource(id = R.drawable.default_profile),
+                                contentDescription = "프로필 사진",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(RoundedCornerShape(100))
+                                    .border(3.dp, mainGreen, RoundedCornerShape(50))
+                            )
+                        }
                     }
                 }
                 
                 Spacer(modifier = Modifier.width(16.dp))
                 
-                // username과 tag (클릭 가능 - RunMusicBox에서는 클릭 불가)
                 Column {
                     Text(
-                        text = when (val s = userState) {
+                        text = authorUsername ?: when (val s = userState) {
                             is UserUiState.Success -> s.userInfo.username
                             is UserUiState.Loading -> "LOADING..."
                             is UserUiState.Error -> "KILLING_PART"
                         },
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.W400,
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         color = mainGreen,
                     )
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = when (val s = userState) {
+                        text = if (authorTag != null) "@$authorTag" else when (val s = userState) {
                             is UserUiState.Success -> "@${s.userInfo.tag}"
                             is UserUiState.Loading -> "@LOADING"
                             is UserUiState.Error -> "@KILLING_PART"
                         },
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.W400,
-                        fontSize = 14.sp,
+                        fontSize = 11.sp,
                         color = mainGreen,
                     )
                 }
@@ -186,52 +186,82 @@ fun RunMusicBox(
 
             }
 
-            val scrollState = rememberScrollState()
-            val density = LocalDensity.current
-
-            LaunchedEffect(currentDiary?.videoUrl) {
-                if (currentDiary != null) {
-                    kotlinx.coroutines.delay(300)
-                    android.util.Log.d("RunMusicBox", "Auto scrolling down - diary: ${currentDiary.musicTitle}")
-                    val scrollOffset = with(density) { 300.dp.toPx().toInt() }
-                    scrollState.animateScrollTo(scrollOffset)
-                }
-            }
-            
-            key(currentDiary?.videoUrl) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(420.dp)
-                        .verticalScroll(scrollState),
+            if (currentDiary == null) {
+                Column (
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    
-                    // Diary의 duration, start, end 값 확인 및 로그
-                    val startSeconds = currentDiary?.start?.toFloatOrNull() ?: 0f
-                    val durationSeconds = currentDiary?.duration?.toFloatOrNull() ?: 0f
-                    val endSeconds = currentDiary?.end?.toFloatOrNull()
+                    Spacer(modifier = Modifier.height(80.dp))
+                    Text(
+                        text = "재생 가능한 킬링파트가 없습니다",
+                        fontFamily = PaperlogyFontFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = mainGreen,
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = "킬링 파트를 추가해 보세요",
+                        fontSize = 14.sp,
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF9C9C9C)
+                    )
+                    Spacer(modifier = Modifier.height(26.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.navi_add),
+                        contentDescription = "킬링파트 추가 아이콘",
+                        modifier = Modifier.size(60.dp)
+                            .clickable { navController.navigate("add_music?tutorial=false") }
+                    )
+                    Spacer(modifier = Modifier.height(50.dp))
+                }
+            } else {
+                val scrollState = rememberScrollState()
 
-                    
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                key(currentDiary.videoUrl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState),
                     ) {
-                        YouTubePlayerBox(
-                            currentDiary, 
-                            startSeconds, 
-                            durationSeconds,
-                            isPlayingState = isPlaying
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(24.dp))
+                        val startSeconds = currentDiary.start?.toFloatOrNull() ?: 0f
+                        val durationSeconds = currentDiary.duration?.toFloatOrNull() ?: 0f
+                        val endSeconds = currentDiary.end?.toFloatOrNull()
 
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        AlbumDiaryBox(currentDiary)
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            YouTubePlayerBox(
+                                currentDiary, 
+                                startSeconds, 
+                                durationSeconds,
+                                isPlayingState = isPlaying,
+                                onVideoEnd = onVideoEnd
+                            )
+                            Spacer(modifier = Modifier.height(20.dp))
+//                            ScrollableText(
+//                                text = currentDiary.musicTitle ?: "",
+//                                modifier = Modifier.fillMaxWidth(),
+//                                fontFamily = PaperlogyFontFamily,
+//                                fontSize = 13.sp,
+//                                fontWeight = FontWeight.Bold
+//                            )
+//                            Spacer(modifier = Modifier.height(4.dp))
+//                            ScrollableText(
+//                                text = currentDiary.artist ?: "",
+//                                modifier = Modifier.fillMaxWidth(),
+//                                fontFamily = PaperlogyFontFamily,
+//                                fontSize = 11.sp,
+//                                fontWeight = FontWeight.Light
+//                            )
+
+                            DiaryBox(currentDiary)
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
         }
@@ -256,24 +286,6 @@ fun RunMusicBox(
                     }
                     .background(Color.Black.copy(alpha = 0.2f))
             )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val startTime = currentDiary?.start?.toFloatOrNull()?.toInt() ?: 0
-                val durationTime = currentDiary?.duration?.toFloatOrNull()?.toInt() ?: 0
-                val totalTime = videoTotalDuration ?: 180
-                MusicTimeBar(
-                    title = currentDiary?.musicTitle,
-                    start = startTime,
-                    during = durationTime,
-                    total = totalTime
-                )
-
-                Log.d("musicTimebar", "startTime: ${startTime}, duration: ${durationTime}, total: ${totalTime}")
-            }
         }
 
     }

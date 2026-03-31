@@ -29,7 +29,8 @@ data class Diary(
     val createDate: String,
     @SerializedName("updateDate")
     val updateDate: String,
-
+    val isLiked: Boolean = false,
+    val likeCount: Int = 0
 )
 
 data class DiaryPage(

@@ -37,7 +37,17 @@ object KakaoLoginClient {
                 }
             }
             if (UserApiClient.instance.isKakaoTalkLoginAvailable(act)) {
-                UserApiClient.instance.loginWithKakaoTalk(act, callback = callback)
+                UserApiClient.instance.loginWithKakaoTalk(act) { token, error ->
+                    if (error != null) {
+                        if (error is ClientError && error.reason == ClientErrorCause.Cancelled) {
+                            cont.cancel()
+                        } else {
+                            UserApiClient.instance.loginWithKakaoAccount(act, callback = callback)
+                        }
+                    } else {
+                        callback(token, null)
+                    }
+                }
             } else {
                 UserApiClient.instance.loginWithKakaoAccount(act, callback = callback)
             }

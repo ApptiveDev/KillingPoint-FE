@@ -57,6 +57,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.focus.focusModifier
+import androidx.activity.compose.BackHandler
+import androidx.navigation.NavController
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -66,7 +68,8 @@ fun ProfileSettingsScreen(
     onDismiss: () -> Unit,
     topOffset: androidx.compose.ui.unit.Dp = 0.dp,
     maxHeight: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    navController: NavController? = null
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
@@ -80,6 +83,27 @@ fun ProfileSettingsScreen(
     
     LaunchedEffect(Unit) {
         userViewModel.loadUserInfo(context)
+    }
+    
+    // 로그아웃/회원탈퇴 모달이 열려있을 때 뒤로가기 처리
+    BackHandler(enabled = showLogoutModal || showUnregisterModal) {
+        if (showLogoutModal) {
+            showLogoutModal = false
+        }
+        if (showUnregisterModal) {
+            showUnregisterModal = false
+        }
+    }
+    
+    // 시스템 뒤로가기 처리 - 네비게이션 스택 확인
+    BackHandler(enabled = !showLogoutModal && !showUnregisterModal) {
+        if (navController != null && navController.previousBackStackEntry != null) {
+            // 이전 화면이 있으면 네비게이션 스택에서 pop
+            navController.popBackStack()
+        } else {
+            // 이전 화면이 없으면 onDismiss 호출
+            onDismiss()
+        }
     }
     
     Box(
@@ -118,7 +142,8 @@ fun ProfileSettingsScreen(
                     userViewModel.loadUserInfo(context)
                 },
                 onLogoutClick = { showLogoutModal = true },
-                onUnregisterClick = { showUnregisterModal = true }
+                onUnregisterClick = { showUnregisterModal = true },
+                navController = navController
             )
         }
         
@@ -172,7 +197,8 @@ private fun ProfileSettingsContent(
     onDismiss: () -> Unit,
     onTagUpdateSuccess: () -> Unit,
     onLogoutClick: () -> Unit,
-    onUnregisterClick: () -> Unit
+    onUnregisterClick: () -> Unit,
+    navController: NavController? = null
 ) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -366,7 +392,7 @@ private fun ProfileSettingsContent(
         
         val pattern = Pattern.compile("^[a-z0-9_.]+$")
         if (!pattern.matcher(tag).matches()) {
-            return "30자 이내의 영문과 숫자,\n 특수문자([.],[_])로 조합해주세요."
+            return "30자 이내의 영문과 숫자,특수문자([.],[_])로 조합해주세요."
         }
         
         return null
@@ -492,12 +518,21 @@ private fun ProfileSettingsContent(
                 color = mainGreen,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.W500,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
 
 
                 )
             
-            IconButton(onClick = onDismiss) {
+            IconButton(onClick = {
+                // 네비게이션 스택 확인
+                if (navController != null && navController.previousBackStackEntry != null) {
+                    // 이전 화면이 있으면 네비게이션 스택에서 pop
+                    navController.popBackStack()
+                } else {
+                    // 이전 화면이 없으면 onDismiss 호출
+                    onDismiss()
+                }
+            }) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "닫기",
@@ -516,8 +551,7 @@ private fun ProfileSettingsContent(
                         .fillMaxWidth(),
                 ) {
                     // 프로필 이미지 (클릭 가능)
-                    Column()
-                    {
+                    Column() {
                         AsyncImage(
                             model = state.userInfo.profileImageUrl,
                             contentDescription = "프로필 사진",
@@ -556,7 +590,7 @@ private fun ProfileSettingsContent(
                             text = "프로필 사진",
                             color = mainGreen,
                             fontFamily = PaperlogyFontFamily,
-                            fontSize = 12.sp
+                            fontSize = 11.sp
                         )
                         
                         // 기본 이미지로 설정 버튼
@@ -590,7 +624,7 @@ private fun ProfileSettingsContent(
                                 text = imageUploadError!!,
                                 color = Color(0xFFFF6B6B),
                                 fontFamily = PaperlogyFontFamily,
-                                fontSize = 11.sp,
+                                fontSize = 10.sp,
                                 lineHeight = 14.sp,
                                 maxLines = 2
                             )
@@ -609,7 +643,7 @@ private fun ProfileSettingsContent(
                             color = mainGreen,
                             fontFamily = PaperlogyFontFamily,
                             fontWeight = FontWeight.W400,
-                            fontSize = 18.sp
+                            fontSize = 17.sp
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
@@ -632,7 +666,7 @@ private fun ProfileSettingsContent(
                                         text = "@ ",
                                         color = mainGreen,
                                         fontFamily = PaperlogyFontFamily,
-                                        fontSize = 14.sp
+                                        fontSize = 13.sp
                                     )
                                     
                                     androidx.compose.foundation.text.BasicTextField(
@@ -647,7 +681,7 @@ private fun ProfileSettingsContent(
                                         textStyle = androidx.compose.ui.text.TextStyle(
                                             color = mainGreen,
                                             fontFamily = PaperlogyFontFamily,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         ),
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
@@ -673,7 +707,7 @@ private fun ProfileSettingsContent(
                                             color = Color(0xFF1A1A1A),
                                             shape = RoundedCornerShape(20.dp)
                                         )
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        .padding(horizontal = 6.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -684,13 +718,13 @@ private fun ProfileSettingsContent(
                                             text = "@",
                                             color = mainGreen,
                                             fontFamily = PaperlogyFontFamily,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         )
                                         Text(
                                             text = state.userInfo.tag,
                                             color = mainGreen,
                                             fontFamily = PaperlogyFontFamily,
-                                            fontSize = 14.sp
+                                            fontSize = 13.sp
                                         )
                                     }
                                     
@@ -703,13 +737,42 @@ private fun ProfileSettingsContent(
                                 }
                             }
                             
-                            // 하단 버튼 영역 (항상 공간 확보)
+                            // 검증 메시지 영역 (입력 필드 바로 아래)
+                            if (isEditingTag) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (validationMessage != null) {
+                                    Text(
+                                        text = validationMessage!!,
+                                        color = if (validationMessage!!.contains("사용 가능") || validationMessage!!.contains("성공")) {
+                                            Color(0xFF4FDD79)
+                                        } else {
+                                            Color(0xFFFF6B6B)
+                                        },
+                                        fontFamily = PaperlogyFontFamily,
+                                        fontSize = 12.sp,
+                                        lineHeight = 18.sp,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(start = 10.dp, end = 10.dp)
+                                    )
+                                } else if (tagText.isNotEmpty() && tagText != state.userInfo.tag && validateTag(tagText) == null) {
+                                    Text(
+                                        text = "사용 가능한 회원태그입니다!",
+                                        color = Color(0xFF4FDD79),
+                                        fontFamily = PaperlogyFontFamily,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(start = 10.dp)
+                                    )
+                                }
+                            }
+                            
+                            // 하단 버튼 영역
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             Row(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                ,horizontalArrangement = Arrangement.End,
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 if (isEditingTag) {
@@ -720,38 +783,6 @@ private fun ProfileSettingsContent(
                                             strokeWidth = 2.dp
                                         )
                                     } else {
-                                        // 검증 메시지 또는 성공 메시지 (항상 공간 확보)
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(40.dp) // 여러 줄 텍스트를 위한 높이 증가
-                                                .padding(start = 10.dp, top = 12.dp)
-                                            ,contentAlignment = Alignment.TopStart
-                                        ) {
-                                            if (isEditingTag) {
-                                                if (validationMessage != null) {
-                                                    Text(
-                                                        text = validationMessage!!,
-                                                        color = if (validationMessage!!.contains("사용 가능") || validationMessage!!.contains("성공")) {
-                                                            Color(0xFF4FDD79)
-                                                        } else {
-                                                            Color(0xFFFF6B6B)
-                                                        },
-                                                        fontFamily = PaperlogyFontFamily,
-                                                        fontSize = 12.sp,
-                                                        lineHeight = 16.sp,
-                                                        maxLines = 2
-                                                    )
-                                                } else if (tagText.isNotEmpty() && tagText != state.userInfo.tag && validateTag(tagText) == null) {
-                                                    Text(
-                                                        text = "사용 가능한 회원태그입니다!",
-                                                        color = Color(0xFF4FDD79),
-                                                        fontFamily = PaperlogyFontFamily,
-                                                        fontSize = 12.sp
-                                                    )
-                                                }
-                                            }
-                                        }
                                         IconButton(
                                             onClick = { cancelEditingTag() },
                                             modifier = Modifier.size(32.dp)

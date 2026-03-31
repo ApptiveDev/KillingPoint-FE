@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,12 +79,7 @@ fun MusicTimeBarForDiaryDetail(
 
                     val startX = (start.toFloat() / total) * w
                     val endX = ((start + during).toFloat() / total) * w
-                    
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "Canvas drawing values:")
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "  - start: $start, during: $during, total: $total")
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "  - width: $w, height: $h")
-                    android.util.Log.d("MusicTimeBarForDiaryDetail", "  - startX: $startX, endX: $endX")
-                    
+
                     drawLine(
                         color = mainGreen,
                         start = Offset(startX, h / 2f),
@@ -100,59 +96,68 @@ fun MusicTimeBarForDiaryDetail(
                 val barWidthPx = barSize.width.toFloat()
                 val barWidthDp = with(density) { barWidthPx.toDp() }.value
 
-                val x0 = 0f
                 val xStart = (start.toFloat() / total) * barWidthDp
                 val xEnd = ((start + during).toFloat() / total) * barWidthDp
                 val xTotal = barWidthDp
-                
-                // 텍스트 측정을 위한 measurer
-                val textMeasurer = rememberTextMeasurer()
-                val textStyle = TextStyle(
+
+                val measurer = rememberTextMeasurer()
+                val style = TextStyle(
                     fontSize = 10.sp,
                     fontFamily = PaperlogyFontFamily,
                     fontWeight = FontWeight.Thin
                 )
-                
-                val startTimeText = formatTime(start)
-                val endTimeText = formatTime(start + during)
-                
-                val startTextWidth = with(density) { 
-                    textMeasurer.measure(startTimeText, textStyle).size.width.toDp().value 
+
+                val tStart = formatTime(start)
+                val tEnd = formatTime(start + during)
+
+                val startWidth = with(density) { measurer.measure(tStart, style).size.width.toDp().value }
+                val endWidth = with(density) { measurer.measure(tEnd, style).size.width.toDp().value }
+
+                val minSpacing = 8f
+
+                // 초기 center clamp
+                var adjustedXStart = xStart.coerceAtLeast(startWidth / 2f)
+                var adjustedXEnd = xEnd.coerceAtMost(xTotal - endWidth / 2f)
+
+                val endRightLimit = xTotal - endWidth / 2f
+                val startLeftLimit = startWidth / 2f
+
+                fun startRight() = adjustedXStart + startWidth / 2f
+                fun endLeft() = adjustedXEnd - endWidth / 2f
+
+                // 1. start → end 기본 충돌 처리
+                val gap1 = endLeft() - startRight()
+                if (gap1 < minSpacing) {
+                    val need = minSpacing - gap1
+                    val half = need / 2f
+
+                    adjustedXStart = (adjustedXStart - half).coerceAtLeast(startLeftLimit)
+                    adjustedXEnd = (adjustedXEnd + half).coerceAtMost(endRightLimit)
                 }
-                val endTextWidth = with(density) { 
-                    textMeasurer.measure(endTimeText, textStyle).size.width.toDp().value 
+
+                // 2. end 기준 total 경계로 충돌 방지
+                val endRight = adjustedXEnd + endWidth / 2f
+                if (endRight > endRightLimit) {
+                    adjustedXEnd = endRightLimit
                 }
-                
-                // 최소 간격 (텍스트 폭의 절반씩 + 여유 공간)
-                val minSpacing = (startTextWidth + endTextWidth) / 2f + 8f
-                val startEndDistance = kotlin.math.abs(xEnd - xStart)
-                
-                // 두 레이블이 겹치지 않도록 위치 조정
-                val adjustedXStart = if (startEndDistance < minSpacing && xStart < xEnd) {
-                    // start를 왼쪽으로, end를 오른쪽으로 밀어내기
-                    xStart - (minSpacing - startEndDistance) / 2f
-                } else {
-                    xStart
+
+                // 3. start ↔ end 재검증
+                val gap2 = endLeft() - startRight()
+                if (gap2 < minSpacing) {
+                    val need = minSpacing - gap2
+                    adjustedXEnd = (adjustedXEnd + need).coerceAtMost(endRightLimit)
                 }
-                
-                val adjustedXEnd = if (startEndDistance < minSpacing && xStart < xEnd) {
-                    xEnd + (minSpacing - startEndDistance) / 2f
-                } else {
-                    xEnd
+
+                // 4. end 기준으로 start가 밀려야 하는 케이스 처리
+                val gap3 = endLeft() - startRight()
+                if (gap3 < minSpacing) {
+                    val need = minSpacing - gap3
+                    adjustedXStart = (adjustedXStart - need).coerceAtLeast(startLeftLimit)
                 }
 
                 Box(Modifier.fillMaxWidth().height(20.dp)) {
-                    // 0 초
-                    TimeLabelCentered("0", x0, barWidthDp)
-
-                    // start
-                    TimeLabelCentered(startTimeText, adjustedXStart, barWidthDp)
-                    
-                    // start + during
-                    TimeLabelCentered(endTimeText, adjustedXEnd, barWidthDp)
-
-                    // total
-                    TimeLabelCentered(formatTime(total), xTotal, barWidthDp)
+                    TimeLabelCentered(tStart, adjustedXStart, barWidthDp)
+                    TimeLabelCentered(tEnd, adjustedXEnd, barWidthDp)
                 }
             }
         }
@@ -163,5 +168,17 @@ private fun formatTime(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return "%d:%02d".format(m, s)
+}
+
+@Preview
+@Composable
+fun MusicTimebarPreview() {
+    MusicTimeBarForDiaryDetail(
+        artist = "Beat It Up",
+        musicTitle = "NCT DREAM",
+        start = 102,
+        during = 12,
+        totalDuration = 150,
+    )
 }
 

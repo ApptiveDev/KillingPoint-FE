@@ -6,12 +6,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.killingpart.killingpoint.R
+import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.UnboundedFontFamily
 
 @Composable
@@ -32,9 +35,9 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
     Row (
         modifier = Modifier.fillMaxWidth()
             .background(color = Color.Black)
-            .height(94.dp)
-            .padding(horizontal = 42.dp,),
-        horizontalArrangement = Arrangement.spacedBy(38.dp),
+            .height(60.dp)
+            .padding(horizontal = 40.dp,),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
         Column (
@@ -45,13 +48,13 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(id = R.drawable.navi_home),
                 contentDescription = "MY 네비게이션 바",
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(36.dp)
             )
             Text(
                 text = "MY",
-                fontFamily = UnboundedFontFamily,
+                fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
+                fontSize = 10.sp,
                 color = Color.White
             )
         }
@@ -63,30 +66,13 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(id = R.drawable.navi_search),
                 contentDescription = "탐색 네비게이션 바",
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(36.dp).clickable {navController.navigate("search")}
             )
             Text(
                 text = "탐색",
-                fontFamily = UnboundedFontFamily,
+                fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
-                color = Color.White
-            )
-        }
-        Column (
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            Image(
-                painter = painterResource(id = R.drawable.navi_social),
-                contentDescription = "소셜 네비게이션 바",
-                modifier = Modifier.size(48.dp)
-            )
-            Text(
-                text = "소셜",
-                fontFamily = UnboundedFontFamily,
-                fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
+                fontSize = 10.sp,
                 color = Color.White
             )
         }
@@ -97,15 +83,34 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
             Image(
                 painter = painterResource(id = R.drawable.navi_add),
                 contentDescription = "추가 네비게이션 바",
-                modifier = Modifier.size(48.dp).clickable { navController.navigate("add_music") }
+                modifier = Modifier.size(36.dp).clickable { navController.navigate("add_music?tutorial=false") }
             )
             Text(
                 text = "추가",
-                fontFamily = UnboundedFontFamily,
+                fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
+                fontSize = 10.sp,
                 color = Color.White
             )
         }
+        Column (
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable { navController.navigate("social") }
+        ){
+            Image(
+                painter = painterResource(id = R.drawable.navi_social),
+                contentDescription = "소셜 네비게이션 바",
+                modifier = Modifier.size(36.dp)
+            )
+            Text(
+                text = "소셜",
+                fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Light,
+                fontSize = 10.sp,
+                color = Color.White
+            )
+        }
+
     }
 }

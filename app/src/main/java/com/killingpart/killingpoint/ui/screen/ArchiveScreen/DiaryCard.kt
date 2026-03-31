@@ -35,7 +35,10 @@ import androidx.compose.material3.Surface
 fun DiaryCard(
     diary: Diary,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
+    authorTag: String? = null,
+    showDate: Boolean = true,
+    onLikeClick: (() -> Unit)? = null
 ) {
     // 날짜에서 시간 부분 제거하고 포맷 변경 (예: "2025-10-29T23:52:08" -> "2025.10.29")
     val dateOnly = try {
@@ -51,52 +54,64 @@ fun DiaryCard(
     } else {
         Modifier
     }
-    
     Column(
         modifier = modifier
             .fillMaxWidth()
             .then(clickableModifier)
     ) {
-        // 상단 아이콘들 (좋아요 + 공개 범위)
+        // 상단: authorTag 있으면 @{tag}, 없으면 좋아요 + 공개 범위 아이콘
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp)
+                .padding(bottom = 4.dp)
                 .padding(horizontal = 3.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = if (authorTag != null) Arrangement.Start else Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 좋아요 수
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = "Likes",
-                    tint = Color(0xFFCCFF33),
-                    modifier = Modifier.size(23.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
+            if (authorTag != null) {
                 Text(
-                    text = "25", // TODO: 실제 좋아요 수로 교체
+                    text = "@$authorTag",
                     color = Color.White,
-                    fontSize = 15.sp,
+                    fontSize = 10.sp,
                     fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                // 좋아요 수
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onLikeClick?.invoke() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Favorite,
+                        contentDescription = "Likes",
+                        tint = Color(0xFFCCFF33),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = "${diary.likeCount}",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // 공개 범위 아이콘
+                Icon(
+                    imageVector = when (diary.scope) {
+                        Scope.PUBLIC -> Icons.Filled.Language
+                        Scope.PRIVATE -> Icons.Filled.Lock
+                        Scope.KILLING_PART -> Icons.Filled.MusicNote
+                    },
+                    contentDescription = "Scope",
+                    tint = Color.White,
+                    modifier = Modifier.size(15.dp)
                 )
             }
-            
-            // 공개 범위 아이콘
-            Icon(
-                imageVector = when (diary.scope) {
-                    Scope.PUBLIC -> Icons.Filled.Language
-                    Scope.PRIVATE -> Icons.Filled.Lock
-                    Scope.KILLING_PART -> Icons.Filled.MusicNote
-                },
-                contentDescription = "Scope",
-                tint = Color.White,
-                modifier = Modifier.size(23.dp)
-            )
         }
         
         Box(
@@ -123,6 +138,7 @@ fun DiaryCard(
                         Color.Black.copy(alpha = 0.3f)
                     )
             )
+
         }
         
         // 하단 텍스트 정보 (이미지 아래)
@@ -136,7 +152,7 @@ fun DiaryCard(
             Text(
                 text = diary.musicTitle,
                 color = Color.White,
-                fontSize = 16.sp,
+                fontSize = 12.sp,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -150,7 +166,7 @@ fun DiaryCard(
             Text(
                 text = diary.artist,
                 color = Color.White,
-                fontSize = 13.sp,
+                fontSize = 9.sp,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -158,17 +174,17 @@ fun DiaryCard(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(5.dp))
-            
-            // 날짜
-            Text(
-                text = dateOnly,
-                color = Color.White,
-                fontSize = 12.sp,
-                fontFamily = PaperlogyFontFamily,
-                fontWeight = FontWeight.Normal,
-                textAlign = TextAlign.Center
-            )
+            if (showDate) {
+                Spacer(modifier = Modifier.height(5.dp))
+                Text(
+                    text = dateOnly,
+                    color = Color.White,
+                    fontSize = 7.sp,
+                    fontFamily = PaperlogyFontFamily,
+                    fontWeight = FontWeight.Normal,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

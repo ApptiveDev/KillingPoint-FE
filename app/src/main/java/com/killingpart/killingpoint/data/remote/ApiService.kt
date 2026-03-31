@@ -11,6 +11,13 @@ import com.killingpart.killingpoint.data.model.UpdateTagRequest
 import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.TestAuthResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
+import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
+import com.killingpart.killingpoint.data.model.SubscribeResponse
+import com.killingpart.killingpoint.data.model.FeedResponse
+import com.killingpart.killingpoint.data.model.FeedDiary
+import com.killingpart.killingpoint.data.model.UserStatistics
+import com.killingpart.killingpoint.data.model.LikeResponse
+import com.killingpart.killingpoint.data.model.StoreResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -20,34 +27,57 @@ import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
+import com.killingpart.killingpoint.data.model.ReportDiaryRequest
+import com.killingpart.killingpoint.data.model.DiaryOrderRequest
+import com.killingpart.killingpoint.data.model.RandomDiariesResponse
+import com.killingpart.killingpoint.data.model.StoredDiariesResponse
+import com.killingpart.killingpoint.data.model.DiaryLikesResponse
+import com.killingpart.killingpoint.data.model.PolicyAgreementRequest
+import com.killingpart.killingpoint.data.model.UserInitSettingsResponse
 
 interface ApiService {
 
-    @GET("youtube")
+    @POST("youtube/search")
     suspend fun searchVideos(
-        @Header("Authorization") accessToken: String,
-        @Query("id") id: String,
-        @Query("artist") artist: String,
-        @Query("title") title: String
+        @Body body: YoutubeVideoRequest
     ): List<YouTubeVideo>
 
     @GET("oauth2/test")
     suspend fun loginWithTest() : TestAuthResponse
 
     @POST("oauth2/kakao")
-    suspend fun loginWithKakao(@Body body: KakaoAuthRequest): KakaoAuthResponse
+    suspend fun loginWithKakao(
+        @Body body: KakaoAuthRequest
+    ): KakaoAuthResponse
 
     @GET("users/my")
-    suspend fun getUserInfo(@Header("Authorization") accessToken: String): UserInfo
+    suspend fun getUserInfo(
+        @Header("Authorization") accessToken: String
+    ): UserInfo
+
+    @GET("users/init-settings")
+    suspend fun getUserInitSettings(
+        @Header("Authorization") accessToken: String,
+        @Query("clientType") clientType: String,
+        @Query("clientVersion") clientVersion: String
+    ): UserInitSettingsResponse
+
+    @POST("users/policy-agreement")
+    suspend fun agreePolicies(
+        @Header("Authorization") accessToken: String,
+        @Body body: PolicyAgreementRequest
+    ): retrofit2.Response<Unit>
 
     @POST("jwt/exchange")
-    suspend fun refreshAccessToken(@Header("X-Refresh-Token") refreshToken: String): KakaoAuthResponse
+    suspend fun refreshAccessToken(
+        @Header("X-Refresh-Token") refreshToken: String
+    ): KakaoAuthResponse
 
     @GET("diaries/my")
     suspend fun getMyDiaries(
         @Header("Authorization") accessToken: String,
         @Query("page") page: Int = 0,
-        @Query("size") size: Int = 10
+        @Query("size") size: Int
     ): MyDiaries
 
     @POST("diaries")
@@ -94,5 +124,108 @@ interface ApiService {
     @DELETE("users/my")
     suspend fun unregister(
         @Header("Authorization") accessToken: String
+    ): retrofit2.Response<Unit>
+
+    @GET("subscribes/{userId}")
+    suspend fun getSubscribes(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int
+    ): SubscribeResponse
+
+    @GET("subscribes/{userId}/fans")
+    suspend fun getFans(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int
+    ): SubscribeResponse
+
+    @POST("subscribes/{subscribeToUserId}")
+    suspend fun addSubscribe(
+        @Header("Authorization") accessToken: String,
+        @Path("subscribeToUserId") subscribeToUserId: Long
+    ): retrofit2.Response<Unit>
+
+    @DELETE("subscribes/{subscribeToUserId}")
+    suspend fun removeSubscribe(
+        @Header("Authorization") accessToken: String,
+        @Path("subscribeToUserId") subscribeToUserId: Long
+    ): retrofit2.Response<Unit>
+
+    @GET("users")
+    suspend fun searchUsers(
+        @Header("Authorization") accessToken: String,
+        @Query("searchCond") searchCond: String? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int
+    ): SubscribeResponse
+
+    @GET("diaries/user/{userId}")
+    suspend fun getUserDiaries(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int
+    ): MyDiaries
+
+    @GET("diaries/my/feeds")
+    suspend fun getFeeds(
+        @Header("Authorization") accessToken: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int
+    ): FeedResponse
+    @GET("users/{userId}/statics")
+    suspend fun getUserStatistics(
+        @Header("Authorization") accessToken: String,
+        @Path("userId") userId: Long
+    ): UserStatistics
+
+    @POST("diaries/{diaryId}/like")
+    suspend fun toggleLike(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long
+    ): LikeResponse
+
+    @GET("diaries/{diaryId}/like")
+    suspend fun getDiaryLikes(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int,
+        @Query("searchCond") searchCond: String? = null
+    ): DiaryLikesResponse
+
+    @POST("diaries/{diaryId}/stores")
+    suspend fun toggleStore(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long
+    ): StoreResponse
+
+    @POST("diaries/{diaryId}/reports")
+    suspend fun reportDiary(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long,
+        @Body body: ReportDiaryRequest
+    ): retrofit2.Response<Unit>
+
+    @GET("diaries/randoms")
+    suspend fun getRandomDiaries(
+        @Header("Authorization") accessToken: String
+    ): RandomDiariesResponse
+
+
+    @GET("diaries/stores")
+    suspend fun getStoredDiaries(
+        @Header("Authorization") accessToken: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): StoredDiariesResponse
+
+    @PATCH("diaries/order")
+    suspend fun reorderDiaries(
+        @Header("Authorization") accessToken: String,
+        @Body body: DiaryOrderRequest
     ): retrofit2.Response<Unit>
 }
