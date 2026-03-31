@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -57,7 +58,13 @@ fun OuterBox(
     diaries: List<Diary>,
     modifier: Modifier = Modifier,
     onProfileClick: () -> Unit = {},
-    navController: androidx.navigation.NavController? = null
+    navController: androidx.navigation.NavController? = null,
+    showProfileEditButton: Boolean = true,
+    showStoredTab: Boolean = true,
+    showDiaryTypeTabs: Boolean = true,
+    maxVisibleItems: Int? = null,
+    interactionsEnabled: Boolean = true,
+    diaryCardScale: Float = 1f
 ) {
     val context = LocalContext.current
     val userViewModel: UserViewModel = viewModel()
@@ -101,17 +108,19 @@ fun OuterBox(
                     isLoadingStatistics = false
                 }
         }
-        isLoadingStored = true
-        repo.getStoredDiariesPage(page = 0, size = 20)
-            .onSuccess { response ->
-                storedDiaries = response.content
-                totalStoredPages = response.page.totalPages
-                currentStoredPage = 0
-            }
-            .onFailure { e ->
-                android.util.Log.e("OuterBox", "보관 일기 조회 실패: ${e.message}")
-            }
-        isLoadingStored = false
+        if (showStoredTab) {
+            isLoadingStored = true
+            repo.getStoredDiariesPage(page = 0, size = 20)
+                .onSuccess { response ->
+                    storedDiaries = response.content
+                    totalStoredPages = response.page.totalPages
+                    currentStoredPage = 0
+                }
+                .onFailure { e ->
+                    android.util.Log.e("OuterBox", "보관 일기 조회 실패: ${e.message}")
+                }
+            isLoadingStored = false
+        }
     }
 
     val chunkedRowsForLoadMore = if (selectedTabIndex == 0) 0 else storedDiaries.chunked(2).size
@@ -280,7 +289,8 @@ fun OuterBox(
                     Spacer(modifier = Modifier.width(10.dp))
                     // 팬덤
                     Column(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickable(enabled = interactionsEnabled) {
+                            if (!interactionsEnabled) return@clickable
                             val uid = currentUserId
                             val userTag = (userState as? UserUiState.Success)?.userInfo?.tag ?: ""
                             if (navController != null && uid != null && userTag.isNotEmpty()) {
@@ -312,7 +322,8 @@ fun OuterBox(
                     Spacer(modifier = Modifier.width(12.dp))
                     // PICKS
                     Column(
-                        modifier = Modifier.clickable {
+                        modifier = Modifier.clickable(enabled = interactionsEnabled) {
+                            if (!interactionsEnabled) return@clickable
                             val uid = currentUserId
                             val userTag = (userState as? UserUiState.Success)?.userInfo?.tag ?: ""
                             if (navController != null && uid != null && userTag.isNotEmpty()) {
@@ -345,79 +356,87 @@ fun OuterBox(
 
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = {
-                        android.util.Log.d("OuterBox", "프로필 편집 버튼 클릭")
-                        onProfileClick()
-                        android.util.Log.d("OuterBox", "onProfileClick 호출 완료")
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(32.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF262626)
-                    ),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+            if (showProfileEditButton) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "프로필 편집",
-                        tint = mainGreen,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "프로필 편집",
-                        color = mainGreen,
-                        fontFamily = PaperlogyFontFamily,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.W400
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(0.dp)
-            ) {
-                listOf("내 킬링파트", "보관한 킬링파트").forEachIndexed { index, label ->
-                    val selected = selectedTabIndex == index
-                    Column(
+                    Button(
+                        onClick = {
+                            android.util.Log.d("OuterBox", "프로필 편집 버튼 클릭")
+                            onProfileClick()
+                            android.util.Log.d("OuterBox", "onProfileClick 호출 완료")
+                        },
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .clickable { selectedTabIndex = index },
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .fillMaxWidth(0.8f)
+                            .height(32.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF262626)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                     ) {
-                        Text(
-                            text = label,
-                            fontFamily = PaperlogyFontFamily,
-                            fontWeight = FontWeight.W400,
-                            fontSize = 12.sp,
-                            color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "프로필 편집",
+                            tint = mainGreen,
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(
-                                    color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
-                                )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "프로필 편집",
+                            color = mainGreen,
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.W400
                         )
                     }
                 }
+                Spacer(modifier = Modifier.height(20.dp))
             }
-            Spacer(modifier = Modifier.height(16.dp))
+
+            if (showDiaryTypeTabs) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    val tabs = if (showStoredTab) {
+                        listOf("내 킬링파트", "보관한 킬링파트")
+                    } else {
+                        listOf("내 킬링파트")
+                    }
+                    tabs.forEachIndexed { index, label ->
+                        val selected = selectedTabIndex == index
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .clickable { selectedTabIndex = index },
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = label,
+                                fontFamily = PaperlogyFontFamily,
+                                fontWeight = FontWeight.W400,
+                                fontSize = 12.sp,
+                                color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.dp)
+                                    .background(
+                                        color = if (selected) Color(0xFFE7E7E7) else Color(0xFF5F5C5C),
+                                    )
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(if (showDiaryTypeTabs) 16.dp else 6.dp))
 
             // 다이어리 그리드 (2x2)
             val configuration = LocalConfiguration.current
@@ -430,11 +449,12 @@ fun OuterBox(
 
             // (Diary, authorTag?, authorUsername?)
             // 보관 탭: originalAuthorTag만 내려오므로 authorTag에만 매핑
-            val displayList: List<Triple<Diary, String?, String?>> = if (selectedTabIndex == 0) {
+            val rawDisplayList: List<Triple<Diary, String?, String?>> = if (selectedTabIndex == 0) {
                 diaries.map { Triple(it, null, null) }
             } else {
                 storedDiaries.map { Triple(it.toDiary, it.originalAuthorTag, null) }
             }
+            val displayList = maxVisibleItems?.let { rawDisplayList.take(it) } ?: rawDisplayList
             val chunkedDiaries = displayList.chunked(2)
             Box(
                 modifier = Modifier
@@ -477,8 +497,14 @@ fun OuterBox(
                                         diary = diary,
                                         authorTag = authorTag,
                                         showDate = selectedTabIndex == 0,
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .graphicsLayer {
+                                                scaleX = diaryCardScale
+                                                scaleY = diaryCardScale
+                                            },
                                         onClick = {
+                                            if (!interactionsEnabled) return@DiaryCard
                                             navController?.let { nav ->
                                                 val diaryIdParam =
                                                     diary.id?.let { "&diaryId=$it" } ?: ""
@@ -518,6 +544,7 @@ fun OuterBox(
                                             }
                                         },
                                         onLikeClick = {
+                                            if (!interactionsEnabled) return@DiaryCard
                                             diary.id?.let { id ->
                                                 likesDiaryId = id
                                             }

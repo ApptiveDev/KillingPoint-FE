@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.TextUnit
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 
 @Composable
@@ -38,7 +39,8 @@ fun TopPillTabs(
     indicatorColor: Color = Color(0xFFEEEFF3),
     selectedTextColor: Color = Color.Black,
     unselectedTextColor: Color = Color(0xFF7B7B7B),
-    cornerRadius: Dp = 40.dp
+    cornerRadius: Dp = 40.dp,
+    textSize: TextUnit = 12.sp
 ) {
     require(options.isNotEmpty())
 
@@ -100,7 +102,7 @@ fun TopPillTabs(
                         color = if (isSelected) selectedTextColor else unselectedTextColor,
                         fontFamily = PaperlogyFontFamily,
                         fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp
+                        fontSize = textSize
                     )
                 }
             }

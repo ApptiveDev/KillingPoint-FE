@@ -19,8 +19,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // 필요할 때만 true 로 바꾸면 디버그 메뉴가 보입니다.
+            buildConfigField("Boolean", "SHOW_DEV_MENU", "false")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("Boolean", "SHOW_DEV_MENU", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

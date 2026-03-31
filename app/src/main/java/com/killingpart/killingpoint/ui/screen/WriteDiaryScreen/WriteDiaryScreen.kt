@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -96,7 +98,7 @@ fun WriteDiaryScreen(
                 .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(if (tutorialMode) 24.dp else 60.dp))
+            Spacer(modifier = Modifier.height(if (tutorialMode) 30.dp else 60.dp))
 
             // Top bar
             Box(
@@ -115,13 +117,15 @@ fun WriteDiaryScreen(
                         tint = Color.White
                     )
                 }
-                Text(
-                    text = "Killing Part",
-                    fontSize = 33.sp,
-                    fontFamily = eng_font_extrabold,
-                    color = Color(0xFF1D1E20),
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                if (!tutorialMode) {
+                    Text(
+                        text = "Killing Part",
+                        fontSize = 33.sp,
+                        fontFamily = eng_font_extrabold,
+                        color = Color(0xFF1D1E20),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
                 if (tutorialMode) {
                     TextButton(
                         onClick = { navController.navigateToMainClearingStack() },
@@ -131,21 +135,28 @@ fun WriteDiaryScreen(
                             "건너뛰기",
                             color = Color.White,
                             fontFamily = PaperlogyFontFamily,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            textDecoration = TextDecoration.Underline
                         )
                     }
                 }
             }
 
             if (tutorialMode) {
+                Spacer(modifier = Modifier.height(60.dp))
                 Text(
-                    text = "선택한 구간에서 느낀 감정과 생각을 적어보세요.",
+                    text = "선택한 구간에서 느낀\n감정과 생각을 적어보세요.",
                     color = Color.White,
                     fontFamily = PaperlogyFontFamily,
-                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
                     lineHeight = 22.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
                 )
+                Spacer(modifier = Modifier.height(18.dp))
             }
 
             val tempDiary = Diary(

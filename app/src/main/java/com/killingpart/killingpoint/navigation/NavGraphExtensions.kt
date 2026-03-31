@@ -7,6 +7,7 @@ import androidx.navigation.NavController
  * [MainActivity]의 초기 네비게이션과 동일하게 graph id 0 기준으로 pop 한다.
  */
 fun NavController.navigateToMainClearingStack() {
+    OnboardingProgressStore.clearTutorialInProgress(context)
     navigate("main") {
         popUpTo(0) { inclusive = true }
     }

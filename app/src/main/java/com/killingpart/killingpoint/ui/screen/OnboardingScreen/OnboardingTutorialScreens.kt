@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,7 +29,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,11 +41,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import com.killingpart.killingpoint.data.model.Diary
+import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.navigation.navigateToMainClearingStack
+import com.killingpart.killingpoint.ui.screen.ArchiveScreen.OuterBox
+import com.killingpart.killingpoint.ui.screen.MainScreen.TopPillTabs
+import com.killingpart.killingpoint.ui.screen.MusicCalendarScreen.MusicCalendarScreen
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import java.time.LocalDate
 
 private val CtaGreen = Color(0xFFC4F236)
 private val CardBg = Color(0xFF232427)
@@ -122,77 +135,101 @@ fun OnboardingKpIntroScreen(navController: NavController) {
     }
 }
 
-/**
- * 홈 탭(내 컬렉션 / 뮤직 캘린더) 프리뷰 — 데모 UI, 실제 등록 데이터는 추후 연동 가능.
- */
 @Composable
 fun OnboardingHomePreviewScreen(navController: NavController) {
+    val context = LocalContext.current
+    val repo = remember { AuthRepository(context) }
     var tab by remember { mutableIntStateOf(0) }
+    var diaries by remember { mutableStateOf<List<Diary>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        diaries = repo.getMyDiaries(size = 30).content
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 8.dp, vertical = 8.dp)
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.align(Alignment.CenterStart)
+            ) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,
                     contentDescription = "back",
                     tint = Color.White
                 )
             }
-            Text(
-                text = "추가한 킬링파트는 여기서 다시 볼 수 있어요.",
-                color = Color.White,
-                fontFamily = PaperlogyFontFamily,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f),
-                lineHeight = 20.sp
-            )
-            TextButton(onClick = { navController.navigateToMainClearingStack() }) {
-                Text("건너뛰기", color = Color.White, fontFamily = PaperlogyFontFamily)
+            TextButton(
+                onClick = { navController.navigateToMainClearingStack() },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                Text(
+                    "건너뛰기",
+                    color = Color.White,
+                    fontFamily = PaperlogyFontFamily,
+                    textDecoration = TextDecoration.Underline
+                )
             }
         }
-        Row(
+        Spacer(modifier = Modifier.height(14.dp))
+        Text(
+            text = "추가한 킬링파트는\n여기서 다시 볼 수 있어요.",
+            color = Color.White,
+            fontFamily = PaperlogyFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 24.sp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            listOf("내 컬렉션", "뮤직 캘린더").forEachIndexed { index, label ->
-                val selected = tab == index
-                Text(
-                    text = label,
-                    color = if (selected) Color.Black else Color.White,
-                    fontFamily = PaperlogyFontFamily,
-                    fontSize = 13.sp,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (selected) Color.White else Color(0xFF2A2B2E))
-                        .clickable { tab = index }
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
-                )
-                if (index == 0) Spacer(modifier = Modifier.width(8.dp))
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
+            lineHeight = 34.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(52.dp))
+
+        TopPillTabs(
+            options = listOf("내 컬렉션", "뮤직 캘린더"),
+            selectedIndex = tab,
+            onSelected = { tab = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+            height = 56.dp,
+            textSize = 16.sp
+        )
+        Spacer(modifier = Modifier.height(28.dp))
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-                .verticalScroll(rememberScrollState())
         ) {
             if (tab == 0) {
-                OnboardingCollectionDemoContent()
+                OuterBox(
+                    diaries = diaries,
+                    navController = navController,
+                    onProfileClick = { },
+                    showProfileEditButton = false,
+                    showStoredTab = false,
+                    showDiaryTypeTabs = false,
+                    interactionsEnabled = false,
+                    diaryCardScale = 0.86f,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .fillMaxHeight()
+                )
             } else {
-                OnboardingCalendarDemoContent()
+                MusicCalendarScreen(
+                    diaries = diaries,
+                    navController = navController,
+                    initialSelectedDate = LocalDate.now().toString()
+                )
             }
         }
         Button(
@@ -209,73 +246,6 @@ fun OnboardingHomePreviewScreen(navController: NavController) {
         ) {
             Text("다음으로 →", fontFamily = PaperlogyFontFamily, fontWeight = FontWeight.Bold)
         }
-    }
-}
-
-@Composable
-private fun OnboardingCollectionDemoContent() {
-    Column {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(CardBg)
-            )
-            Spacer(modifier = Modifier.size(12.dp))
-            Column {
-                Text("홍길동", color = Color.White, fontFamily = PaperlogyFontFamily, fontSize = 15.sp)
-                Text("@KILLERPART", color = CtaGreen, fontFamily = PaperlogyFontFamily, fontSize = 12.sp)
-            }
-        }
-        Text(
-            "0 명곡   0 PICKS   1 킬링파트",
-            color = CtaGreen,
-            fontFamily = PaperlogyFontFamily,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(CardBg)
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text("Title", color = Color.White, fontFamily = PaperlogyFontFamily)
-        Text("Artist Name", color = Color(0xFF9A9B9E), fontFamily = PaperlogyFontFamily, fontSize = 13.sp)
-        Text("1999.12.12", color = Color(0xFF6A6B6C), fontFamily = PaperlogyFontFamily, fontSize = 12.sp)
-    }
-}
-
-@Composable
-private fun OnboardingCalendarDemoContent() {
-    Column {
-        Text(
-            "2026년 3월",
-            color = Color.White,
-            fontFamily = PaperlogyFontFamily,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-        Text(
-            "일 월 화 수 목 금 토",
-            color = Color(0xFF9A9B9E),
-            fontFamily = PaperlogyFontFamily,
-            fontSize = 11.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            "29일에 등록한 킬링파트가 여기 표시됩니다 (데모).",
-            color = Color(0xFF9A9B9E),
-            fontFamily = PaperlogyFontFamily,
-            fontSize = 13.sp,
-            lineHeight = 20.sp
-        )
     }
 }
 
@@ -305,7 +275,12 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.weight(1f))
             TextButton(onClick = { navController.navigateToMainClearingStack() }) {
-                Text("건너뛰기", color = Color.White, fontFamily = PaperlogyFontFamily)
+                Text(
+                    "건너뛰기",
+                    color = Color.White,
+                    fontFamily = PaperlogyFontFamily,
+                    textDecoration = TextDecoration.Underline
+                )
             }
         }
         Column(
@@ -320,8 +295,8 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
                 text = "피드에서 친구의 킬링파트를,\n탐색에서 다양한 킬링파트를 감상해보세요",
                 color = Color.White,
                 fontFamily = PaperlogyFontFamily,
-                fontSize = 15.sp,
-                lineHeight = 22.sp,
+                fontSize = 22.sp,
+                lineHeight = 40.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 20.dp)
             )

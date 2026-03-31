@@ -16,22 +16,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.kakao.sdk.common.KakaoSdk
+import com.killingpart.killingpoint.BuildConfig
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.navigation.NavGraph
+import com.killingpart.killingpoint.navigation.OnboardingProgressStore
 import com.killingpart.killingpoint.ui.component.VideoSplashScreen
 import com.killingpart.killingpoint.ui.viewmodel.LoginViewModel
 import com.killingpart.killingpoint.ui.viewmodel.LoginUiState
-import com.killingpart.killingpoint.BuildConfig
 
 class MainActivity : ComponentActivity() {
 
@@ -89,14 +90,14 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(loginState, context) {
                 when (val s = loginState) {
                     is LoginUiState.AutoLoginSuccess -> {
-                        val isNew = s.isNew
                         val repo = AuthRepository(context)
                         val start = repo.getUserInitSettings()
                             .getOrNull()
                             ?.let { init ->
                                 when {
                                     init.needsPolicyAgreement -> "onboarding_policy"
-                                    init.needsTagSetup || isNew -> "onboarding_name"
+                                    init.needsTagSetup -> "onboarding_name"
+                                    OnboardingProgressStore.isTutorialInProgress(context) -> "onboarding_kp_intro"
                                     else -> "main"
                                 }
                             } ?: "home"
@@ -154,7 +155,7 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 startDestination = startDestination
                             )
-                            if (BuildConfig.DEBUG) {
+                            if (BuildConfig.DEBUG && BuildConfig.SHOW_DEV_MENU) {
                                 Column(
                                     modifier = Modifier
                                         .align(Alignment.TopEnd)
@@ -164,29 +165,22 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     TextButton(
                                         onClick = { navController.navigate("onboarding_policy") }
-                                    ) {
-                                        Text("약관 화면")
-                                    }
+                                    ) { Text("약관 화면") }
                                     TextButton(
                                         onClick = { navController.navigate("onboarding_name") }
-                                    ) {
-                                        Text("이름·태그")
-                                    }
+                                    ) { Text("이름·태그") }
                                     TextButton(
                                         onClick = { navController.navigate("onboarding_kp_intro") }
-                                    ) {
-                                        Text("튜토리얼 시작")
-                                    }
+                                    ) { Text("튜토리얼 시작") }
                                     TextButton(
                                         onClick = { navController.navigate("add_music?tutorial=true") }
-                                    ) {
-                                        Text("곡 검색 튜토리얼")
-                                    }
+                                    ) { Text("곡 검색 튜토리얼") }
                                     TextButton(
                                         onClick = { navController.navigate("onboarding_home_preview") }
-                                    ) {
-                                        Text("홈 프리뷰 튜토리얼")
-                                    }
+                                    ) { Text("홈 프리뷰 튜토리얼") }
+                                    TextButton(
+                                        onClick = { navController.navigate("onboarding_finish") }
+                                    ) { Text("마지막 화면") }
                                 }
                             }
                         }

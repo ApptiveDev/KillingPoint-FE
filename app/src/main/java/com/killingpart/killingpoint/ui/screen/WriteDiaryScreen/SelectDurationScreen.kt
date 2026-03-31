@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
@@ -54,6 +55,7 @@ import com.killingpart.killingpoint.data.model.Scope
 import com.killingpart.killingpoint.ui.component.BottomBar
 import com.killingpart.killingpoint.navigation.navigateToMainClearingStack
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.graphicsLayer
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import java.time.LocalDate
@@ -131,6 +133,7 @@ fun SelectDurationScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
+    val tutorialTouchInteraction = remember { MutableInteractionSource() }
 
     LaunchedEffect(title, artist) {
         if (videoUrl.isEmpty()) {
@@ -157,6 +160,24 @@ fun SelectDurationScreen(
 
 
     val scrollState = rememberScrollState()
+    val navigateNext: () -> Unit = {
+        val encodedVideoUrl = Uri.encode(currentVideoUrl ?: "")
+        val tutorialArg = if (tutorialMode) "true" else "false"
+
+        navController.navigate(
+            "write_diary" +
+                    "?title=${Uri.encode(title)}" +
+                    "&artist=${Uri.encode(artist)}" +
+                    "&image=${Uri.encode(imageUrl)}" +
+                    "&duration=${duration.toInt()}" +
+                    "&start=${start.toInt()}" +
+                    "&end=${end.toInt()}" +
+                    "&videoUrl=$encodedVideoUrl" +
+                    "&totalDuration=${currentTotalDuration}" +
+                    "&tutorial=$tutorialArg"
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -190,20 +211,15 @@ fun SelectDurationScreen(
                         tint = Color.White
                     )
                 }
-                Text(
-                    text = if (tutorialMode) {
-                        "킬링파트로 사용할 구간을 정해보세요!"
-                    } else {
-                        "Killing Part"
-                    },
-                    fontSize = if (tutorialMode) 14.sp else 33.sp,
-                    fontFamily = if (tutorialMode) PaperlogyFontFamily else eng_font_extrabold,
-                    color = if (tutorialMode) Color.White else Color(0xFF1D1E20),
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(horizontal = 48.dp),
-                    maxLines = 2
-                )
+                if (!tutorialMode) {
+                    Text(
+                        text = "Killing Part",
+                        fontSize = 33.sp,
+                        fontFamily = eng_font_extrabold,
+                        color = Color(0xFF1D1E20),
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
                 if (tutorialMode) {
                     TextButton(
                         onClick = { navController.navigateToMainClearingStack() },
@@ -213,23 +229,56 @@ fun SelectDurationScreen(
                             "건너뛰기",
                             color = Color.White,
                             fontFamily = PaperlogyFontFamily,
-                            fontSize = 14.sp
+                            fontSize = 14.sp,
+                            textDecoration = TextDecoration.Underline
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (tutorialMode) {
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "킬링파트로 사용할 구간을 정해보세요!",
+                    fontSize = 21.sp,
+                    fontFamily = korean_font_medium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp),
+                    maxLines = 2
+                )
+            }
+
+            Spacer(modifier = Modifier.height(if (tutorialMode) 18.dp else 24.dp))
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .then(
+                        if (tutorialMode) {
+                            Modifier.clickable(
+                                interactionSource = tutorialTouchInteraction,
+                                indication = null,
+                                onClick = navigateNext
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
                     .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                val dimmedModifier = if (tutorialMode) {
+                    Modifier.graphicsLayer { alpha = 0.38f }
+                } else {
+                    Modifier
+                }
                 if (isLoadingVideo || currentVideoUrl == null) {
                     Box(
                         modifier = Modifier
+                            .then(dimmedModifier)
                             .size(250.dp, 150.dp)
                             .background(Color(0xFF1A1A1A), RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
@@ -256,7 +305,9 @@ fun SelectDurationScreen(
                         updateDate = ""
                     )
                     Box(
-                        modifier = Modifier.size(250.dp, 150.dp)
+                        modifier = Modifier
+                            .then(dimmedModifier)
+                            .size(250.dp, 150.dp)
                     ) {
 
                         YouTubePlayerBox(tempDiary, startSeconds, durationSeconds, shouldLoop = true)
@@ -264,15 +315,17 @@ fun SelectDurationScreen(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
 
-                AlbumDiaryBoxWithoutContent(
-                    track = SimpleTrack(
-                        id = "",
-                        title = title,
-                        artist = artist,
-                        albumImageUrl = imageUrl,
-                        albumId = ""
+                Box(modifier = dimmedModifier) {
+                    AlbumDiaryBoxWithoutContent(
+                        track = SimpleTrack(
+                            id = "",
+                            title = title,
+                            artist = artist,
+                            albumImageUrl = imageUrl,
+                            albumId = ""
+                        )
                     )
-                )
+                }
 
                 Spacer(modifier = Modifier.height(18.dp))
 
@@ -394,7 +447,7 @@ fun SelectDurationScreen(
                         }
                     }
 
-                    Spacer(Modifier.height(38.dp))
+                    Spacer(Modifier.height(if (tutorialMode) 20.dp else 38.dp))
                 }
 
                 Spacer(modifier = Modifier.height(80.dp))
@@ -403,24 +456,7 @@ fun SelectDurationScreen(
 
 
         Button(
-            onClick = {
-
-                val encodedVideoUrl = Uri.encode(currentVideoUrl ?: "")
-                val tutorialArg = if (tutorialMode) "true" else "false"
-
-                navController.navigate(
-                    "write_diary" +
-                            "?title=${Uri.encode(title)}" +
-                            "&artist=${Uri.encode(artist)}" +
-                            "&image=${Uri.encode(imageUrl)}" +
-                            "&duration=${duration.toInt()}" +
-                            "&start=${start.toInt()}" +
-                            "&end=${end.toInt()}" +
-                            "&videoUrl=$encodedVideoUrl" +
-                            "&totalDuration=${currentTotalDuration}" +
-                            "&tutorial=$tutorialArg"
-                )
-            },
+            onClick = navigateNext,
             modifier = Modifier
                 .fillMaxWidth(0.8f)
                 .align(Alignment.CenterHorizontally),

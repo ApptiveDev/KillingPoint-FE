@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.killingpart.killingpoint.data.repository.AuthRepository
+import com.killingpart.killingpoint.navigation.OnboardingProgressStore
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -174,6 +175,7 @@ fun OnboardingTagScreen(
                             repo.updateTag(tag)
                                 .onSuccess {
                                     if (continueTutorial) {
+                                        OnboardingProgressStore.markTutorialInProgress(context)
                                         navController.navigate("onboarding_kp_intro") {
                                             popUpTo("onboarding_name") { inclusive = true }
                                         }

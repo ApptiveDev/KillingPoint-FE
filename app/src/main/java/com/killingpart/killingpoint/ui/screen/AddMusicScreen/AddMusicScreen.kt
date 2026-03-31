@@ -40,6 +40,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
 import androidx.compose.ui.platform.LocalContext
 import com.killingpart.killingpoint.ui.viewmodel.SpotifyViewModel
@@ -143,7 +144,8 @@ fun AddMusicScreen(
                                 "건너뛰기",
                                 color = Color.White,
                                 fontFamily = PaperlogyFontFamily,
-                                fontSize = 15.sp
+                                fontSize = 15.sp,
+                                textDecoration = TextDecoration.Underline
                             )
                         }
                     }
