@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -291,7 +292,8 @@ fun WriteDiaryScreen(
             }
         }
         Spacer(modifier = Modifier.height(20.dp))
-        // 저장 버튼 (중앙정렬)
+        // 저장 버튼 (중앙정렬) — 본문이 비어 있으면 비활성 + alpha 0.4
+        val canSubmit = content.isNotBlank()
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
@@ -327,10 +329,12 @@ fun WriteDiaryScreen(
                         }
                     }
                 },
-                enabled = !tutorialMode || content.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(0.8f),
+                enabled = canSubmit,
+                modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .alpha(if (canSubmit) 1f else 0.4f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (tutorialMode && content.isBlank()) Color(0xFF3D4A2E) else Color(0xFFCCFF33),
+                    containerColor = if (tutorialMode && !canSubmit) Color(0xFF3D4A2E) else Color(0xFFCCFF33),
                     contentColor = Color.Black,
                     disabledContainerColor = Color(0xFF3D4A2E),
                     disabledContentColor = Color(0xFF5C5C5C)

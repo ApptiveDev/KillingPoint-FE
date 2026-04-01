@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.*
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,33 +130,41 @@ fun SelectDurationScreen(
     var currentTotalDuration by remember { mutableStateOf(if (totalDuration > 0) totalDuration else 10) }
     var candidateVideos by remember { mutableStateOf<List<YouTubeVideo>>(emptyList()) }
     var isLoadingVideo by remember { mutableStateOf(false) }
-    var isCandidateExpanded by remember { mutableStateOf(true) }
+    var isCandidateExpanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val repo = remember { AuthRepository(context) }
     val tutorialTouchInteraction = remember { MutableInteractionSource() }
 
-    LaunchedEffect(title, artist) {
-        if (videoUrl.isEmpty()) {
-            isLoadingVideo = true
-            try {
-                val videos = repo.searchVideos(title, artist)
-                videos.forEachIndexed { index, video ->
-                    android.util.Log.d("SelectDurationScreen", "  비디오[$index]: url=${video.id}")
-                }
-                candidateVideos = videos
+    // Add Music에서 이미 videoUrl이 넘어온 경우에도 후보 목록은 검색 API로 채워야 "다른 영상 검색 결과"가 보임
+    LaunchedEffect(title, artist, videoUrl) {
+        isLoadingVideo = true
+        try {
+            val videos = repo.searchVideos(title, artist)
+            videos.forEachIndexed { index, video ->
+                android.util.Log.d("SelectDurationScreen", "  비디오[$index]: id=${video.id}")
+            }
+            candidateVideos = videos
+            if (videoUrl.isEmpty()) {
                 val firstVideo = videos.firstOrNull()
-                val newVideoId = firstVideo?.id
-                currentVideoUrl = newVideoId
+                currentVideoUrl = firstVideo?.id
                 currentTotalDuration = firstVideo?.duration ?: 10
                 isCandidateExpanded = false
-            } catch (e: Exception) {
-                candidateVideos = emptyList()
+            } else {
+                currentVideoUrl = videoUrl
+                val matched = videos.find { it.id == videoUrl }
+                currentTotalDuration = matched?.duration ?: if (totalDuration > 0) totalDuration else 10
+                isCandidateExpanded = false
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SelectDurationScreen", "searchVideos 실패: ${e.message}")
+            candidateVideos = emptyList()
+            if (videoUrl.isEmpty()) {
                 currentVideoUrl = null
                 currentTotalDuration = 10
             }
-            isLoadingVideo = false
         }
+        isLoadingVideo = false
     }
 
 
@@ -342,15 +351,18 @@ fun SelectDurationScreen(
                     )
                     Spacer(Modifier.height(3.dp))
 
-                    KillingPartSelector(
-
-                        currentTotalDuration, onStartChange = { s,e,d ->
-                            start = s
-                            end = e
-                            duration =d
-                        }
-
-                    )
+                    key(currentVideoUrl) {
+                        KillingPartSelector(
+                            totalDuration = currentTotalDuration,
+                            initialStartSec = start,
+                            initialDurationSec = duration,
+                            onStartChange = { s, e, d ->
+                                start = s
+                                end = e
+                                duration = d
+                            }
+                        )
+                    }
                     Spacer(Modifier.height(24.dp))
 
                     if (candidateVideos.isNotEmpty()) {
@@ -393,11 +405,21 @@ fun SelectDurationScreen(
                                         modifier = Modifier
                                             .width(146.dp)
                                             .clickable {
+                                                val newTotal = video.duration
                                                 currentVideoUrl = video.id
-                                                currentTotalDuration = video.duration
-                                                start = 0f
-                                                duration = 10f.coerceAtMost(video.duration.toFloat())
-                                                end = (start + duration).coerceAtMost(video.duration.toFloat())
+                                                currentTotalDuration = newTotal
+                                                val tf = newTotal.toFloat()
+                                                val minDur = 10f
+                                                val maxDur = minOf(30f, tf)
+                                                val maxStart = (tf - minDur).coerceAtLeast(0f)
+                                                val newStart = start.coerceIn(0f, maxStart)
+                                                val newDuration = duration.coerceIn(
+                                                    minDur,
+                                                    minOf(maxDur, tf - newStart)
+                                                )
+                                                start = newStart
+                                                duration = newDuration
+                                                end = (newStart + newDuration).coerceAtMost(tf)
                                             }
                                     ) {
                                         AsyncImage(

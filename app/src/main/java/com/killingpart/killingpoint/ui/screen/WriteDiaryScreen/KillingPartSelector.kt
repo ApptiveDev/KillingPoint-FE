@@ -59,6 +59,9 @@ fun formatTime(seconds: Float): String {
 @Composable
 fun KillingPartSelector(
     totalDuration: Int,
+    /** 첫 레이아웃 시 선택 구간 (다른 영상으로 바꿀 때 부모에서 넘김) */
+    initialStartSec: Float = 0f,
+    initialDurationSec: Float = 10f,
     onStartChange: (start: Float, end: Float, duration: Float) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -87,6 +90,9 @@ fun KillingPartSelector(
     var leftHandleX by remember { mutableStateOf(0f) }
     var rightHandleX by remember { mutableStateOf(0f) }
     var handlesInitialized by remember { mutableStateOf(false) }
+    var lastCommittedStart by remember { mutableStateOf(Float.NaN) }
+    var lastCommittedEnd by remember { mutableStateOf(Float.NaN) }
+    var lastCommittedDuration by remember { mutableStateOf(Float.NaN) }
 
     LaunchedEffect(parentWidthPx) {
         if (parentWidthPx > 0f && !handlesInitialized) {
@@ -95,12 +101,30 @@ fun KillingPartSelector(
             val maxAllowedPxPerSecond = parentWidthPx / maxDurationSecForScaling
 
             pxPerSecond = maxAllowedPxPerSecond
-            val initialDurationSec = minDurationSec.coerceAtMost(maxDurationSec)
-            val durationPx = initialDurationSec * pxPerSecond
+            val initDur = initialDurationSec.coerceIn(minDurationSec, maxDurationSec)
+            val durationPx = initDur * pxPerSecond
             val center = parentWidthPx / 2f
 
             leftHandleX = center - durationPx / 2f
             rightHandleX = center + durationPx / 2f
+
+            val maxStart = (totalDuration.toFloat() - initDur).coerceAtLeast(0f)
+            val targetStart = initialStartSec.coerceIn(0f, maxStart)
+            val targetScrollPx = (targetStart * pxPerSecond - leftHandleX).coerceAtLeast(0f)
+            kotlinx.coroutines.delay(48)
+            val maxScroll = scrollState.maxValue.coerceAtLeast(0)
+            scrollState.scrollTo(
+                targetScrollPx.roundToInt().coerceIn(0, maxScroll)
+            )
+
+            val sx = scrollState.value.toFloat()
+            val s = ((sx + leftHandleX) / pxPerSecond).coerceIn(0f, totalDuration.toFloat())
+            val e = ((sx + rightHandleX) / pxPerSecond).coerceIn(0f, totalDuration.toFloat())
+            val d = (e - s).coerceAtLeast(0f)
+            onStartChange(s, e, d)
+            lastCommittedStart = s
+            lastCommittedEnd = e
+            lastCommittedDuration = d
 
             handlesInitialized = true
         }
@@ -115,9 +139,6 @@ fun KillingPartSelector(
     val durationSec = (endTime - startTime).coerceAtLeast(0f)
     var miniMapWidthPx by remember { mutableStateOf(0f) }
     var wasScrolling by remember { mutableStateOf(false) }
-    var lastCommittedStart by remember { mutableStateOf(Float.NaN) }
-    var lastCommittedEnd by remember { mutableStateOf(Float.NaN) }
-    var lastCommittedDuration by remember { mutableStateOf(Float.NaN) }
 
     fun commitSelectionIfNeeded() {
         val changed =
