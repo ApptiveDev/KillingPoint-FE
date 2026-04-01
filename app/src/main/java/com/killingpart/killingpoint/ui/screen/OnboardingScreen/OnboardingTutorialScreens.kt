@@ -1,5 +1,6 @@
 package com.killingpart.killingpoint.ui.screen.OnboardingScreen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,10 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,9 +50,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
+import com.killingpart.killingpoint.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.navigation.navigateToMainClearingStack
@@ -250,11 +256,12 @@ fun OnboardingHomePreviewScreen(navController: NavController) {
 }
 
 /**
- * 피드/탐색 소개 — 카드 내부는 터치해도 동작하지 않음 (다음·건너뛰기만).
+ * 피드/탐색 데모 — 시안과 동일한 정적 UI. 하단 [다음으로]만 동작.
  */
 @Composable
 fun OnboardingFeedDemoScreen(navController: NavController) {
     val blockInteraction = remember { MutableInteractionSource() }
+    val mutedGreen = Color(0xFF9EB85C)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -266,22 +273,22 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = { navController.popBackStack() }) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "back",
-                    tint = Color.White
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.ArrowBack,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(24.dp)
+            )
             Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = { navController.navigateToMainClearingStack() }) {
-                Text(
-                    "건너뛰기",
-                    color = Color.White,
-                    fontFamily = PaperlogyFontFamily,
-                    textDecoration = TextDecoration.Underline
-                )
-            }
+            Text(
+                text = "건너뛰기",
+                color = Color.White,
+                fontFamily = PaperlogyFontFamily,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.padding(8.dp)
+            )
         }
         Column(
             modifier = Modifier
@@ -295,8 +302,9 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
                 text = "피드에서 친구의 킬링파트를,\n탐색에서 다양한 킬링파트를 감상해보세요",
                 color = Color.White,
                 fontFamily = PaperlogyFontFamily,
+                fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                lineHeight = 40.sp,
+                lineHeight = 30.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 20.dp)
             )
@@ -307,7 +315,6 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
                     .border(1.dp, Color(0xFF333438), RoundedCornerShape(16.dp))
                     .background(CardBg)
                     .padding(16.dp)
-                    // 데모 카드: 클릭 소비만 하고 네비게이션 없음
                     .clickable(
                         interactionSource = blockInteraction,
                         indication = null,
@@ -315,45 +322,266 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
                     )
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
+                    // 프로필 헤더
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.default_profile),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color(0xFF444548))
+                                .size(55.dp)
+                                .clip(CircleShape)
+                                .border(4.dp, CtaGreen, CircleShape)
                         )
-                        Spacer(modifier = Modifier.size(10.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "킬링파트 @KILLINGPART",
-                                color = Color.White,
+                                text = "킬링파트",
+                                color = CtaGreen,
                                 fontFamily = PaperlogyFontFamily,
-                                fontSize = 13.sp
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            )
+                            Text(
+                                text = "@KILLINGPART",
+                                color = mutedGreen,
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 11.sp
                             )
                         }
-                        Text(
-                            "프로필 방문",
-                            color = CtaGreen,
-                            fontFamily = PaperlogyFontFamily,
-                            fontSize = 11.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    color = Color(0xFF262626),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "프로필 방문",
+                                color = CtaGreen,
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
+
+                    // 영상 썸네일
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(140.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF1A1A1A))
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.example_video),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .clip(CircleShape)
+                                    .border(1.dp, Color.White.copy(alpha = 0.9f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(56.dp)
+                                    .height(40.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFFF0000)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.PlayArrow,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // 곡 정보
+                    Text(
+                        text = "Death Sonnet von Dat",
+                        color = Color.White,
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(12.dp))
+
                     Text(
-                        "데모 게시글입니다. 다음을 눌러 계속하세요.",
-                        color = Color(0xFFCCCCCC),
+                        text = "Davinci Leo",
+                        color = Color(0xFF8E8E93),
                         fontFamily = PaperlogyFontFamily,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp
+                        fontSize = 15.sp,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(30.dp))
+
+                    // 킬링파트 일기 + 좋아요
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                        content = { // content 파라미터 명시
+                            Text(
+                                text = "킬링파트 일기",
+                                color = Color(0xFF8E8E93),
+                                fontFamily = PaperlogyFontFamily,
+                                fontSize = 14.sp,
+                                textAlign = TextAlign.Center
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .align(Alignment.CenterEnd)
+                                    .clip(RoundedCornerShape(30))
+                                    .background(CtaGreen)
+                                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Favorite,
+                                    contentDescription = null,
+                                    tint = Color(0xFF17181B),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "26",
+                                    color = Color(0xFF17181B),
+                                    fontFamily = PaperlogyFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = "오늘 하루는 유난히 공허하게 흘러간 것 같다. 해야 할 일은 분명 있었지만 마음은 잘 따라주지 않았고, 생각들은 제자리를 맴돌았다. 그러다 문득, 특별한 이유 없이 음악을 들어야겠다는 충동이 찾아왔다. 그래서 큰 고민도 없이 '아무 노래'를 골랐다...",
+                        color = Color.White,
+                        fontFamily = PaperlogyFontFamily,
+                        fontSize = 13.sp,
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(26.dp))
+
+                    // 킬링파트 라벨 + 정지 아이콘
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "킬링파트",
+                            color = Color(0xFF8E8E93),
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 12.sp
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(CtaGreen)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // 재생바: 얇은 흰 전체 라인 + 킬링파트 구간 두꺼운 초록 바
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                    ) {
+                        // 전체 얇은 흰 라인
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .align(Alignment.Center)
+                                .background(Color.White.copy(alpha = 0.5f))
+                        )
+                        // 킬링파트 구간 초록 바 (0:51 ~ 1:43 / 전체 2:00 기준)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Center)
+                        ) {
+                            Spacer(modifier = Modifier.weight(0.425f))   // 0:51 / 2:00
+                            Box(
+                                modifier = Modifier
+                                    .weight(0.433f)                       // (1:43 - 0:51) / 2:00
+                                    .height(7.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(CtaGreen)
+                            )
+                            Spacer(modifier = Modifier.weight(0.142f))   // 나머지
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // 타임스탬프 + 대시 행
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "0",
+                            color = Color(0xFF5C5C5E),
+                            fontFamily = PaperlogyFontFamily,
+                            fontSize = 12.sp
+                        )
+                        Row(
+                            modifier = Modifier.weight(0.85f),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(9) {
+                                Text("-", color = Color(0xFF5C5C5E), fontFamily = PaperlogyFontFamily, fontSize = 11.sp)
+                            }
+                            Text("1:42", color = Color(0xFF5C5C5E), fontFamily = PaperlogyFontFamily, fontSize = 11.sp)
+                            repeat(4) {
+                                Text("-", color = Color(0xFF5C5C5E), fontFamily = PaperlogyFontFamily, fontSize = 11.sp)
+                            }
+                            Text("2:00", color = Color(0xFF5C5C5E), fontFamily = PaperlogyFontFamily, fontSize = 11.sp)
+                            repeat(3) {
+                                Text("-", color = Color(0xFF5C5C5E), fontFamily = PaperlogyFontFamily, fontSize = 11.sp)
+                            }
+                        }
+                    }
                 }
             }
         }
