@@ -17,9 +17,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.delay
 
 @Composable
 fun VideoSplashScreen(
@@ -41,6 +43,7 @@ fun VideoSplashScreen(
     }
 
     var videoEnded by remember { mutableStateOf(false) }
+    var hasFinished by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val listener = object : Player.Listener {
@@ -48,6 +51,11 @@ fun VideoSplashScreen(
                 if (state == Player.STATE_ENDED) {
                     videoEnded = true
                 }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                // 디코딩/리소스 문제로 영상 종료 이벤트를 못 받는 경우도 메인으로 진행한다.
+                videoEnded = true
             }
         }
         exoPlayer.addListener(listener)
@@ -58,7 +66,18 @@ fun VideoSplashScreen(
     }
 
     LaunchedEffect(canFinish, videoEnded) {
-        if (canFinish && videoEnded) {
+        if (canFinish && videoEnded && !hasFinished) {
+            hasFinished = true
+            onFinish()
+        }
+    }
+
+    LaunchedEffect(canFinish) {
+        if (!canFinish || hasFinished) return@LaunchedEffect
+        // 플레이어 상태가 꼬여 종료 이벤트가 오지 않아도 스플래시 고착을 방지한다.
+        delay(6500)
+        if (!hasFinished) {
+            hasFinished = true
             onFinish()
         }
     }
