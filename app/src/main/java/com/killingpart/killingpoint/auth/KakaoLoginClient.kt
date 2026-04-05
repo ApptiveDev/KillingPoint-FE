@@ -44,8 +44,10 @@ object KakaoLoginClient {
                         } else {
                             UserApiClient.instance.loginWithKakaoAccount(act, callback = callback)
                         }
-                    } else {
+                    } else if (token != null) {
                         callback(token, null)
+                    } else {
+                        cont.resumeWithException(IllegalStateException("카카오 로그인 응답이 비어 있습니다."))
                     }
                 }
             } else {

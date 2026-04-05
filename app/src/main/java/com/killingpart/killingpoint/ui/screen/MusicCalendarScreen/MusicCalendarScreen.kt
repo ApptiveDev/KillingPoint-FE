@@ -72,7 +72,9 @@ import com.killingpart.killingpoint.ui.component.ScrollableText
 fun MusicCalendarScreen(
     diaries: List<Diary>,
     navController: androidx.navigation.NavController? = null,
-    initialSelectedDate: String? = null
+    initialSelectedDate: String? = null,
+    /** false: 온보딩 미리보기 등 — 월/날짜/스크롤/일기 카드 탭 비활성 */
+    interactionsEnabled: Boolean = true
 ) {
     // 현재 선택된 날짜 (null이면 아무것도 선택되지 않은 상태)
     // Diary list 로그 출력
@@ -115,6 +117,10 @@ fun MusicCalendarScreen(
     // 월 선택기(MonthPicker) 표시 여부
     var showMonthPicker by remember { mutableStateOf(false) }
 
+    LaunchedEffect(interactionsEnabled) {
+        if (!interactionsEnabled) showMonthPicker = false
+    }
+
     // 최근 3년간의 Month 목록 (현재 ~ 36개월 전까지)
     val availableMonths = remember {
         val months = mutableListOf<YearMonth>()
@@ -138,10 +144,12 @@ fun MusicCalendarScreen(
     // 선택된 날짜의 모든 일기
     val selectedDiaries = selectedDate?.let { diariesByDate[it] } ?: emptyList()
 
+    val calendarScrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // 스크롤 가능
+            // 온보딩 미리보기에서도 아래 일기 목록까지 보려면 스크롤은 항상 허용
+            .verticalScroll(calendarScrollState)
             .padding(horizontal = 30.dp)
     ) {
         Spacer(Modifier.height(20.dp))
@@ -160,7 +168,10 @@ fun MusicCalendarScreen(
         // 현재 월 표시 + 클릭 시 MonthPicker 열기
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { showMonthPicker = !showMonthPicker }
+            modifier = Modifier.clickable(
+                enabled = interactionsEnabled,
+                onClick = { showMonthPicker = !showMonthPicker }
+            )
         ) {
             Text(
                 text = "${currentMonth.monthValue}월",
@@ -233,6 +244,7 @@ fun MusicCalendarScreen(
             yearMonth = currentMonth,
             diariesByDate = diariesByDate,
             selectedDate = selectedDate,
+            interactionsEnabled = interactionsEnabled,
             onDateClick = { date ->
                 // 같은 날짜를 다시 클릭하면 선택 해제
                 selectedDate = if (selectedDate == date) null else date
@@ -269,10 +281,11 @@ fun MusicCalendarScreen(
             
             selectedDiaries.forEachIndexed { index, diary ->
                 DiaryEntryCard(
-                    diary = diary, 
+                    diary = diary,
                     navController = navController,
                     selectedDate = selectedDate?.toString(),
-                    diaryId = diary.id
+                    diaryId = diary.id,
+                    interactionsEnabled = interactionsEnabled
                 )
             }
         } else if (selectedDate != null) {
@@ -607,6 +620,7 @@ fun CalendarGrid(
     yearMonth: YearMonth,
     diariesByDate: Map<LocalDate, List<Diary>>,
     selectedDate: LocalDate?,
+    interactionsEnabled: Boolean = true,
     onDateClick: (LocalDate) -> Unit
 ) {
     val firstDayOfMonth = yearMonth.atDay(1)
@@ -655,6 +669,7 @@ fun CalendarGrid(
                             isSunday = isSunday,
                             isSaturday = isSaturday,
                             isCurrentMonth = true,
+                            interactionsEnabled = interactionsEnabled,
                             onClick = { onDateClick(date) }
                         )
                         dayCounter++
@@ -678,6 +693,7 @@ fun CalendarDayCell(
     isSunday: Boolean,
     isSaturday: Boolean,
     isCurrentMonth: Boolean,
+    interactionsEnabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Box(
@@ -697,7 +713,7 @@ fun CalendarDayCell(
                     Modifier
                 }
             )
-            .clickable { onClick() }
+            .clickable(enabled = interactionsEnabled, onClick = onClick)
     ) {
         // 날짜는 좌상단에 표시
         Text(
@@ -739,7 +755,8 @@ fun DiaryEntryCard(
     diary: Diary,
     navController: androidx.navigation.NavController? = null,
     selectedDate: String? = null,
-    diaryId: Long? = null
+    diaryId: Long? = null,
+    interactionsEnabled: Boolean = true
 ) {
     Column(
         modifier = Modifier
@@ -796,22 +813,32 @@ fun DiaryEntryCard(
             // 코멘트 읽기 버튼
             Column(
                 horizontalAlignment = Alignment.End,
-                modifier = Modifier.clickable {
-                    if (diary.id == null) {
-                        android.util.Log.e("DiaryEntryCard", "diary.id가 null입니다. 일기 상세 페이지로 이동할 수 없습니다.")
-                        return@clickable
-                    }
-                    
-                    val selectedDateParam = selectedDate?.let { "&selectedDate=${Uri.encode(it)}" } ?: ""
-                    val diaryIdParam = "&diaryId=${diary.id}"
-                    val scopeParam = "&scope=${diary.scope.name}"
-                    
-                    android.util.Log.d("DiaryEntryCard", "일기 상세 페이지로 이동 - diaryId: ${diary.id}")
-                    
-                    val totalDurationParam = diary.totalDuration?.let { "&totalDuration=$it" } ?: ""
-                    
-                    navController?.navigate(
-                        "diary_detail" +
+                modifier = Modifier.clickable(
+                    enabled = interactionsEnabled,
+                    onClick = {
+                        if (diary.id == null) {
+                            android.util.Log.e(
+                                "DiaryEntryCard",
+                                "diary.id가 null입니다. 일기 상세 페이지로 이동할 수 없습니다."
+                            )
+                            return@clickable
+                        }
+
+                        val selectedDateParam =
+                            selectedDate?.let { "&selectedDate=${Uri.encode(it)}" } ?: ""
+                        val diaryIdParam = "&diaryId=${diary.id}"
+                        val scopeParam = "&scope=${diary.scope.name}"
+
+                        android.util.Log.d(
+                            "DiaryEntryCard",
+                            "일기 상세 페이지로 이동 - diaryId: ${diary.id}"
+                        )
+
+                        val totalDurationParam =
+                            diary.totalDuration?.let { "&totalDuration=$it" } ?: ""
+
+                        navController?.navigate(
+                            "diary_detail" +
                                 "?artist=${Uri.encode(diary.artist)}" +
                                 "&musicTitle=${Uri.encode(diary.musicTitle)}" +
                                 "&albumImageUrl=${Uri.encode(diary.albumImageUrl)}" +
@@ -826,8 +853,9 @@ fun DiaryEntryCard(
                                 selectedDateParam +
                                 totalDurationParam +
                                 "&fromTab=calendar"
-                    )
-                }
+                        )
+                    }
+                )
             ) {
                 Text(
                     text = "코멘트읽기",

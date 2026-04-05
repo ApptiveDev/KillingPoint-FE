@@ -1,6 +1,7 @@
 package com.killingpart.killingpoint.ui.component
 
 import android.net.Uri
+import android.view.LayoutInflater
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,8 +20,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.killingpart.killingpoint.R
 import kotlinx.coroutines.delay
 
 @Composable
@@ -31,37 +32,45 @@ fun VideoSplashScreen(
     val context = LocalContext.current
 
     val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(
-                Uri.parse("asset:///splash_video.mp4")
-            )
-            setMediaItem(mediaItem)
-            prepare()
-            playWhenReady = true
-            repeatMode = Player.REPEAT_MODE_OFF
-        }
+        runCatching {
+            ExoPlayer.Builder(context).build().apply {
+                val mediaItem = MediaItem.fromUri(
+                    Uri.parse("asset:///splash_video.mp4")
+                )
+                setMediaItem(mediaItem)
+                prepare()
+                playWhenReady = true
+                repeatMode = Player.REPEAT_MODE_OFF
+            }
+        }.getOrNull()
     }
 
     var videoEnded by remember { mutableStateOf(false) }
     var hasFinished by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) {
-        val listener = object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED) {
+    DisposableEffect(exoPlayer) {
+        val player = exoPlayer
+        if (player == null) {
+            videoEnded = true
+            onDispose { }
+        } else {
+            val listener = object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (state == Player.STATE_ENDED) {
+                        videoEnded = true
+                    }
+                }
+
+                override fun onPlayerError(error: PlaybackException) {
+                    // 디코딩/리소스 문제로 영상 종료 이벤트를 못 받는 경우도 메인으로 진행한다.
                     videoEnded = true
                 }
             }
-
-            override fun onPlayerError(error: PlaybackException) {
-                // 디코딩/리소스 문제로 영상 종료 이벤트를 못 받는 경우도 메인으로 진행한다.
-                videoEnded = true
+            player.addListener(listener)
+            onDispose {
+                player.removeListener(listener)
+                player.release()
             }
-        }
-        exoPlayer.addListener(listener)
-        onDispose {
-            exoPlayer.removeListener(listener)
-            exoPlayer.release()
         }
     }
 
@@ -87,14 +96,16 @@ fun VideoSplashScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        AndroidView(
-            factory = {  ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = false
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+        if (exoPlayer != null) {
+            AndroidView(
+                factory = { ctx ->
+                    (LayoutInflater.from(ctx).inflate(R.layout.exo_player_texture_view, null)
+                        as PlayerView).apply {
+                        player = exoPlayer
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }

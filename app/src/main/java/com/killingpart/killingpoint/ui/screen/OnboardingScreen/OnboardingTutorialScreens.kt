@@ -30,9 +30,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,7 +44,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -108,7 +105,7 @@ fun OnboardingKpIntroScreen(navController: NavController) {
                     shape = RoundedCornerShape(100),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CtaGreen,
-                        contentColor = Color(0xFF17181B)
+                        contentColor = Color(0xFF000000)
                     )
                 ) {
                     Text(
@@ -125,8 +122,8 @@ fun OnboardingKpIntroScreen(navController: NavController) {
                         .height(54.dp),
                     shape = RoundedCornerShape(100),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3A3B3E),
-                        contentColor = Color(0xFF17181B)
+                        containerColor = Color(0xFF9C9C9C),
+                        contentColor = Color(0xFF000000)
                     )
                 ) {
                     Text(
@@ -157,47 +154,24 @@ fun OnboardingHomePreviewScreen(navController: NavController) {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp)
-        ) {
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.align(Alignment.CenterStart)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.ArrowBack,
-                    contentDescription = "back",
-                    tint = Color.White
-                )
-            }
-            TextButton(
-                onClick = { navController.navigateToMainClearingStack() },
-                modifier = Modifier.align(Alignment.CenterEnd)
-            ) {
-                Text(
-                    "건너뛰기",
-                    color = Color.White,
-                    fontFamily = PaperlogyFontFamily,
-                    textDecoration = TextDecoration.Underline
-                )
-            }
-        }
+        OnboardingFlowTopBar(
+            onBack = { navController.popBackStack() },
+            onSkip = { navController.navigateToMainClearingStack() }
+        )
         Spacer(modifier = Modifier.height(14.dp))
         Text(
             text = "추가한 킬링파트는\n여기서 다시 볼 수 있어요.",
             color = Color.White,
             fontFamily = PaperlogyFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
+            fontSize = 20.sp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
             lineHeight = 34.sp,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(52.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         TopPillTabs(
             options = listOf("내 컬렉션", "뮤직 캘린더"),
@@ -209,7 +183,7 @@ fun OnboardingHomePreviewScreen(navController: NavController) {
             height = 56.dp,
             textSize = 16.sp
         )
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(15.dp))
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -234,7 +208,8 @@ fun OnboardingHomePreviewScreen(navController: NavController) {
                 MusicCalendarScreen(
                     diaries = diaries,
                     navController = navController,
-                    initialSelectedDate = LocalDate.now().toString()
+                    initialSelectedDate = LocalDate.now().toString(),
+                    interactionsEnabled = false
                 )
             }
         }
@@ -267,29 +242,11 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.ArrowBack,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .size(24.dp)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-            Text(
-                text = "건너뛰기",
-                color = Color.White,
-                fontFamily = PaperlogyFontFamily,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
+        OnboardingFlowTopBar(
+            onBack = { navController.popBackStack() },
+            onSkip = { navController.navigateToMainClearingStack() }
+        )
+        Spacer(modifier = Modifier.height(14.dp))
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -303,7 +260,7 @@ fun OnboardingFeedDemoScreen(navController: NavController) {
                 color = Color.White,
                 fontFamily = PaperlogyFontFamily,
                 fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
+                fontSize = 20.sp,
                 lineHeight = 30.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 20.dp)

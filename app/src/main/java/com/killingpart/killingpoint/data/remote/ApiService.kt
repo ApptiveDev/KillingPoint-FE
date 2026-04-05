@@ -8,6 +8,7 @@ import com.killingpart.killingpoint.data.model.YouTubeVideo
 import com.killingpart.killingpoint.data.model.CreateDiaryRequest
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.UpdateTagRequest
+import com.killingpart.killingpoint.data.model.UpdateUsernameRequest
 import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.TestAuthResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
@@ -103,6 +104,12 @@ interface ApiService {
     suspend fun updateTag(
         @Header("Authorization") accessToken: String,
         @Body body: UpdateTagRequest
+    ): retrofit2.Response<Unit>
+
+    @PATCH("users/my/names")
+    suspend fun updateUsername(
+        @Header("Authorization") accessToken: String,
+        @Body body: UpdateUsernameRequest
     ): retrofit2.Response<Unit>
 
     @GET("presigned-url")

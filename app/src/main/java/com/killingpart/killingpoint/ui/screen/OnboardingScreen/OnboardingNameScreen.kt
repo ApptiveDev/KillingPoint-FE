@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -20,16 +22,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -41,8 +47,13 @@ private val nameReserved = setOf("killingpart", "admin", "support")
 
 @Composable
 fun OnboardingNameScreen(navController: NavController) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val repo = remember { AuthRepository(context) }
+
     var name by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -76,7 +87,7 @@ fun OnboardingNameScreen(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "*한글 8자 이내, 영어 16자 이내(숫자 포함)",
+                    text = "*1~20자, 영문·한글·숫자·띄어쓰기만 가능",
                     color = Color(0xFF7E7F83),
                     fontFamily = PaperlogyFontFamily,
                     fontSize = 12.sp
@@ -136,24 +147,54 @@ fun OnboardingNameScreen(navController: NavController) {
                         error = err
                         return@Button
                     }
-                    val encoded = URLEncoder.encode(name.trim(), StandardCharsets.UTF_8.toString())
-                    navController.navigate("onboarding_tag?name=$encoded&continueTutorial=true")
+                    val trimmed = name.trim()
+                    loading = true
+                    scope.launch {
+                        try {
+                            repo.updateUsername(trimmed)
+                                .onSuccess {
+                                    val encoded = URLEncoder.encode(
+                                        trimmed,
+                                        StandardCharsets.UTF_8.toString()
+                                    )
+                                    navController.navigate(
+                                        "onboarding_tag?name=$encoded&continueTutorial=true"
+                                    )
+                                }
+                                .onFailure { e ->
+                                    error = parseUsernameApiErrorMessage(e.message)
+                                }
+                        } finally {
+                            loading = false
+                        }
+                    }
                 },
+                enabled = !loading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
                 shape = RoundedCornerShape(100),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = CtaGreen,
-                    contentColor = Color(0xFF17181B)
+                    containerColor = if (loading) Color(0xFF6A6B6C) else CtaGreen,
+                    contentColor = Color(0xFF17181B),
+                    disabledContainerColor = Color(0xFF6A6B6C),
+                    disabledContentColor = Color(0xFF17181B)
                 )
             ) {
-                Text(
-                    text = "다음",
-                    fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                if (loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color(0xFF17181B),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "다음",
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
     }
@@ -162,14 +203,34 @@ fun OnboardingNameScreen(navController: NavController) {
 internal fun validateOnboardingName(raw: String): String? {
     val name = raw.trim()
     if (name.isEmpty()) return "이름을 입력해주세요."
+    if (name.length > 20) return "이름은 20자 이내로 입력해주세요."
     if (name.lowercase() in nameReserved) return "사용할 수 없는 이름입니다."
-    if (!name.matches(Regex("^[가-힣a-zA-Z0-9]+$"))) {
-        return "한글, 영문, 그리고 숫자로 조합해주세요."
+    if (!name.matches(Regex("^[a-zA-Z가-힣0-9 ]+$"))) {
+        return "영문, 한글, 숫자, 띄어쓰기만 사용할 수 있습니다."
     }
-    val hasHangul = name.any { it in '\uAC00'..'\uD7A3' }
-    return if (hasHangul) {
-        if (name.length > 8) "한글 기준 8자 이내로 입력해주세요." else null
-    } else {
-        if (name.length > 16) "영문 기준 16자 이내로 입력해주세요." else null
+    return null
+}
+
+private fun parseUsernameApiErrorMessage(raw: String?): String {
+    if (raw.isNullOrBlank()) return "이름 변경에 실패했습니다."
+    val jsonStart = raw.indexOf("{")
+    if (jsonStart == -1) return raw
+    return try {
+        val json = JSONObject(raw.substring(jsonStart))
+        when {
+            json.has("message") -> json.getString("message")
+            json.has("fieldErrors") -> {
+                val arr = json.getJSONArray("fieldErrors")
+                buildString {
+                    for (i in 0 until arr.length()) {
+                        val o = arr.getJSONObject(i)
+                        if (o.has("username")) append(o.getString("username"))
+                    }
+                }.ifBlank { raw }
+            }
+            else -> raw
+        }
+    } catch (_: Exception) {
+        raw
     }
 }

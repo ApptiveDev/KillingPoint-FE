@@ -12,6 +12,7 @@ import com.killingpart.killingpoint.data.model.YouTubeVideo
 import com.killingpart.killingpoint.data.model.CreateDiaryRequest
 import com.killingpart.killingpoint.data.model.Diary
 import com.killingpart.killingpoint.data.model.UpdateTagRequest
+import com.killingpart.killingpoint.data.model.UpdateUsernameRequest
 import com.killingpart.killingpoint.data.model.PresignedUrlResponse
 import com.killingpart.killingpoint.data.model.UpdateProfileImageRequest
 import com.killingpart.killingpoint.data.model.YoutubeVideoRequest
@@ -432,6 +433,26 @@ class AuthRepository(
                 val code = e.code()
                 val msg = e.response()?.errorBody()?.string().orEmpty()
                 throw IllegalStateException("태그 업데이트 실패 ($code): $msg")
+            } else {
+                throw e
+            }
+        }
+    }
+
+    suspend fun updateUsername(username: String): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val accessToken = getAccessToken()
+                ?: throw IllegalStateException("액세스 토큰이 없습니다")
+            val response = api.updateUsername("Bearer $accessToken", UpdateUsernameRequest(username))
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string().orEmpty()
+                throw IllegalStateException("이름 변경 실패 (${response.code()}): $errorBody")
+            }
+        }.recoverCatching { e ->
+            if (e is HttpException) {
+                val code = e.code()
+                val msg = e.response()?.errorBody()?.string().orEmpty()
+                throw IllegalStateException("이름 변경 실패 ($code): $msg")
             } else {
                 throw e
             }

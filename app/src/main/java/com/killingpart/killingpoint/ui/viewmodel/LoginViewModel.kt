@@ -7,6 +7,7 @@ import com.killingpart.killingpoint.auth.KakaoLoginClient
 import com.killingpart.killingpoint.data.local.TokenStore
 import com.killingpart.killingpoint.data.remote.RetrofitClient
 import com.killingpart.killingpoint.data.repository.AuthRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -34,6 +35,8 @@ class LoginViewModel(
             try {
                 val kakaoAccessToken = KakaoLoginClient.getAccessToken(context)
                 onSuccess(kakaoAccessToken)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.value = LoginUiState.Error(e.message ?: "카카오 로그인 실패")
             }

@@ -31,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,8 +45,9 @@ import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import com.killingpart.killingpoint.ui.screen.HomeScreen.BackgroundVideo
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
-import com.killingpart.killingpoint.ui.viewmodel.LoginViewModel
 import com.killingpart.killingpoint.ui.viewmodel.LoginUiState
+import com.killingpart.killingpoint.ui.viewmodel.LoginViewModel
+import com.killingpart.killingpoint.ui.viewmodel.activityScopedLoginViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -55,7 +55,7 @@ fun PolicyAgreementScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val loginViewModel: LoginViewModel = viewModel()
+    val loginViewModel: LoginViewModel = activityScopedLoginViewModel()
     val loginState by loginViewModel.state.collectAsState()
     val isNewUser = (loginState as? LoginUiState.AutoLoginSuccess)?.isNew == true
     val scope = rememberCoroutineScope()

@@ -2,6 +2,8 @@ package com.killingpart.killingpoint.ui.screen.HomeScreen
 
 import android.content.Context
 import android.net.Uri
+import android.view.LayoutInflater
+import androidx.activity.compose.LocalActivity
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,9 +20,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,7 +39,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -50,17 +58,21 @@ import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.theme.textGray1
 import com.killingpart.killingpoint.ui.theme.UnboundedFontFamily
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
+import com.killingpart.killingpoint.ui.viewmodel.LoginUiState
 import com.killingpart.killingpoint.ui.viewmodel.LoginViewModel
+import com.killingpart.killingpoint.ui.viewmodel.activityScopedLoginViewModel
 
 @Composable
 fun HelloScreen(navController: NavController) {
     val context = LocalContext.current
-    val loginViewModel: LoginViewModel = viewModel()
+    val loginViewModel: LoginViewModel = activityScopedLoginViewModel()
+    val loginState by loginViewModel.state.collectAsState()
+    val loginBusy = loginState is LoginUiState.Loading
 
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // 1. 배경 비디오
+        // 1. 배경 비디오 (SurfaceView 는 일부 기기에서 버퍼/터치 이슈 → TextureView + 일시정지)
         BackgroundVideo(
             videoFileName = "login_video.mp4",
             modifier = Modifier.fillMaxSize()
@@ -71,6 +83,7 @@ fun HelloScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .align(Alignment.TopStart) // 화면 좌상단 정렬
+                .zIndex(1f)
                 .padding(top = 200.dp, start = 20.dp) // 원하는 만큼 위치 조정 (여기만 수정하면 로고 위치 이동)
         ) {
             Image(
@@ -86,6 +99,7 @@ fun HelloScreen(navController: NavController) {
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter) // 화면 하단 중앙 정렬
+                .zIndex(1f)
                 .padding(bottom = 100.dp), // 바닥에서 얼마나 띄울지 결정
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -102,23 +116,31 @@ fun HelloScreen(navController: NavController) {
                 modifier = Modifier
                     .size(240.dp, 54.dp)
                     .background(color = Color(0xFF1D1E20), shape = RoundedCornerShape(100))
-                    .clickable { onSnsLoginClick(context, loginViewModel) },
+                    .clickable(enabled = !loginBusy) { onSnsLoginClick(context, loginViewModel) },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.kakao),
-                    contentDescription = "KakaoLogin",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "카카오 로그인",
-                    fontFamily = PaperlogyFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 14.sp,
-                    color = Color(0xFFFEE500)
-                )
+                if (loginBusy) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Color(0xFFFEE500),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.kakao),
+                        contentDescription = "KakaoLogin",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "카카오 로그인",
+                        fontFamily = PaperlogyFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 14.sp,
+                        color = Color(0xFFFEE500)
+                    )
+                }
             }
         }
     }
@@ -153,37 +175,59 @@ fun BackgroundVideo(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
 
     val exoPlayer = remember {
-        ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(
-                Uri.parse("asset:///$videoFileName")
-            )
-            setMediaItem(mediaItem)
-            prepare()
-            playWhenReady = true
-            repeatMode = Player.REPEAT_MODE_ALL // 반복 재생
-            volume = 0f // 음소거 (필요시 조정)
-        }
+        runCatching {
+            ExoPlayer.Builder(context).build().apply {
+                val mediaItem = MediaItem.fromUri(
+                    Uri.parse("asset:///$videoFileName")
+                )
+                setMediaItem(mediaItem)
+                prepare()
+                playWhenReady = true
+                repeatMode = Player.REPEAT_MODE_ALL // 반복 재생
+                volume = 0f // 음소거 (필요시 조정)
+            }
+        }.getOrNull()
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer.release()
+    DisposableEffect(activity, exoPlayer) {
+        val player = exoPlayer
+        if (player == null) {
+            return@DisposableEffect onDispose { }
         }
-    }
-
-    Box(modifier = modifier) {
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    player = exoPlayer
-                    useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM // 화면을 꽉 채우도록
+        val owner = activity as? LifecycleOwner
+        val observer = if (owner != null) {
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE -> player.pause()
+                    Lifecycle.Event.ON_RESUME -> player.play()
+                    else -> Unit
                 }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+            }.also { owner.lifecycle.addObserver(it) }
+        } else {
+            null
+        }
+        onDispose {
+            observer?.let { o -> owner?.lifecycle?.removeObserver(o) }
+            player.release()
+        }
+    }
+
+    Box(modifier = modifier.background(Color.Black)) {
+        if (exoPlayer != null) {
+            AndroidView(
+                factory = { ctx ->
+                    (LayoutInflater.from(ctx).inflate(R.layout.exo_player_texture_view, null)
+                        as PlayerView).apply {
+                        player = exoPlayer
+                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM // 화면을 꽉 채우도록
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 

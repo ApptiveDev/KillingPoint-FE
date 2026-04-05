@@ -429,7 +429,7 @@ fun MainScreen(navController: NavController, initialTab: String = "play", initia
                             onLogout = {
                                 // 로그아웃/회원탈퇴 후 로그인 화면으로 이동 - 모든 네비게이션 스택 정리
                                 navController.navigate("home") {
-                                    popUpTo(0) { inclusive = false }
+                                    popUpTo(navController.graph.id) { inclusive = true }
                                     launchSingleTop = true
                                 }
                             },

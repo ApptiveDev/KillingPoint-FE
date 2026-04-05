@@ -40,17 +40,15 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.style.TextDecoration
 import com.killingpart.killingpoint.data.spotify.SimpleTrack
 import androidx.compose.ui.platform.LocalContext
 import com.killingpart.killingpoint.ui.viewmodel.SpotifyViewModel
 import com.killingpart.killingpoint.ui.viewmodel.SpotifyUiState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.TextButton
 import androidx.compose.ui.text.font.FontWeight
 import com.killingpart.killingpoint.navigation.navigateToMainClearingStack
+import com.killingpart.killingpoint.ui.screen.OnboardingScreen.OnboardingFlowTopBar
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.ui.layout.ContentScale
@@ -113,11 +111,11 @@ fun AddMusicScreen(
     ) {
         // Center background logo (subtle)
             Image(
-                painter = painterResource(id = R.drawable.killingpart_logo_dark),
+                painter = painterResource(id = R.drawable.killing_part_logo_dark),
                 contentDescription = "앱 배경 로고",
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .offset(y = (-140).dp)
+//                    .offset(y = 24.dp)
                     .size(280.dp)
             )
 
@@ -133,24 +131,12 @@ fun AddMusicScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (tutorialMode) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = { navController.navigateToMainClearingStack() }) {
-                            Text(
-                                "건너뛰기",
-                                color = Color.White,
-                                fontFamily = PaperlogyFontFamily,
-                                fontSize = 15.sp,
-                                textDecoration = TextDecoration.Underline
-                            )
-                        }
-                    }
+                    OnboardingFlowTopBar(
+                        onBack = { navController.popBackStack() },
+                        onSkip = { navController.navigateToMainClearingStack() }
+                    )
                 }
-                Spacer(modifier = Modifier.height(if (tutorialMode) 8.dp else 60.dp))
+                Spacer(modifier = Modifier.height(if (tutorialMode) 14.dp else 60.dp))
                 if (tutorialMode) {
                     Text(
                         text = "어떤 곡으로 시작할까요?",
@@ -349,7 +335,7 @@ fun AddMusicScreenSuccessPreview() {
             .background(Color(0xFF1D1E20))
     ) {
         Image(
-            painter = painterResource(id = R.drawable.killingpart_logo_dark),
+            painter = painterResource(id = R.drawable.killing_part_logo_dark),
             contentDescription = "앱 배경 로고",
             modifier = Modifier
                 .align(Alignment.Center)

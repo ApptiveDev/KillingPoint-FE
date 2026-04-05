@@ -25,8 +25,7 @@ fun getOnboardingPolicyContent(type: OnboardingPolicyType): OnboardingPolicyCont
 }
 
 private const val PRIVACY_POLICY_PLACEHOLDER_TEXT = """
-개인정보 처리방침 전문은 아직 전달되지 않아 임시 문구를 표시합니다.
-전문을 주시면 동일한 방식으로 즉시 반영하겠습니다.
+
 """
 
 private const val SERVICE_TERMS_TEXT = """
