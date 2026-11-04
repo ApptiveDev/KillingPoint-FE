@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,7 +71,7 @@ fun FriendProfileScreen(
     isMyPick: Boolean = false,
     fromPickFandomList: Boolean = false
 ) {
-    var selectedTab by remember { mutableStateOf(if (fromPickFandomList) FriendProfileTab.FRIEND else FriendProfileTab.FRIEND) }
+    var selectedTab by rememberSaveable { mutableStateOf(if (fromPickFandomList) FriendProfileTab.FRIEND else FriendProfileTab.FRIEND) }
     var currentUserId by remember { mutableStateOf(0L) }
     // 친구 컬렉션 좋아요 모달 상태
     var likesDiaryId by remember { mutableStateOf<Long?>(null) }

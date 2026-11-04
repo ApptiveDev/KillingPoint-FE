@@ -209,9 +209,8 @@ fun DiaryDetailScreen(
             if (previousRoute?.startsWith("main") == true) {
                 when (fromTab) {
                     "profile" -> {
-                        navController.navigate("main?tab=profile") {
-                            popUpTo("main") { inclusive = false }
-                        }
+                        // 기존 main 엔트리로 복귀해야 스크롤 위치가 유지됨
+                        navController.popBackStack()
                     }
                     "calendar" -> {
                         val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""
@@ -314,9 +313,8 @@ fun DiaryDetailScreen(
                             if (previousRoute?.startsWith("main") == true) {
                                 when (fromTab) {
                                     "profile" -> {
-                                        navController.navigate("main?tab=profile") {
-                                            popUpTo("main") { inclusive = false }
-                                        }
+                                        // 기존 main 엔트리로 복귀해야 스크롤 위치가 유지됨
+                                        navController.popBackStack()
                                     }
                                     "calendar" -> {
                                         val selectedDateParam = if (selectedDate.isNotEmpty()) "&selectedDate=${android.net.Uri.encode(selectedDate)}" else ""

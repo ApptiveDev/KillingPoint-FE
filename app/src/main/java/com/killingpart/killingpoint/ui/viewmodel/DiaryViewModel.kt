@@ -25,7 +25,10 @@ class DiaryViewModel(
     val state: StateFlow<DiaryUiState> = _state
 
     fun loadDiaries(context: Context) {
-        _state.value = DiaryUiState.Loading
+        // 이미 데이터가 있으면 Loading으로 바꾸지 않음 (화면이 교체되며 스크롤 위치가 초기화되는 것 방지)
+        if (_state.value !is DiaryUiState.Success) {
+            _state.value = DiaryUiState.Loading
+        }
         val repo = repoFactory(context)
         viewModelScope.launch {
             try {

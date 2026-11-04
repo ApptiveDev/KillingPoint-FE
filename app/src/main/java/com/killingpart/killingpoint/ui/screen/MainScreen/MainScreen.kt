@@ -38,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -93,7 +94,7 @@ private fun subTabFor(tab: MainTab): String = when (tab) {
 
 @Composable
 fun MainScreen(navController: NavController, initialTab: String = "play", initialSelectedDate: String = "") {
-    var selected by remember(initialTab) { 
+    var selected by rememberSaveable(initialTab) {
         mutableStateOf(
             when (initialTab) {
                 "profile" -> MainTab.PROFILE

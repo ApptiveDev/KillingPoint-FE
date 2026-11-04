@@ -30,8 +30,14 @@ class FriendProfileViewModel(
     private val _state = MutableStateFlow<FriendProfileUiState>(FriendProfileUiState.Loading)
     val state: StateFlow<FriendProfileUiState> = _state
 
+    private var loadedUserId: Long? = null
+
     fun loadFriendProfile(context: Context, userId: Long) {
-        _state.value = FriendProfileUiState.Loading
+        // 같은 유저 데이터가 이미 있으면 Loading으로 바꾸지 않음 (화면이 교체되며 스크롤 위치가 초기화되는 것 방지)
+        if (_state.value !is FriendProfileUiState.Success || loadedUserId != userId) {
+            _state.value = FriendProfileUiState.Loading
+        }
+        loadedUserId = userId
         val repo = repoFactory(context)
         viewModelScope.launch {
             val firstPageResult = repo.getUserDiaries(userId, 0, 1)
