@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.killingpart.killingpoint.auth.KakaoLoginClient
 import com.killingpart.killingpoint.data.local.TokenStore
+import com.killingpart.killingpoint.data.remote.RefreshTokenInvalidException
 import com.killingpart.killingpoint.data.remote.RetrofitClient
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,9 +79,15 @@ class LoginViewModel(
                         _state.value = LoginUiState.AutoLoginSuccess(isNew = isNew, provider = "session")
                     }
                     .onFailure { e ->
-                        android.util.Log.e("LoginViewModel", "자동 로그인 실패: ${e.message}")
-                        // 토큰 갱신 실패 시 로그인 화면 유지
-                        _state.value = LoginUiState.Idle
+                        if (e !is RefreshTokenInvalidException && repo.getAccessToken() != null) {
+                            // 네트워크/서버 일시 오류: 세션은 살아 있으므로 로그인 화면으로 보내지 않는다.
+                            // 액세스 토큰이 만료됐으면 이후 요청의 401 에서 다시 재발급된다.
+                            android.util.Log.w("LoginViewModel", "토큰 갱신 일시 실패, 기존 세션으로 진입: ${e.message}")
+                            _state.value = LoginUiState.AutoLoginSuccess(isNew = false, provider = "session")
+                        } else {
+                            android.util.Log.e("LoginViewModel", "자동 로그인 실패: ${e.message}")
+                            _state.value = LoginUiState.Idle
+                        }
                     }
             } else {
                 android.util.Log.d("LoginViewModel", "자동 로그인 실패: refreshToken 없음")
