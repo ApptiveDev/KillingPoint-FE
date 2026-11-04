@@ -33,7 +33,9 @@ data class DiaryDetail(
     val userId: Long,
     val username: String,
     val tag: String,
-    val profileImageUrl: String
+    val profileImageUrl: String,
+    // 댓글 미리보기. 서버는 항상 내려주지만 구버전 응답 대비 nullable
+    val commentPreview: CommentPreview? = null
 ) {
     fun toDiary(): Diary = Diary(
         id = diaryId,

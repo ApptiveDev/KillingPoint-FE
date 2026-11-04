@@ -54,6 +54,9 @@ import coil.compose.AsyncImage
 import com.killingpart.killingpoint.R
 import com.killingpart.killingpoint.ui.component.AppBackground
 import com.killingpart.killingpoint.ui.component.BottomBar
+import com.killingpart.killingpoint.data.model.CommentPreview
+import com.killingpart.killingpoint.ui.screen.CommentScreen.CommentBottomSheet
+import com.killingpart.killingpoint.ui.screen.CommentScreen.CommentPreviewBar
 import com.killingpart.killingpoint.ui.component.LikesModal
 import com.killingpart.killingpoint.data.model.DiaryLikeUser
 import com.killingpart.killingpoint.data.model.CreateDiaryRequest
@@ -136,12 +139,20 @@ fun DiaryDetailScreen(
         userViewModel.loadUserInfo(context)
     }
 
-    LaunchedEffect(diaryId, isOtherPersonDiary) {
-        if (!isOtherPersonDiary || diaryId == null) return@LaunchedEffect
+    // 댓글 미리보기 (내 일기/남의 일기 모두 단건 조회 응답의 commentPreview 사용)
+    var commentPreview by remember { mutableStateOf<CommentPreview?>(null) }
+    var showCommentSheet by remember { mutableStateOf(false) }
+    var commentPreviewVersion by remember { mutableStateOf(0) }
+
+    LaunchedEffect(diaryId, isOtherPersonDiary, commentPreviewVersion) {
+        if (diaryId == null) return@LaunchedEffect
         repo.getDiaryDetail(diaryId).onSuccess { detail ->
-            isLiked = detail.isLiked
-            likeCount = detail.likeCount
-            isStored = detail.isStored
+            commentPreview = detail.commentPreview ?: CommentPreview()
+            if (isOtherPersonDiary && commentPreviewVersion == 0) {
+                isLiked = detail.isLiked
+                likeCount = detail.likeCount
+                isStored = detail.isStored
+            }
         }
     }
 
@@ -777,11 +788,33 @@ fun DiaryDetailScreen(
                         }
                     }
                 }
+
+                val preview = commentPreview
+                if (diaryId != null && preview != null && !isEditing) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CommentPreviewBar(
+                        preview = preview,
+                        onClick = { showCommentSheet = true },
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             BottomBar(navController = navController)
+        }
+
+        if (showCommentSheet && diaryId != null) {
+            CommentBottomSheet(
+                diaryId = diaryId,
+                onDismiss = { count ->
+                    showCommentSheet = false
+                    commentPreview = commentPreview?.copy(commentCount = count)
+                    // 미리보기 문구/아바타는 서버 기준으로 다시 받아온다
+                    commentPreviewVersion++
+                }
+            )
         }
 
         if (showShareSheet) {
