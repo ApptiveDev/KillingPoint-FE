@@ -14,6 +14,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.killingpart.killingpoint.ui.theme.PaperlogyFontFamily
 import com.killingpart.killingpoint.ui.theme.mainGreen
 import com.killingpart.killingpoint.ui.viewmodel.UserUiState
+import com.killingpart.killingpoint.ui.viewmodel.StoredDiaryViewModel
 import com.killingpart.killingpoint.ui.viewmodel.UserViewModel
 import com.killingpart.killingpoint.data.repository.AuthRepository
 import androidx.compose.material.icons.filled.Search
@@ -75,12 +77,14 @@ fun OuterBox(
     var isLoadingStatistics by remember { mutableStateOf(false) }
 
     // 탭: 0 = 내 킬링파트, 1 = 보관한 킬링파트
-    var selectedTabIndex by remember { mutableStateOf(0) }
-    var storedDiaries by remember { mutableStateOf<List<StoredDiary>>(emptyList()) }
-    var totalStoredPages by remember { mutableStateOf(0) }
-    var currentStoredPage by remember { mutableStateOf(-1) }
-    var isLoadingStored by remember { mutableStateOf(false) }
-    var isLoadingMoreStored by remember { mutableStateOf(false) }
+    var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
+    // 보관 목록은 ViewModel에 보관해 상세 화면에서 돌아와도 유지
+    val storedViewModel: StoredDiaryViewModel = viewModel()
+    val storedState by storedViewModel.state.collectAsState()
+    val storedDiaries = storedState.diaries
+    val totalStoredPages = storedState.totalPages
+    val currentStoredPage = storedState.currentPage
+    val isLoadingStored = storedState.isLoading
     val gridListState = rememberLazyListState()
 
     // 좋아요 목록 모달 상태
@@ -109,17 +113,7 @@ fun OuterBox(
                 }
         }
         if (showStoredTab) {
-            isLoadingStored = true
-            repo.getStoredDiariesPage(page = 0, size = 20)
-                .onSuccess { response ->
-                    storedDiaries = response.content
-                    totalStoredPages = response.page.totalPages
-                    currentStoredPage = 0
-                }
-                .onFailure { e ->
-                    android.util.Log.e("OuterBox", "보관 일기 조회 실패: ${e.message}")
-                }
-            isLoadingStored = false
+            storedViewModel.loadStoredDiaries(context)
         }
     }
 
@@ -134,24 +128,12 @@ fun OuterBox(
     ) {
         if (selectedTabIndex != 1 || currentStoredPage < 0) return@LaunchedEffect
         if (currentStoredPage + 1 >= totalStoredPages) return@LaunchedEffect
-        if (isLoadingMoreStored) return@LaunchedEffect
         val layoutInfo = gridListState.layoutInfo
         val totalItems = layoutInfo.totalItemsCount
         if (totalItems == 0) return@LaunchedEffect
         val lastVisible = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
         if (lastVisible < totalItems - 2) return@LaunchedEffect
-        val repo = AuthRepository(context)
-        isLoadingMoreStored = true
-        val nextPage = currentStoredPage + 1
-        repo.getStoredDiariesPage(page = nextPage, size = 20)
-            .onSuccess { response ->
-                storedDiaries = storedDiaries + response.content
-                currentStoredPage = nextPage
-            }
-            .onFailure { e ->
-                android.util.Log.e("OuterBox", "보관 일기 추가 로드 실패: ${e.message}")
-            }
-        isLoadingMoreStored = false
+        storedViewModel.loadMore(context)
     }
 
     // 좋아요 목록 데이터 로드
