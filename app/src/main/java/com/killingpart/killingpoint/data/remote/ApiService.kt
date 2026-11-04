@@ -41,6 +41,14 @@ import com.killingpart.killingpoint.data.model.AlarmResponse
 import com.killingpart.killingpoint.data.model.AlarmEnabledRequest
 import com.killingpart.killingpoint.data.model.AlarmEnabledResponse
 import com.killingpart.killingpoint.data.model.FcmTokenRequest
+import com.killingpart.killingpoint.data.model.Comment
+import com.killingpart.killingpoint.data.model.CommentLikeResponse
+import com.killingpart.killingpoint.data.model.CommentListResponse
+import com.killingpart.killingpoint.data.model.CommentPage
+import com.killingpart.killingpoint.data.model.CommentReportRequest
+import com.killingpart.killingpoint.data.model.CreateCommentRequest
+import com.killingpart.killingpoint.data.model.MentionCandidate
+import com.killingpart.killingpoint.data.model.UpdateCommentRequest
 
 interface ApiService {
 
@@ -307,4 +315,62 @@ interface ApiService {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): AlarmResponse
+
+    // ===== 댓글 =====
+
+    @GET("diaries/{diaryId}/comments")
+    suspend fun getComments(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): CommentListResponse
+
+    @POST("diaries/{diaryId}/comments")
+    suspend fun createComment(
+        @Header("Authorization") accessToken: String,
+        @Path("diaryId") diaryId: Long,
+        @Body body: CreateCommentRequest
+    ): Comment
+
+    @GET("comments/{commentId}/replies")
+    suspend fun getReplies(
+        @Header("Authorization") accessToken: String,
+        @Path("commentId") commentId: Long,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): CommentPage
+
+    @PUT("comments/{commentId}")
+    suspend fun updateComment(
+        @Header("Authorization") accessToken: String,
+        @Path("commentId") commentId: Long,
+        @Body body: UpdateCommentRequest
+    ): Comment
+
+    @DELETE("comments/{commentId}")
+    suspend fun deleteComment(
+        @Header("Authorization") accessToken: String,
+        @Path("commentId") commentId: Long
+    ): retrofit2.Response<Unit>
+
+    @POST("comments/{commentId}/like")
+    suspend fun toggleCommentLike(
+        @Header("Authorization") accessToken: String,
+        @Path("commentId") commentId: Long
+    ): CommentLikeResponse
+
+    @POST("comments/{commentId}/reports")
+    suspend fun reportComment(
+        @Header("Authorization") accessToken: String,
+        @Path("commentId") commentId: Long,
+        @Body body: CommentReportRequest
+    ): retrofit2.Response<Unit>
+
+    @GET("comments/mention-candidates")
+    suspend fun getMentionCandidates(
+        @Header("Authorization") accessToken: String,
+        @Query("keyword") keyword: String? = null,
+        @Query("size") size: Int = 10
+    ): List<MentionCandidate>
 }
