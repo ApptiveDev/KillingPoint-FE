@@ -18,3 +18,6 @@ google-services.json
 *.aab
 *.apk
 /app/release/
+
+# 백엔드 댓글 API 문서 (로컬 참고용)
+/comments_api/
