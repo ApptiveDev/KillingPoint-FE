@@ -23,7 +23,10 @@ import com.killingpart.killingpoint.data.model.FeedDiary
 import com.killingpart.killingpoint.data.model.LikeResponse
 import com.killingpart.killingpoint.data.model.StoreResponse
 import com.killingpart.killingpoint.data.model.SurveyRequest
+import com.killingpart.killingpoint.data.remote.RefreshResult
+import com.killingpart.killingpoint.data.remote.RefreshTokenInvalidException
 import com.killingpart.killingpoint.data.remote.RetrofitClient
+import com.killingpart.killingpoint.data.remote.TokenRefresher
 import com.killingpart.killingpoint.data.remote.ApiService
 import com.killingpart.killingpoint.ui.screen.MainScreen.YouTubePlayerBox
 import kotlinx.coroutines.Dispatchers
@@ -238,36 +241,24 @@ class AuthRepository(
         }
     }
 
-    suspend fun refreshAccessToken(): Result<Boolean> = // isNew 반환
+    /**
+     * 토큰 재발급. 성공 시 isNew 반환 (이미 다른 요청이 재발급해 둔 경우 false).
+     * 리프레시 토큰이 무효면 [RefreshTokenInvalidException] (토큰 삭제됨),
+     * 네트워크/서버 일시 오류면 그 외 예외로 실패하며 토큰은 유지된다.
+     *
+     * @param failedAccessToken 401 을 받은 요청의 액세스 토큰. null 이면 무조건 재발급 (앱 실행 시)
+     */
+    suspend fun refreshAccessToken(failedAccessToken: String? = null): Result<Boolean> =
         withContext(Dispatchers.IO) {
-            runCatching {
-                val refreshToken = getRefreshToken()
-                    ?: throw IllegalStateException("리프레시 토큰이 없습니다")
-                
-                android.util.Log.d("AuthRepository", "토큰 갱신 시도: refreshToken 존재=${refreshToken.isNotBlank()}")
-                
-                val response = api.refreshAccessToken(refreshToken)
-                
-                android.util.Log.d("AuthRepository", "토큰 갱신 성공: isNew=${response.isNew}, 새 accessToken 길이=${response.accessToken.length}, 새 refreshToken 길이=${response.refreshToken.length}")
-                
-                tokenStore.save(response.accessToken, response.refreshToken)
-                
-                val savedAccessToken = tokenStore.getAccessToken()
-                val savedRefreshToken = tokenStore.getRefreshToken()
-                android.util.Log.d("AuthRepository", "토큰 저장 확인: accessToken 저장됨=${savedAccessToken != null}, refreshToken 저장됨=${savedRefreshToken != null}")
-                
-                response.isNew // isNew 반환
-            }.recoverCatching { e ->
-                android.util.Log.e("AuthRepository", "토큰 갱신 실패: ${e.message}")
-                if (e is HttpException) {
-                    val code = e.code()
-                    val msg = e.response()?.errorBody()?.string().orEmpty()
-                    android.util.Log.e("AuthRepository", "토큰 갱신 실패 상세: code=$code, message=$msg")
-                    // 토큰 갱신 실패 시 토큰 삭제
-                    clearTokens()
-                    throw IllegalStateException("토큰 갱신 실패 ($code): $msg")
-                } else {
-                    throw e
+            when (val result = TokenRefresher.get(context).refresh(failedAccessToken)) {
+                is RefreshResult.Success -> Result.success(result.isNew ?: false)
+                RefreshResult.InvalidRefreshToken -> {
+                    android.util.Log.e("AuthRepository", "토큰 갱신 실패: 리프레시 토큰 무효")
+                    Result.failure(RefreshTokenInvalidException())
+                }
+                is RefreshResult.TemporaryFailure -> {
+                    android.util.Log.e("AuthRepository", "토큰 갱신 일시 실패: ${result.reason}")
+                    Result.failure(IllegalStateException(result.reason))
                 }
             }
         }
@@ -687,7 +678,7 @@ class AuthRepository(
 
                 if (code == 401) {
                     android.util.Log.d("AuthRepository", "토큰 갱신 시도 (401)")
-                    refreshAccessToken().getOrThrow()
+                    refreshAccessToken(failedAccessToken = accessToken).getOrThrow()
                     accessToken = getAccessToken()
                         ?: throw IllegalStateException("토큰 갱신 후 액세스 토큰을 가져올 수 없습니다")
                     android.util.Log.d("AuthRepository", "토큰 갱신 성공, 재시도")

@@ -1,61 +1,36 @@
 package com.killingpart.killingpoint.data.remote
 
 import android.content.Context
-import com.killingpart.killingpoint.data.local.TokenStore
-import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
-import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.Route
-import org.json.JSONObject
 
+/**
+ * 401 응답 시 액세스 토큰을 재발급하고 요청을 한 번 다시 보낸다.
+ * 재발급 자체는 [TokenRefresher] 가 직렬로 처리한다.
+ */
 class TokenAuthenticator(
-    private val context: Context
+    context: Context
 ) : Authenticator {
-    private val tokenStore = TokenStore(context)
+    private val refresher = TokenRefresher.get(context)
 
     override fun authenticate(route: Route?, response: Response): Request? {
-        if (responseCount(response) >= 2) {
-            return null
+        if (responseCount(response) >= 2) return null
+        if (response.request.url.encodedPath.endsWith("/jwt/exchange")) return null
+
+        val failedAccessToken = response.request.header("Authorization")
+            ?.removePrefix("Bearer")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+
+        return when (val result = refresher.refresh(failedAccessToken)) {
+            is RefreshResult.Success -> response.request.newBuilder()
+                .header("Authorization", "Bearer ${result.accessToken}")
+                .build()
+            RefreshResult.InvalidRefreshToken,
+            is RefreshResult.TemporaryFailure -> null
         }
-
-        val refreshToken = runBlocking { tokenStore.getRefreshToken() }
-            ?: return null
-
-        val refreshUrl = RetrofitClient.BASE_URL + "jwt/exchange"
-
-        val client = OkHttpClient()
-
-        val refreshRequest = Request.Builder()
-            .url(refreshUrl)
-            .header("X-Refresh-Token", refreshToken)
-            .post("".toRequestBody())
-            .build()
-
-        val refreshResponse = try {
-            client.newCall(refreshRequest).execute()
-        } catch (e: Exception) {
-            return null
-        }
-
-        if (!refreshResponse.isSuccessful) {
-            runBlocking { tokenStore.clear() }
-            return null
-        }
-
-        val body = refreshResponse.body?.string() ?: return null
-        val json = JSONObject(body)
-
-        val newAccess = json.getString("accessToken")
-        val newRefresh = json.getString("refreshToken")
-
-        runBlocking { tokenStore.save(newAccess, newRefresh) }
-
-        return response.request.newBuilder()
-            .header("Authorization", "Bearer $newAccess")
-            .build()
     }
 
     private fun responseCount(response: Response): Int {
